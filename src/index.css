@@ -1193,7 +1193,7 @@ body {
 }
 
 .set-input-stepped {
-  background: transparent !important;
+  background-color: transparent !important;
   border: none !important;
   color: var(--text-primary) !important;
   text-align: center;
@@ -1208,6 +1208,18 @@ body {
 .set-input-stepped:focus {
   outline: none !important;
   box-shadow: none !important;
+  background-color: transparent !important;
+}
+
+.set-input-stepped:disabled {
+  color: var(--text-tertiary) !important;
+  opacity: 0.7 !important;
+  background-color: transparent !important;
+}
+
+.set-input-stepped::placeholder {
+  color: var(--text-tertiary) !important;
+  opacity: 0.5 !important;
 }
 
 /* Remove default spin buttons inside stepped input */
