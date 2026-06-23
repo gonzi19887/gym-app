@@ -1179,3 +1179,70 @@ body {
   align-items: center;
   gap: 8px;
 }
+
+/* Stepper styles for mobile friendly inputs */
+.stepper-container {
+  display: flex;
+  align-items: center;
+  background-color: var(--bg-primary) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 8px !important;
+  overflow: hidden;
+  height: 32px;
+  width: 100%;
+}
+
+.set-input-stepped {
+  background: transparent !important;
+  border: none !important;
+  color: var(--text-primary) !important;
+  text-align: center;
+  width: 100% !important;
+  font-size: 13px !important;
+  font-weight: 600;
+  font-family: var(--font-sans);
+  padding: 0 !important;
+  height: 100%;
+}
+
+.set-input-stepped:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Remove default spin buttons inside stepped input */
+.set-input-stepped::-webkit-outer-spin-button,
+.set-input-stepped::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.set-input-stepped[type=number] {
+  -moz-appearance: textfield;
+}
+
+.stepper-btn-minus, .stepper-btn-plus {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  width: 24px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition-smooth);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.stepper-btn-minus:hover, .stepper-btn-plus:hover {
+  color: var(--accent-primary);
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.stepper-btn-minus:disabled, .stepper-btn-plus:disabled {
+  opacity: 0.2;
+  cursor: not-allowed;
+}

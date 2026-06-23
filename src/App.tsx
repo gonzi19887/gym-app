@@ -1405,23 +1405,61 @@ function App() {
                     >
                       <span className="set-number">{sIdx + 1}</span>
                       
-                      <input 
-                        type="number"
-                        placeholder="0"
-                        value={set.weight || ''}
-                        disabled={set.is_completed}
-                        onChange={(e) => handleSetChange(set.id, 'weight', parseFloat(e.target.value) || 0)}
-                        className="set-input"
-                      />
+                      <div className="stepper-container">
+                        <button
+                          type="button"
+                          disabled={set.is_completed}
+                          onClick={() => handleSetChange(set.id, 'weight', Math.max(0, parseFloat(((set.weight || 0) - 2.5).toFixed(2))))}
+                          className="stepper-btn-minus"
+                        >
+                          -
+                        </button>
+                        <input 
+                          type="number"
+                          placeholder="0"
+                          value={set.weight || ''}
+                          disabled={set.is_completed}
+                          onFocus={(e) => e.target.select()}
+                          onChange={(e) => handleSetChange(set.id, 'weight', parseFloat(e.target.value) || 0)}
+                          className="set-input-stepped"
+                        />
+                        <button
+                          type="button"
+                          disabled={set.is_completed}
+                          onClick={() => handleSetChange(set.id, 'weight', parseFloat(((set.weight || 0) + 2.5).toFixed(2)))}
+                          className="stepper-btn-plus"
+                        >
+                          +
+                        </button>
+                      </div>
                       
-                      <input 
-                        type="number"
-                        placeholder="0"
-                        value={set.reps || ''}
-                        disabled={set.is_completed}
-                        onChange={(e) => handleSetChange(set.id, 'reps', parseInt(e.target.value) || 0)}
-                        className="set-input"
-                      />
+                      <div className="stepper-container">
+                        <button
+                          type="button"
+                          disabled={set.is_completed}
+                          onClick={() => handleSetChange(set.id, 'reps', Math.max(1, (set.reps || 0) - 1))}
+                          className="stepper-btn-minus"
+                        >
+                          -
+                        </button>
+                        <input 
+                          type="number"
+                          placeholder="0"
+                          value={set.reps || ''}
+                          disabled={set.is_completed}
+                          onFocus={(e) => e.target.select()}
+                          onChange={(e) => handleSetChange(set.id, 'reps', parseInt(e.target.value) || 0)}
+                          className="set-input-stepped"
+                        />
+                        <button
+                          type="button"
+                          disabled={set.is_completed}
+                          onClick={() => handleSetChange(set.id, 'reps', (set.reps || 0) + 1)}
+                          className="stepper-btn-plus"
+                        >
+                          +
+                        </button>
+                      </div>
 
                       <button
                         onClick={() => handleToggleSet(set.id, !set.is_completed)}
@@ -2189,51 +2227,132 @@ function App() {
                                         <div className="grid grid-cols-3 gap-2 pt-2 border-t border-white/5">
                                           <div>
                                             <label className="text-[10px] text-on-surface-variant/80 uppercase block mb-1">Series</label>
-                                            <input 
-                                              type="number"
-                                              min="1"
-                                              max="12"
-                                              value={config.sets}
-                                              onChange={(e) => {
-                                                const val = Math.max(1, parseInt(e.target.value) || 1);
-                                                setNewRoutineSelectedExercises(prev => 
-                                                  prev.map(item => item.id === config.id ? { ...item, sets: val } : item)
-                                                );
-                                              }}
-                                              className="w-full bg-surface-container-high border border-border-subtle rounded px-2 py-1 text-xs text-on-surface text-center focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
-                                            />
+                                            <div className="flex items-center bg-surface-container-high border border-border-subtle rounded overflow-hidden h-7">
+                                              <button
+                                                type="button"
+                                                onClick={() => {
+                                                  const val = Math.max(1, (config.sets || 1) - 1);
+                                                  setNewRoutineSelectedExercises(prev => 
+                                                    prev.map(item => item.id === config.id ? { ...item, sets: val } : item)
+                                                  );
+                                                }}
+                                                className="px-2 text-xs text-on-surface-variant hover:text-primary h-full hover:bg-white/5 transition-colors font-bold"
+                                              >
+                                                -
+                                              </button>
+                                              <input 
+                                                type="number"
+                                                min="1"
+                                                max="12"
+                                                value={config.sets}
+                                                onFocus={(e) => e.target.select()}
+                                                onChange={(e) => {
+                                                  const val = Math.max(1, parseInt(e.target.value) || 1);
+                                                  setNewRoutineSelectedExercises(prev => 
+                                                    prev.map(item => item.id === config.id ? { ...item, sets: val } : item)
+                                                  );
+                                                }}
+                                                className="w-full bg-transparent border-none text-xs text-on-surface text-center focus:outline-none p-0 h-full [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                              />
+                                              <button
+                                                type="button"
+                                                onClick={() => {
+                                                  const val = Math.min(12, (config.sets || 1) + 1);
+                                                  setNewRoutineSelectedExercises(prev => 
+                                                    prev.map(item => item.id === config.id ? { ...item, sets: val } : item)
+                                                  );
+                                                }}
+                                                className="px-2 text-xs text-on-surface-variant hover:text-primary h-full hover:bg-white/5 transition-colors font-bold"
+                                              >
+                                                +
+                                              </button>
+                                            </div>
                                           </div>
                                           <div>
                                             <label className="text-[10px] text-on-surface-variant/80 uppercase block mb-1">Reps</label>
-                                            <input 
-                                              type="number"
-                                              min="1"
-                                              max="100"
-                                              value={config.reps}
-                                              onChange={(e) => {
-                                                const val = Math.max(1, parseInt(e.target.value) || 1);
-                                                setNewRoutineSelectedExercises(prev => 
-                                                  prev.map(item => item.id === config.id ? { ...item, reps: val } : item)
-                                                );
-                                              }}
-                                              className="w-full bg-surface-container-high border border-border-subtle rounded px-2 py-1 text-xs text-on-surface text-center focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
-                                            />
+                                            <div className="flex items-center bg-surface-container-high border border-border-subtle rounded overflow-hidden h-7">
+                                              <button
+                                                type="button"
+                                                onClick={() => {
+                                                  const val = Math.max(1, (config.reps || 1) - 1);
+                                                  setNewRoutineSelectedExercises(prev => 
+                                                    prev.map(item => item.id === config.id ? { ...item, reps: val } : item)
+                                                  );
+                                                }}
+                                                className="px-2 text-xs text-on-surface-variant hover:text-primary h-full hover:bg-white/5 transition-colors font-bold"
+                                              >
+                                                -
+                                              </button>
+                                              <input 
+                                                type="number"
+                                                min="1"
+                                                max="100"
+                                                value={config.reps}
+                                                onFocus={(e) => e.target.select()}
+                                                onChange={(e) => {
+                                                  const val = Math.max(1, parseInt(e.target.value) || 1);
+                                                  setNewRoutineSelectedExercises(prev => 
+                                                    prev.map(item => item.id === config.id ? { ...item, reps: val } : item)
+                                                  );
+                                                }}
+                                                className="w-full bg-transparent border-none text-xs text-on-surface text-center focus:outline-none p-0 h-full [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                              />
+                                              <button
+                                                type="button"
+                                                onClick={() => {
+                                                  const val = Math.min(100, (config.reps || 1) + 1);
+                                                  setNewRoutineSelectedExercises(prev => 
+                                                    prev.map(item => item.id === config.id ? { ...item, reps: val } : item)
+                                                  );
+                                                }}
+                                                className="px-2 text-xs text-on-surface-variant hover:text-primary h-full hover:bg-white/5 transition-colors font-bold"
+                                              >
+                                                +
+                                              </button>
+                                            </div>
                                           </div>
                                           <div>
                                             <label className="text-[10px] text-on-surface-variant/80 uppercase block mb-1">Descanso (s)</label>
-                                            <input 
-                                              type="number"
-                                              min="0"
-                                              step="5"
-                                              value={config.rest}
-                                              onChange={(e) => {
-                                                const val = Math.max(0, parseInt(e.target.value) || 0);
-                                                setNewRoutineSelectedExercises(prev => 
-                                                  prev.map(item => item.id === config.id ? { ...item, rest: val } : item)
-                                                );
-                                              }}
-                                              className="w-full bg-surface-container-high border border-border-subtle rounded px-2 py-1 text-xs text-on-surface text-center focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
-                                            />
+                                            <div className="flex items-center bg-surface-container-high border border-border-subtle rounded overflow-hidden h-7">
+                                              <button
+                                                type="button"
+                                                onClick={() => {
+                                                  const val = Math.max(0, (config.rest || 0) - 5);
+                                                  setNewRoutineSelectedExercises(prev => 
+                                                    prev.map(item => item.id === config.id ? { ...item, rest: val } : item)
+                                                  );
+                                                }}
+                                                className="px-2 text-xs text-on-surface-variant hover:text-primary h-full hover:bg-white/5 transition-colors font-bold"
+                                              >
+                                                -
+                                              </button>
+                                              <input 
+                                                type="number"
+                                                min="0"
+                                                step="5"
+                                                value={config.rest}
+                                                onFocus={(e) => e.target.select()}
+                                                onChange={(e) => {
+                                                  const val = Math.max(0, parseInt(e.target.value) || 0);
+                                                  setNewRoutineSelectedExercises(prev => 
+                                                    prev.map(item => item.id === config.id ? { ...item, rest: val } : item)
+                                                  );
+                                                }}
+                                                className="w-full bg-transparent border-none text-xs text-on-surface text-center focus:outline-none p-0 h-full [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                              />
+                                              <button
+                                                type="button"
+                                                onClick={() => {
+                                                  const val = (config.rest || 0) + 5;
+                                                  setNewRoutineSelectedExercises(prev => 
+                                                    prev.map(item => item.id === config.id ? { ...item, rest: val } : item)
+                                                  );
+                                                }}
+                                                className="px-2 text-xs text-on-surface-variant hover:text-primary h-full hover:bg-white/5 transition-colors font-bold"
+                                              >
+                                                +
+                                              </button>
+                                            </div>
                                           </div>
                                         </div>
                                       </div>
