@@ -1,23 +1,23 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
 
 :root {
-  /* Colors - Sleek Cyberpunk/Gym Theme */
-  --bg-primary: #09090e;
-  --bg-secondary: #111119;
-  --bg-tertiary: #1b1b28;
-  --bg-accent: rgba(168, 85, 247, 0.1);
+  /* Colors - Focused Obsidian (JJK Aesthetic) */
+  --bg-primary: #131314; /* Obsidian Dark */
+  --bg-secondary: #1c1b1c; /* Surface Level 1 */
+  --bg-tertiary: #201f20; /* Surface Container */
+  --bg-accent: rgba(184, 211, 0, 0.08); /* Electric Lime accent bg */
   
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --text-tertiary: #64748b;
+  --text-primary: #e5e2e3; /* On-Surface */
+  --text-secondary: #c6c9ad; /* On-Surface Variant */
+  --text-tertiary: #90937a; /* Outline */
   
-  --accent-primary: #a855f7; /* Violet */
-  --accent-secondary: #f43f5e; /* Rose */
-  --accent-tertiary: #10b981; /* Emerald/Success */
+  --accent-primary: #b8d300; /* Electric Lime */
+  --accent-secondary: #ddb7ff; /* Neon Purple */
+  --accent-tertiary: #10b981; /* Success */
   
-  --accent-glow: rgba(168, 85, 247, 0.3);
-  --border-color: #27273a;
-  --border-color-glow: rgba(168, 85, 247, 0.2);
+  --accent-glow: rgba(184, 211, 0, 0.15);
+  --border-color: rgba(255, 255, 255, 0.05); /* Border Subtle */
+  --border-color-glow: rgba(184, 211, 0, 0.2);
   
   /* Borders & Spacing */
   --border-radius-smooth: 16px;
@@ -25,7 +25,7 @@
   --border-radius-pill: 9999px;
   
   /* Fonts */
-  --font-sans: 'Outfit', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-sans: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
   
   /* Animations */
   --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1089,7 +1089,7 @@ body {
 
 .exercise-image-fallback {
   width: 100%;
-  height: 160px;
+  height: 240px;
   border-radius: var(--border-radius-smooth);
   background-color: var(--bg-primary);
   border: 1px solid var(--border-color);
@@ -1106,7 +1106,7 @@ body {
 .exercise-image-fallback img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   opacity: 0.8;
 }
 

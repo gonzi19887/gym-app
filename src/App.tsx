@@ -131,6 +131,8 @@ function App() {
     reps: number;
     rest: number;
   }[]>([]);
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
+  const [activeCategoryToSelect, setActiveCategoryToSelect] = useState<string | null>(null);
 
   // Active Workout State
   const [activeWorkout, setActiveWorkout] = useState<Workout | null>(null);
@@ -179,6 +181,115 @@ function App() {
   const [authUsername, setAuthUsername] = useState('');
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
   const [authLoading, setAuthLoading] = useState(false);
+
+  // Dynamic JJK Routine Name Generator
+  const isNameManuallyEdited = useRef(false);
+
+  const generateJJKRoutineName = (selectedIds: string[]): string => {
+    if (selectedIds.length === 0) return '';
+    
+    const counts: { [key: string]: number } = {};
+    selectedIds.forEach(id => {
+      const ex = exercises.find(e => e.id === id);
+      if (ex) {
+        const cat = ex.category.toUpperCase();
+        counts[cat] = (counts[cat] || 0) + 1;
+      }
+    });
+    
+    const sortedCats = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+    if (sortedCats.length === 0) return '';
+    
+    const primaryCat = sortedCats[0][0];
+    
+    if (primaryCat.includes('BICEPS') || primaryCat.includes('TRICEPS') || primaryCat.includes('ANTEBRAZOS') || primaryCat.includes('BRAZO') || primaryCat.includes('BRAZOS')) {
+      const names = [
+        'Divergent Fist: Fuerza de Brazos 🤜🌀',
+        'Black Flash: Impacto de Brazos ⚡🤛',
+        'Boogie Woogie: Danza de Manos 👏✨',
+        'Fuerza de Toji: Brazos de Grado Especial 💪🔥'
+      ];
+      return names[Math.floor(Math.random() * names.length)];
+    }
+    
+    if (primaryCat.includes('PECHO')) {
+      const names = [
+        'Cuerpo de Sukuna: Pecho Blindado 👹🛡️',
+        'Ritual de Sangre: Pecho de Acero 🩸🛡️',
+        'Escudo de Energía Maldita: Pectoral 🌀🛡️'
+      ];
+      return names[Math.floor(Math.random() * names.length)];
+    }
+    
+    if (primaryCat.includes('ESPALDA')) {
+      const names = [
+        'Back of the Demon: Espalda Maldita 👺🗡️',
+        'Wings of the Curse: Dorsales de Grado Especial 🪽🌀',
+        'Restricción Celestial: Espalda de Acero 🦾'
+      ];
+      return names[Math.floor(Math.random() * names.length)];
+    }
+    
+    if (primaryCat.includes('PIERNA') || primaryCat.includes('PANTORRILLA') || primaryCat.includes('CADERA') || primaryCat.includes('PIERNAS')) {
+      const names = [
+        'Desplazamiento Divino: Piernas de Gojo ⚡👣',
+        'Puntapié del Dios del Trueno: Piernas 👣⚡',
+        'Velocidad de Toji: Entrenamiento de Piernas 🐆🦿',
+        'Ritual del Viento: Piernas Malditas 🌀👣'
+      ];
+      return names[Math.floor(Math.random() * names.length)];
+    }
+    
+    if (primaryCat.includes('ABDOMEN') || primaryCat.includes('TRONCO') || primaryCat.includes('COLUMNA') || primaryCat.includes('ABS') || primaryCat.includes('ABDOMINAL')) {
+      const names = [
+        'Domain Expansion: Núcleo Absoluto 🔮🧘',
+        'Estabilidad del Velo: Core Maldito 🛡️🌀',
+        'Fuerza Interior de Nanami: Abdomen 7:3 📐🌀'
+      ];
+      return names[Math.floor(Math.random() * names.length)];
+    }
+    
+    if (primaryCat.includes('HOMBRO') || primaryCat.includes('TRAPECIOS') || primaryCat.includes('HOMBROS')) {
+      const names = [
+        'Soporte del Cielo: Hombros de Titanio 🦾🌌',
+        'Fuerza Escapular: Ritual de Hombros 🦾🌀',
+        'Hombros de Sukuna: Carga Maldita 👹🦾'
+      ];
+      return names[Math.floor(Math.random() * names.length)];
+    }
+    
+    if (primaryCat.includes('ESTIRAMIENTOS') || primaryCat.includes('CUELLO') || primaryCat.includes('ESTIRAMIENTO')) {
+      const names = [
+        'Reverse Cursed Technique: Curación Inversa 🔮🩹',
+        'Ritual de Restauración Maldita 🧘🩹',
+        'Liberación del Límite de Energía 🌀🩹'
+      ];
+      return names[Math.floor(Math.random() * names.length)];
+    }
+    
+    const combos = [
+      'Heavenly Restriction (Restricción Celestial) 🦾💀',
+      'Special Grade Ritual (Ritual de Grado Especial) 👹🔮',
+      'Cursed Energy Manifestation (Manifestación de Energía) 🌀⚡',
+      'Shaman Training (Entrenamiento de Chamán) 🛡️⚔️'
+    ];
+    return combos[Math.floor(Math.random() * combos.length)];
+  };
+
+  useEffect(() => {
+    if (showRoutineCreator) {
+      isNameManuallyEdited.current = false;
+      setNewRoutineName('');
+    }
+  }, [showRoutineCreator]);
+
+  useEffect(() => {
+    if (showRoutineCreator && (!isNameManuallyEdited.current || newRoutineName === '')) {
+      const selectedIds = newRoutineSelectedExercises.map(item => item.id);
+      const suggested = generateJJKRoutineName(selectedIds);
+      setNewRoutineName(suggested);
+    }
+  }, [newRoutineSelectedExercises, showRoutineCreator]);
 
   // Sync state helper to write locally and sync immediately if online
   const saveRecord = async (
@@ -310,7 +421,7 @@ function App() {
     });
   };
 
-  const loadData = async () => {
+  async function loadData() {
     await initDB();
     await seedDatabase();
 
@@ -472,7 +583,7 @@ function App() {
           playsInline
           controls={false}
           className={options?.className}
-          style={{ width: '100%', height: '100%', objectFit: 'cover', ...options?.style }}
+          style={{ width: '100%', height: '100%', objectFit: 'contain', ...options?.style }}
           onError={(e) => {
             (e.target as HTMLElement).style.display = 'none';
           }}
@@ -485,7 +596,7 @@ function App() {
         src={src}
         alt={ex.name}
         className={options?.className}
-        style={{ width: '100%', height: '100%', objectFit: 'cover', ...options?.style }}
+        style={{ width: '100%', height: '100%', objectFit: 'contain', ...options?.style }}
         onError={(e) => {
           (e.target as HTMLElement).style.display = 'none';
         }}
@@ -1221,7 +1332,7 @@ function App() {
                 <h3 className="active-exercise-name">{currentActiveExercise.name}</h3>
 
                 {/* Exercise image/illustration */}
-                <div className="exercise-image-fallback" style={{ height: '140px', marginTop: '4px', marginBottom: '12px' }}>
+                <div className="exercise-image-fallback" style={{ height: '240px', marginTop: '4px', marginBottom: '12px' }}>
                   {renderExerciseMedia(currentActiveExercise)}
                   <div className="exercise-image-fallback-text">Visualización</div>
                 </div>
@@ -1870,226 +1981,339 @@ function App() {
 
             {/* ROUTINE CREATOR MODAL */}
             {showRoutineCreator && (
-              <div className="overlay-screen animate-slide">
+              <div className="overlay-screen animate-slide overflow-y-auto pb-32">
                 <header className="overlay-header">
-                  <h3 className="overlay-header-title">Crear Plan de Rutina</h3>
+                  <h3 className="overlay-header-title">Forjar Dominio</h3>
                   <button 
                     onClick={() => setShowRoutineCreator(false)}
                     className="btn-secondary"
                     style={{ padding: '6px 12px', fontSize: '11px' }}
                   >
-                    Cerrar
+                    Volver
                   </button>
                 </header>
 
-                <div className="overlay-body">
-                  {/* Name */}
-                  <div className="form-group">
-                    <label className="form-label">Nombre de la Rutina</label>
-                    <input 
-                      type="text"
-                      placeholder="Ej: Lunes Brazo / Hombro"
-                      value={newRoutineName}
-                      onChange={(e) => setNewRoutineName(e.target.value)}
-                      className="form-input"
-                    />
-                  </div>
-
-                  {/* Day Picker */}
-                  <div className="form-group">
-                    <label className="form-label">Días Programados</label>
-                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                      {WEEKDAYS.map((day) => {
-                        const isSelected = newRoutineDays.includes(day.value);
-                        return (
-                          <button
-                            key={day.value}
-                            type="button"
-                            onClick={() => {
-                              setNewRoutineDays(prev => 
-                                isSelected 
-                                  ? prev.filter(v => v !== day.value) 
-                                  : [...prev, day.value]
-                              );
-                            }}
-                            className={`calendar-day-box ${isSelected ? 'completed' : ''}`}
-                            style={{ width: '42px', height: '42px', cursor: 'pointer', borderRadius: '10px', fontSize: '11px' }}
-                          >
-                            {day.label}
-                          </button>
-                        );
-                      })}
+                <main className="flex-1 w-full max-w-2xl mx-auto px-4 py-lg flex flex-col gap-xl">
+                  {/* Header Section */}
+                  <section className="flex flex-col gap-sm">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
+                        <span className="material-symbols-outlined text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>edit_document</span>
+                      </div>
+                      <h2 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface">Gestor de Rutinas</h2>
                     </div>
-                  </div>
+                    <p className="font-body-md text-body-md text-on-surface-variant">Forja un nuevo circuito de entrenamiento. Ajusta los parámetros de tu energía maldita.</p>
+                  </section>
 
-                  {/* Selected Exercises Configuration */}
-                  {newRoutineSelectedExercises.length > 0 && (
-                    <div className="form-group" style={{ marginBottom: '20px' }}>
-                      <label className="form-label">Configurar Ejercicios Seleccionados</label>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                        {newRoutineSelectedExercises.map((config) => (
-                          <div 
-                            key={config.id} 
-                            style={{
-                              backgroundColor: 'rgba(255, 255, 255, 0.02)',
-                              border: '1px solid var(--border-color)',
-                              borderRadius: '12px',
-                              padding: '12px',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              gap: '10px'
-                            }}
-                          >
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)' }}>
-                                {config.name}
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setNewRoutineSelectedExercises(prev => prev.filter(item => item.id !== config.id));
-                                }}
-                                style={{
-                                  background: 'none',
-                                  border: 'none',
-                                  color: '#ff4d4d',
-                                  fontSize: '11px',
-                                  fontWeight: '600',
-                                  cursor: 'pointer',
-                                  padding: '2px 6px',
-                                  borderRadius: '6px',
-                                  backgroundColor: 'rgba(255, 77, 77, 0.1)'
-                                }}
-                              >
-                                Quitar
-                              </button>
-                            </div>
-                            
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.2fr', gap: '8px' }}>
-                              <div>
-                                <label style={{ fontSize: '9px', textTransform: 'uppercase', color: 'var(--text-tertiary)', display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>Series</label>
-                                <input 
-                                  type="number"
-                                  min="1"
-                                  max="12"
-                                  value={config.sets}
-                                  onChange={(e) => {
-                                    const val = Math.max(1, parseInt(e.target.value) || 1);
-                                    setNewRoutineSelectedExercises(prev => 
-                                      prev.map(item => item.id === config.id ? { ...item, sets: val } : item)
-                                    );
-                                  }}
-                                  className="set-input"
-                                  style={{ padding: '6px 8px', fontSize: '12px' }}
-                                />
-                              </div>
-                              <div>
-                                <label style={{ fontSize: '9px', textTransform: 'uppercase', color: 'var(--text-tertiary)', display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>Reps</label>
-                                <input 
-                                  type="number"
-                                  min="1"
-                                  max="100"
-                                  value={config.reps}
-                                  onChange={(e) => {
-                                    const val = Math.max(1, parseInt(e.target.value) || 1);
-                                    setNewRoutineSelectedExercises(prev => 
-                                      prev.map(item => item.id === config.id ? { ...item, reps: val } : item)
-                                    );
-                                  }}
-                                  className="set-input"
-                                  style={{ padding: '6px 8px', fontSize: '12px' }}
-                                />
-                              </div>
-                              <div>
-                                <label style={{ fontSize: '9px', textTransform: 'uppercase', color: 'var(--text-tertiary)', display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>Descanso (seg)</label>
-                                <input 
-                                  type="number"
-                                  min="0"
-                                  step="5"
-                                  value={config.rest}
-                                  onChange={(e) => {
-                                    const val = Math.max(0, parseInt(e.target.value) || 0);
-                                    setNewRoutineSelectedExercises(prev => 
-                                      prev.map(item => item.id === config.id ? { ...item, rest: val } : item)
-                                    );
-                                  }}
-                                  className="set-input"
-                                  style={{ padding: '6px 8px', fontSize: '12px' }}
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        ))}
+                  {/* Configuration Form */}
+                  <section className="flex flex-col gap-lg bg-surface-level-1 p-md md:p-lg rounded-xl border border-border-subtle relative overflow-hidden">
+                    {/* Decorative Glow */}
+                    <div className="absolute -top-20 -right-20 w-64 h-64 bg-primary/5 rounded-full blur-[80px] pointer-events-none" aria-hidden="true"></div>
+                    
+                    {/* Title Input */}
+                    <div className="flex flex-col gap-xs z-10">
+                      <label className="font-label-md text-label-md text-primary uppercase tracking-wider" htmlFor="routine-name">Nombre del Dominio</label>
+                      <div className="relative" aria-live="polite">
+                        <input 
+                          className="w-full h-14 bg-obsidian-zero border border-border-subtle rounded-lg px-4 pr-12 text-on-surface font-body-lg text-body-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-all placeholder:text-on-surface-variant/40" 
+                          id="routine-name" 
+                          placeholder="Ej. Domain Expansion: Núcleo Absoluto" 
+                          type="text"
+                          value={newRoutineName}
+                          onChange={(e) => {
+                            setNewRoutineName(e.target.value);
+                            isNameManuallyEdited.current = true;
+                          }}
+                        />
+                        <button 
+                          type="button"
+                          onClick={() => {
+                            const selectedIds = newRoutineSelectedExercises.map(item => item.id);
+                            const suggested = generateJJKRoutineName(selectedIds);
+                            setNewRoutineName(suggested);
+                            isNameManuallyEdited.current = false;
+                          }}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary transition-colors p-2" 
+                          title="Generar nombre místico"
+                        >
+                          <span className="material-symbols-outlined text-xl">auto_awesome</span>
+                        </button>
                       </div>
                     </div>
-                  )}
 
-                  {/* Categorized Exercise Selector with Preview */}
-                  <div className="form-group">
-                    <label className="form-label">Ejercicios por Categoría</label>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                      
-                      {Object.entries(groupedExercises).map(([category, catExercises]) => (
-                        <div key={category} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                          <h4 style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: 'var(--accent-primary)', letterSpacing: '0.5px', marginBottom: '2px' }}>
-                            {category}
-                          </h4>
-                          
-                          <div className="checkbox-list">
-                            {catExercises.map((ex) => {
-                              const isSelected = newRoutineSelectedExercises.some(item => item.id === ex.id);
-                              return (
-                                <button
-                                  key={ex.id}
-                                  type="button"
-                                  onClick={() => {
-                                    setNewRoutineSelectedExercises(prev => 
-                                      isSelected 
-                                        ? prev.filter(item => item.id !== ex.id) 
-                                        : [...prev, { id: ex.id, name: ex.name, sets: 4, reps: 10, rest: 60 }]
-                                    );
-                                  }}
-                                  className={`checkbox-row ${isSelected ? 'selected' : ''}`}
-                                  style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px' }}
-                                >
-                                  {/* Small Thumbnail Preview */}
-                                  <div style={{ width: '32px', height: '32px', borderRadius: '6px', overflow: 'hidden', backgroundColor: 'var(--bg-primary)', border: '1px solid var(--border-color)', flexShrink: 0 }}>
-                                    {renderExerciseMedia(ex, { style: { width: '100%', height: '100%', objectFit: 'cover' } })}
-                                  </div>
-
-                                  <span style={{ flex: 1, fontSize: '12px' }}>{ex.name}</span>
-                                  
-                                  <div className="checkbox-indicator">
-                                    {isSelected && <Check size={11} strokeWidth={3} />}
-                                  </div>
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      ))}
-
+                    {/* Day Selector */}
+                    <div className="flex flex-col gap-sm z-10">
+                      <div className="flex justify-between items-end">
+                        <label className="font-label-md text-label-md text-primary uppercase tracking-wider">Días de Manifestación</label>
+                        <span className="font-label-md text-label-md text-on-surface-variant">
+                          {newRoutineDays.length} Día{newRoutineDays.length !== 1 ? 's' : ''}
+                        </span>
+                      </div>
+                      <div className="flex gap-2 justify-between w-full" role="group" aria-label="Días de entrenamiento">
+                        {WEEKDAYS.map((day) => {
+                          const isSelected = newRoutineDays.includes(day.value);
+                          return (
+                            <button
+                              key={day.value}
+                              type="button"
+                              onClick={() => {
+                                setNewRoutineDays(prev => 
+                                  isSelected 
+                                    ? prev.filter(v => v !== day.value) 
+                                    : [...prev, day.value]
+                                );
+                              }}
+                              className={`w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center font-label-lg text-label-lg transition-transform active:scale-95 ${
+                                isSelected 
+                                  ? 'bg-primary text-on-primary shadow-[0_0_20px_rgba(184,211,0,0.15)] font-bold' 
+                                  : 'bg-obsidian-zero border border-border-subtle text-on-surface-variant hover:border-primary/50'
+                              }`}
+                            >
+                              {day.label}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                </div>
+                  </section>
 
-                <footer className="overlay-footer">
-                  <button
-                    onClick={() => setShowRoutineCreator(false)}
-                    className="btn-secondary"
-                    style={{ flex: 1 }}
-                  >
-                    Volver
-                  </button>
-                  <button
-                    onClick={handleCreateRoutine}
-                    disabled={!newRoutineName.trim() || newRoutineSelectedExercises.length === 0}
-                    className="btn-primary"
-                    style={{ flex: 1 }}
-                  >
-                    Guardar Rutina
-                  </button>
-                </footer>
+                  {/* Collapsible Exercise List */}
+                  <section className="flex flex-col gap-md">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-headline-md text-headline-md text-on-surface">Compendio de Técnicas</h3>
+                    </div>
+
+                    {Object.entries(groupedExercises).map(([category, catExercises]) => {
+                      const isExpanded = !!expandedCategories[category];
+                      const selectedInCat = newRoutineSelectedExercises.filter(item => 
+                        catExercises.some(ex => ex.id === item.id)
+                      );
+
+                      // Dynamic icon for muscle category
+                      let catIcon = "fitness_center";
+                      let iconBg = "bg-primary/10 text-primary";
+                      const upperCat = category.toUpperCase();
+                      if (upperCat.includes('ABDOMEN') || upperCat.includes('ABS') || upperCat.includes('NÚCLEO') || upperCat.includes('CORE')) {
+                        catIcon = "accessibility_new";
+                        iconBg = "bg-secondary-container/30 text-secondary";
+                      } else if (upperCat.includes('ESPALDA')) {
+                        catIcon = "shield";
+                        iconBg = "bg-primary/10 text-primary";
+                      } else if (upperCat.includes('HOMBRO')) {
+                        catIcon = "sports_martial_arts";
+                        iconBg = "bg-secondary-container/30 text-secondary";
+                      }
+
+                      return (
+                        <div key={category} className="bg-surface-level-1 rounded-xl border border-border-subtle overflow-hidden transition-all duration-300">
+                          <button 
+                            type="button"
+                            className="w-full flex justify-between items-center p-4 hover:bg-white/5 transition-colors focus:outline-none" 
+                            onClick={() => {
+                              setExpandedCategories(prev => ({
+                                ...prev,
+                                [category]: !prev[category]
+                              }));
+                            }}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className={`w-8 h-8 rounded flex items-center justify-center ${iconBg}`}>
+                                <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>{catIcon}</span>
+                              </div>
+                              <span className="font-headline-md text-body-lg text-on-surface">{category}</span>
+                              <span className="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant font-label-md text-[10px]">
+                                {selectedInCat.length} Técnica{selectedInCat.length !== 1 ? 's' : ''}
+                              </span>
+                            </div>
+                            <span 
+                              className={`material-symbols-outlined text-on-surface-variant transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}
+                            >
+                              expand_more
+                            </span>
+                          </button>
+
+                          {isExpanded && (
+                            <div className="px-4 pb-4 flex flex-col gap-sm">
+                              {/* Selected exercises in this category */}
+                              {selectedInCat.length === 0 ? (
+                                <div className="py-6 flex flex-col items-center justify-center text-center gap-2">
+                                  <span className="material-symbols-outlined text-on-surface-variant/30 text-4xl">do_not_disturb_off</span>
+                                  <p className="text-on-surface-variant font-label-md">No hay técnicas asignadas a este grupo.</p>
+                                </div>
+                              ) : (
+                                <div className="flex flex-col gap-sm">
+                                  {selectedInCat.map((config) => {
+                                    const exerciseObj = catExercises.find(e => e.id === config.id);
+                                    return (
+                                      <div 
+                                        key={config.id} 
+                                        className="flex flex-col gap-3 p-3 bg-obsidian-zero rounded-lg border border-border-subtle hover:border-primary/30 transition-colors group"
+                                      >
+                                        <div className="flex justify-between items-center">
+                                          <div className="flex items-center gap-4">
+                                            <div className="w-14 h-14 rounded-md bg-surface-bright overflow-hidden flex-shrink-0 relative border border-white/5">
+                                              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10 pointer-events-none" aria-hidden="true"></div>
+                                              <div className="w-full h-full bg-surface-container flex items-center justify-center">
+                                                {exerciseObj ? renderExerciseMedia(exerciseObj, { style: { width: '100%', height: '100%', objectFit: 'cover' } }) : (
+                                                  <span className="material-symbols-outlined text-on-surface-variant text-2xl opacity-50">smart_display</span>
+                                                )}
+                                              </div>
+                                            </div>
+                                            <div className="flex flex-col">
+                                              <h4 className="font-label-lg text-label-lg text-on-surface group-hover:text-primary transition-colors">
+                                                {config.name}
+                                              </h4>
+                                              <p className="font-label-md text-label-md text-on-surface-variant mt-0.5">
+                                                {config.sets} sets × {config.reps} reps • {config.rest}s desc
+                                              </p>
+                                            </div>
+                                          </div>
+                                          <div className="flex items-center gap-2">
+                                            <button 
+                                              type="button"
+                                              onClick={() => {
+                                                setNewRoutineSelectedExercises(prev => prev.filter(item => item.id !== config.id));
+                                              }}
+                                              className="w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant hover:text-error hover:bg-error/10 transition-colors" 
+                                              aria-label="Eliminar ejercicio"
+                                            >
+                                              <span className="material-symbols-outlined text-sm">delete</span>
+                                            </button>
+                                            <div className="w-8 h-8 rounded-full flex items-center justify-center text-primary bg-primary/10">
+                                              <span className="material-symbols-outlined text-sm">drag_indicator</span>
+                                            </div>
+                                          </div>
+                                        </div>
+
+                                        {/* Edit Fields */}
+                                        <div className="grid grid-cols-3 gap-2 pt-2 border-t border-white/5">
+                                          <div>
+                                            <label className="text-[10px] text-on-surface-variant/80 uppercase block mb-1">Series</label>
+                                            <input 
+                                              type="number"
+                                              min="1"
+                                              max="12"
+                                              value={config.sets}
+                                              onChange={(e) => {
+                                                const val = Math.max(1, parseInt(e.target.value) || 1);
+                                                setNewRoutineSelectedExercises(prev => 
+                                                  prev.map(item => item.id === config.id ? { ...item, sets: val } : item)
+                                                );
+                                              }}
+                                              className="w-full bg-surface-container-high border border-border-subtle rounded px-2 py-1 text-xs text-on-surface text-center focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
+                                            />
+                                          </div>
+                                          <div>
+                                            <label className="text-[10px] text-on-surface-variant/80 uppercase block mb-1">Reps</label>
+                                            <input 
+                                              type="number"
+                                              min="1"
+                                              max="100"
+                                              value={config.reps}
+                                              onChange={(e) => {
+                                                const val = Math.max(1, parseInt(e.target.value) || 1);
+                                                setNewRoutineSelectedExercises(prev => 
+                                                  prev.map(item => item.id === config.id ? { ...item, reps: val } : item)
+                                                );
+                                              }}
+                                              className="w-full bg-surface-container-high border border-border-subtle rounded px-2 py-1 text-xs text-on-surface text-center focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
+                                            />
+                                          </div>
+                                          <div>
+                                            <label className="text-[10px] text-on-surface-variant/80 uppercase block mb-1">Descanso (s)</label>
+                                            <input 
+                                              type="number"
+                                              min="0"
+                                              step="5"
+                                              value={config.rest}
+                                              onChange={(e) => {
+                                                const val = Math.max(0, parseInt(e.target.value) || 0);
+                                                setNewRoutineSelectedExercises(prev => 
+                                                  prev.map(item => item.id === config.id ? { ...item, rest: val } : item)
+                                                );
+                                              }}
+                                              className="w-full bg-surface-container-high border border-border-subtle rounded px-2 py-1 text-xs text-on-surface text-center focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
+                                            />
+                                          </div>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+
+                              {/* Toggle Add Exercises Panel */}
+                              {activeCategoryToSelect === category ? (
+                                <div className="mt-3 p-3 bg-surface-container-low rounded-lg border border-border-subtle flex flex-col gap-2">
+                                  <div className="flex justify-between items-center mb-1">
+                                    <span className="font-label-md text-label-md text-primary uppercase tracking-wider">Añadir Técnicas</span>
+                                    <button 
+                                      type="button"
+                                      onClick={() => setActiveCategoryToSelect(null)}
+                                      className="text-xs text-on-surface-variant hover:text-on-surface transition-colors"
+                                    >
+                                      Ocultar
+                                    </button>
+                                  </div>
+                                  <div className="flex flex-col gap-1 max-h-60 overflow-y-auto hide-scrollbar">
+                                    {catExercises
+                                      .filter(ex => !newRoutineSelectedExercises.some(item => item.id === ex.id))
+                                      .map((ex) => (
+                                        <button
+                                          key={ex.id}
+                                          type="button"
+                                          onClick={() => {
+                                            setNewRoutineSelectedExercises(prev => [
+                                              ...prev, 
+                                              { id: ex.id, name: ex.name, sets: 4, reps: 10, rest: 60 }
+                                            ]);
+                                          }}
+                                          className="w-full flex items-center justify-between p-2 rounded hover:bg-white/5 transition-colors text-left"
+                                        >
+                                          <div className="flex items-center gap-2">
+                                            <div className="w-8 h-8 rounded overflow-hidden bg-obsidian-zero border border-white/5 flex-shrink-0">
+                                              {renderExerciseMedia(ex, { style: { width: '100%', height: '100%', objectFit: 'cover' } })}
+                                            </div>
+                                            <span className="text-xs text-on-surface font-body-md">{ex.name}</span>
+                                          </div>
+                                          <span className="material-symbols-outlined text-sm text-primary">add_circle</span>
+                                        </button>
+                                      ))
+                                    }
+                                    {catExercises.filter(ex => !newRoutineSelectedExercises.some(item => item.id === ex.id)).length === 0 && (
+                                      <span className="text-xs text-on-surface-variant italic py-2 text-center">Todas las técnicas han sido añadidas.</span>
+                                    )}
+                                  </div>
+                                </div>
+                              ) : (
+                                <button 
+                                  type="button"
+                                  onClick={() => setActiveCategoryToSelect(category)}
+                                  className="w-full py-3 mt-2 border border-dashed border-border-subtle rounded-lg text-on-surface-variant font-label-md flex items-center justify-center gap-2 hover:bg-white/5 hover:text-primary transition-colors"
+                                >
+                                  <span className="material-symbols-outlined text-sm">add_circle</span> Añadir Ejercicio a {category}
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </section>
+
+                  {/* Save Action */}
+                  <div className="pt-6 mt-4 border-t border-white/5 pb-10">
+                    <button 
+                      onClick={handleCreateRoutine}
+                      disabled={!newRoutineName.trim() || newRoutineSelectedExercises.length === 0}
+                      className="w-full h-14 rounded-full bg-primary text-on-primary font-bold text-lg tracking-tight shadow-[0_0_30px_rgba(184,211,0,0.15)] hover:brightness-110 active:scale-95 transition-all flex justify-center items-center gap-2 relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <div className="absolute inset-0 bg-white/20 w-full translate-x-[-100%] skew-x-[-15deg] group-hover:animate-[shimmer_1s_infinite]" aria-hidden="true"></div>
+                      <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>vpn_key</span>
+                      Sellar Ritual
+                    </button>
+                  </div>
+                </main>
               </div>
             )}
 

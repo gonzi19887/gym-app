@@ -35,4 +35,21 @@ export default defineConfig({
       }
     })
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('scheduler')) {
+              return 'vendor-react';
+            }
+            if (id.includes('@supabase') || id.includes('websocket')) {
+              return 'vendor-supabase';
+            }
+            return 'vendor-libs';
+          }
+        }
+      }
+    }
+  }
 })

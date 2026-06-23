@@ -171,3 +171,10 @@ $$ language plpgsql security definer;
 create or replace trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
+
+-- 7. Índices para Optimización de Consultas (Supabase Best Practices)
+create index if not exists idx_routine_exercises_routine_id on public.routine_exercises(routine_id);
+create index if not exists idx_routine_exercises_exercise_id on public.routine_exercises(exercise_id);
+create index if not exists idx_workouts_user_id on public.workouts(user_id);
+create index if not exists idx_workout_sets_workout_id on public.workout_sets(workout_id);
+create index if not exists idx_workout_sets_exercise_id on public.workout_sets(exercise_id);
