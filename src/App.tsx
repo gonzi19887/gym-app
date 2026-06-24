@@ -455,7 +455,7 @@ function App() {
         current_streak: 0,
         last_workout_date: ''
       };
-      await addRecord('profiles', currentProfile);
+      await saveRecord('profiles', currentProfile, 'CREATE');
     }
     setProfile(currentProfile);
 
