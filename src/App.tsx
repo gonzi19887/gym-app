@@ -375,6 +375,7 @@ function App() {
           email: authEmail,
           password: authPassword,
           options: {
+            emailRedirectTo: window.location.origin,
             data: {
               username: authUsername.trim() || 'Chamán Novato'
             }
