@@ -179,7 +179,7 @@ function App() {
   const [authEmail, setAuthEmail] = useState('');
   const [authPassword, setAuthPassword] = useState('');
   const [authUsername, setAuthUsername] = useState('');
-  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
+  const [authMode, setAuthMode] = useState<'login' | 'signup' | 'reset_password'>('login');
   const [authLoading, setAuthLoading] = useState(false);
   const [guestMode, setGuestMode] = useState<boolean>(() => localStorage.getItem('guestMode') === 'true');
 
@@ -358,11 +358,19 @@ function App() {
 
   const handleAuthAction = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isSupabaseConfigured || !supabase || !authEmail.trim() || !authPassword.trim()) return;
+    if (!isSupabaseConfigured || !supabase || !authEmail.trim()) return;
+    if (authMode !== 'reset_password' && !authPassword.trim()) return;
 
     setAuthLoading(true);
     try {
-      if (authMode === 'signup') {
+      if (authMode === 'reset_password') {
+        const { error } = await supabase.auth.resetPasswordForEmail(authEmail.trim(), {
+          redirectTo: window.location.origin
+        });
+        if (error) throw error;
+        alert('¡Enlace enviado! Revisa tu bandeja de entrada (y la carpeta de spam) para restablecer tu contraseña.');
+        setAuthMode('login');
+      } else if (authMode === 'signup') {
         const { error } = await supabase.auth.signUp({
           email: authEmail,
           password: authPassword,
@@ -373,7 +381,7 @@ function App() {
           }
         });
         if (error) throw error;
-        alert('¡Registro exitoso! Ya puedes iniciar sesión con tus credenciales.');
+        alert('¡Registro exitoso! Si tu configuración de Supabase tiene activa la confirmación de correo (activada por defecto), debes confirmar el correo de verificación antes de poder iniciar sesión.');
         setAuthMode('login');
       } else {
         const { error } = await supabase.auth.signInWithPassword({
@@ -384,7 +392,7 @@ function App() {
         setShowProfileEditor(false); // Close modal on success
       }
     } catch (err: any) {
-      alert(err.message || 'Error al autenticar');
+      alert(err.message || 'Error al procesar solicitud');
     } finally {
       setAuthLoading(false);
     }
@@ -1213,44 +1221,51 @@ function App() {
           </div>
 
           <div className="card p-6 border border-border-subtle bg-surface-level-1 rounded-2xl shadow-xl flex flex-col gap-4" style={{ marginBottom: 0, padding: '20px' }}>
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
-              <button
-                type="button"
-                onClick={() => setAuthMode('login')}
-                className={`btn-secondary flex-1 py-2 text-xs font-bold transition-all ${authMode === 'login' ? 'border-primary text-primary bg-primary/5' : ''}`}
-                style={{
-                  flex: 1,
-                  border: authMode === 'login' ? '1.5px solid var(--accent-primary)' : '1px solid var(--border-color)',
-                  backgroundColor: authMode === 'login' ? 'rgba(184, 211, 0, 0.05)' : 'transparent',
-                  color: authMode === 'login' ? 'var(--accent-primary)' : 'var(--text-secondary)',
-                  padding: '10px 0',
-                  borderRadius: '10px',
-                  cursor: 'pointer',
-                  fontWeight: 'bold',
-                  fontSize: '11px'
-                }}
-              >
-                Iniciar Sesión
-              </button>
-              <button
-                type="button"
-                onClick={() => setAuthMode('signup')}
-                className={`btn-secondary flex-1 py-2 text-xs font-bold transition-all ${authMode === 'signup' ? 'border-primary text-primary bg-primary/5' : ''}`}
-                style={{
-                  flex: 1,
-                  border: authMode === 'signup' ? '1.5px solid var(--accent-primary)' : '1px solid var(--border-color)',
-                  backgroundColor: authMode === 'signup' ? 'rgba(184, 211, 0, 0.05)' : 'transparent',
-                  color: authMode === 'signup' ? 'var(--accent-primary)' : 'var(--text-secondary)',
-                  padding: '10px 0',
-                  borderRadius: '10px',
-                  cursor: 'pointer',
-                  fontWeight: 'bold',
-                  fontSize: '11px'
-                }}
-              >
-                Crear Cuenta
-              </button>
-            </div>
+            {authMode !== 'reset_password' ? (
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+                <button
+                  type="button"
+                  onClick={() => setAuthMode('login')}
+                  className={`btn-secondary flex-1 py-2 text-xs font-bold transition-all ${authMode === 'login' ? 'border-primary text-primary bg-primary/5' : ''}`}
+                  style={{
+                    flex: 1,
+                    border: authMode === 'login' ? '1.5px solid var(--accent-primary)' : '1px solid var(--border-color)',
+                    backgroundColor: authMode === 'login' ? 'rgba(184, 211, 0, 0.05)' : 'transparent',
+                    color: authMode === 'login' ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                    padding: '10px 0',
+                    borderRadius: '10px',
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                    fontSize: '11px'
+                  }}
+                >
+                  Iniciar Sesión
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAuthMode('signup')}
+                  className={`btn-secondary flex-1 py-2 text-xs font-bold transition-all ${authMode === 'signup' ? 'border-primary text-primary bg-primary/5' : ''}`}
+                  style={{
+                    flex: 1,
+                    border: authMode === 'signup' ? '1.5px solid var(--accent-primary)' : '1px solid var(--border-color)',
+                    backgroundColor: authMode === 'signup' ? 'rgba(184, 211, 0, 0.05)' : 'transparent',
+                    color: authMode === 'signup' ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                    padding: '10px 0',
+                    borderRadius: '10px',
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                    fontSize: '11px'
+                  }}
+                >
+                  Crear Cuenta
+                </button>
+              </div>
+            ) : (
+              <div style={{ textAlign: 'center', marginBottom: '12px' }}>
+                <h3 style={{ color: 'var(--text-primary)', fontSize: '15px', fontWeight: 'bold', margin: 0 }}>Restablecer Contraseña</h3>
+                <p style={{ color: 'var(--text-tertiary)', fontSize: '10px', marginTop: '4px' }}>Te enviaremos un enlace de recuperación.</p>
+              </div>
+            )}
 
             <form onSubmit={handleAuthAction} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {authMode === 'signup' && (
@@ -1279,17 +1294,30 @@ function App() {
                 />
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '9px', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontWeight: 'bold' }}>Contraseña</label>
-                <input
-                  type="password"
-                  placeholder="••••••••"
-                  value={authPassword}
-                  onChange={(e) => setAuthPassword(e.target.value)}
-                  className="form-input"
-                  required
-                />
-              </div>
+              {authMode !== 'reset_password' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <label style={{ fontSize: '9px', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontWeight: 'bold' }}>Contraseña</label>
+                    {authMode === 'login' && (
+                      <button
+                        type="button"
+                        onClick={() => setAuthMode('reset_password')}
+                        style={{ background: 'none', border: 'none', color: 'var(--accent-secondary)', fontSize: '9px', fontWeight: 'bold', cursor: 'pointer', padding: 0 }}
+                      >
+                        ¿Olvidaste tu contraseña?
+                      </button>
+                    )}
+                  </div>
+                  <input
+                    type="password"
+                    placeholder="••••••••"
+                    value={authPassword}
+                    onChange={(e) => setAuthPassword(e.target.value)}
+                    className="form-input"
+                    required
+                  />
+                </div>
+              )}
 
               <button
                 type="submit"
@@ -1297,8 +1325,33 @@ function App() {
                 className="btn-primary w-full py-3 mt-2 text-sm font-extrabold uppercase tracking-wider shadow-lg transition-transform hover:scale-[1.01]"
                 style={{ padding: '12px', width: '100%', marginTop: '8px', cursor: 'pointer' }}
               >
-                {authLoading ? 'Canalizando energía...' : authMode === 'login' ? 'Entrar ⚡' : 'Registrarse ⚔️'}
+                {authLoading 
+                  ? 'Canalizando energía...' 
+                  : authMode === 'login' 
+                    ? 'Entrar ⚡' 
+                    : authMode === 'signup' 
+                      ? 'Registrarse ⚔️' 
+                      : 'Enviar enlace ✉️'}
               </button>
+
+              {authMode === 'reset_password' && (
+                <button
+                  type="button"
+                  onClick={() => setAuthMode('login')}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--text-secondary)',
+                    fontSize: '11px',
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                    marginTop: '4px',
+                    textAlign: 'center'
+                  }}
+                >
+                  Volver a Iniciar Sesión
+                </button>
+              )}
             </form>
           </div>
 
