@@ -8,7 +8,7 @@ export async function seedDatabase(): Promise<void> {
     const existing = await getAllRecords<Exercise>('exercises');
     const hasJpg = existing.some(ex => ex.gif_url && (ex.gif_url.endsWith('.jpg') || ex.gif_url.endsWith('.jpeg')));
 
-    if (existing.length < 50 || hasJpg) {
+    if (existing.length < 1000 || hasJpg) {
       console.log('Cleaning exercises store to ensure only GIFs and scraped exercises are present...');
       for (const ex of existing) {
         await deleteRecord('exercises', ex.id);
