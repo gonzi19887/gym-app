@@ -181,6 +181,7 @@ function App() {
   const [authUsername, setAuthUsername] = useState('');
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
   const [authLoading, setAuthLoading] = useState(false);
+  const [guestMode, setGuestMode] = useState<boolean>(() => localStorage.getItem('guestMode') === 'true');
 
   // Dynamic JJK Routine Name Generator
   const isNameManuallyEdited = useRef(false);
@@ -318,6 +319,8 @@ function App() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       if (session) {
+        setGuestMode(false);
+        localStorage.removeItem('guestMode');
         syncLocalQueueToCloud();
         pullCloudDataToLocal().then(() => {
           loadData();
@@ -328,6 +331,8 @@ function App() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       if (session) {
+        setGuestMode(false);
+        localStorage.removeItem('guestMode');
         syncLocalQueueToCloud();
         pullCloudDataToLocal().then(() => {
           loadData();
@@ -389,6 +394,8 @@ function App() {
     if (!supabase) return;
     await supabase.auth.signOut();
     setSession(null);
+    localStorage.removeItem('guestMode');
+    setGuestMode(false);
     window.location.reload();
   };
 
@@ -1187,6 +1194,139 @@ function App() {
     acc[ex.category].push(ex);
     return acc;
   }, {} as { [category: string]: Exercise[] });
+
+  if (!session && !guestMode) {
+    return (
+      <div className="app-container flex flex-col justify-center items-center px-6 py-12 min-h-screen bg-background text-on-background relative overflow-hidden" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: '100svh', padding: '24px' }}>
+        {/* Decorative elements */}
+        <div className="absolute -top-32 -right-32 w-64 h-64 rounded-full bg-purple-500/10 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-32 -left-32 w-64 h-64 rounded-full bg-lime-500/10 blur-3xl pointer-events-none" />
+        
+        <div className="w-full max-w-sm z-10 flex flex-col gap-6" style={{ width: '100%', maxWidth: '360px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div className="text-center mb-4" style={{ textAlign: 'center' }}>
+            <h1 className="font-headline text-primary mb-2 uppercase tracking-wide drop-shadow-md" style={{ fontSize: '32px', color: 'var(--accent-primary)', marginBottom: '8px', fontWeight: '800' }}>
+              Hechicería Fitness
+            </h1>
+            <p className="text-on-surface-variant uppercase tracking-widest font-semibold" style={{ fontSize: '10px', color: 'var(--text-secondary)', letterSpacing: '2px' }}>
+              Expande tu Dominio • Forja tu Fuerza
+            </p>
+          </div>
+
+          <div className="card p-6 border border-border-subtle bg-surface-level-1 rounded-2xl shadow-xl flex flex-col gap-4" style={{ marginBottom: 0, padding: '20px' }}>
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+              <button
+                type="button"
+                onClick={() => setAuthMode('login')}
+                className={`btn-secondary flex-1 py-2 text-xs font-bold transition-all ${authMode === 'login' ? 'border-primary text-primary bg-primary/5' : ''}`}
+                style={{
+                  flex: 1,
+                  border: authMode === 'login' ? '1.5px solid var(--accent-primary)' : '1px solid var(--border-color)',
+                  backgroundColor: authMode === 'login' ? 'rgba(184, 211, 0, 0.05)' : 'transparent',
+                  color: authMode === 'login' ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                  padding: '10px 0',
+                  borderRadius: '10px',
+                  cursor: 'pointer',
+                  fontWeight: 'bold',
+                  fontSize: '11px'
+                }}
+              >
+                Iniciar Sesión
+              </button>
+              <button
+                type="button"
+                onClick={() => setAuthMode('signup')}
+                className={`btn-secondary flex-1 py-2 text-xs font-bold transition-all ${authMode === 'signup' ? 'border-primary text-primary bg-primary/5' : ''}`}
+                style={{
+                  flex: 1,
+                  border: authMode === 'signup' ? '1.5px solid var(--accent-primary)' : '1px solid var(--border-color)',
+                  backgroundColor: authMode === 'signup' ? 'rgba(184, 211, 0, 0.05)' : 'transparent',
+                  color: authMode === 'signup' ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                  padding: '10px 0',
+                  borderRadius: '10px',
+                  cursor: 'pointer',
+                  fontWeight: 'bold',
+                  fontSize: '11px'
+                }}
+              >
+                Crear Cuenta
+              </button>
+            </div>
+
+            <form onSubmit={handleAuthAction} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {authMode === 'signup' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '9px', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontWeight: 'bold' }}>Apodo / Username</label>
+                  <input
+                    type="text"
+                    placeholder="Ej: Gojo Satoru"
+                    value={authUsername}
+                    onChange={(e) => setAuthUsername(e.target.value)}
+                    className="form-input"
+                    required
+                  />
+                </div>
+              )}
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '9px', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontWeight: 'bold' }}>Email</label>
+                <input
+                  type="email"
+                  placeholder="chaman@jjk.com"
+                  value={authEmail}
+                  onChange={(e) => setAuthEmail(e.target.value)}
+                  className="form-input"
+                  required
+                />
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '9px', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontWeight: 'bold' }}>Contraseña</label>
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  value={authPassword}
+                  onChange={(e) => setAuthPassword(e.target.value)}
+                  className="form-input"
+                  required
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={authLoading}
+                className="btn-primary w-full py-3 mt-2 text-sm font-extrabold uppercase tracking-wider shadow-lg transition-transform hover:scale-[1.01]"
+                style={{ padding: '12px', width: '100%', marginTop: '8px', cursor: 'pointer' }}
+              >
+                {authLoading ? 'Canalizando energía...' : authMode === 'login' ? 'Entrar ⚡' : 'Registrarse ⚔️'}
+              </button>
+            </form>
+          </div>
+
+          <div style={{ textAlign: 'center', marginTop: '8px' }}>
+            <button
+              type="button"
+              onClick={() => {
+                setGuestMode(true);
+                localStorage.setItem('guestMode', 'true');
+              }}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--text-secondary)',
+                fontSize: '11px',
+                textDecoration: 'underline',
+                cursor: 'pointer',
+                fontWeight: '600',
+                letterSpacing: '1px'
+              }}
+            >
+              Continuar como Invitado 🧘 (Modo Offline)
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="app-container">
