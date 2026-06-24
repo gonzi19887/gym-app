@@ -51,6 +51,24 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Global Form Resets to block Tailwind Forms plugin overrides */
+input[type="text"],
+input[type="number"],
+input[type="email"],
+input[type="password"] {
+  background-color: var(--bg-primary) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+input[type="text"]::placeholder,
+input[type="number"]::placeholder,
+input[type="email"]::placeholder,
+input[type="password"]::placeholder {
+  color: var(--text-tertiary) !important;
+  opacity: 0.6 !important;
+}
+
 /* Custom Scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
@@ -959,21 +977,26 @@ body {
 }
 
 .form-input {
-  width: 100%;
-  background-color: var(--bg-primary);
-  border: 1px solid var(--border-color);
-  color: var(--text-primary);
-  border-radius: 12px;
-  padding: 12px;
-  font-size: 14px;
-  transition: var(--transition-smooth);
-  font-family: var(--font-sans);
+  width: 100% !important;
+  background-color: var(--bg-primary) !important;
+  border: 1px solid var(--border-color) !important;
+  color: var(--text-primary) !important;
+  border-radius: 12px !important;
+  padding: 12px !important;
+  font-size: 14px !important;
+  transition: var(--transition-smooth) !important;
+  font-family: var(--font-sans) !important;
+}
+
+.form-input::placeholder {
+  color: var(--text-tertiary) !important;
+  opacity: 0.6 !important;
 }
 
 .form-input:focus {
-  outline: none;
-  border-color: var(--accent-primary);
-  box-shadow: 0 0 8px var(--accent-glow);
+  outline: none !important;
+  border-color: var(--accent-primary) !important;
+  box-shadow: 0 0 8px var(--accent-glow) !important;
 }
 
 /* Level Up overlay */
