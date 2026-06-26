@@ -35,7 +35,11 @@ export async function seedDatabase(): Promise<void> {
             category: val.category || 'Otros',
             gif_url: val.local_gif_path || val.gif_url || '',
             tips: val.instructions_es || [],
-            is_custom: false
+            is_custom: false,
+            posicion_inicial: val.posicion_inicial || [],
+            ejecucion: val.ejecucion || [],
+            consejos: val.consejos || [],
+            variantes: val.variantes || []
           };
           await addRecord('exercises', exercise);
         }

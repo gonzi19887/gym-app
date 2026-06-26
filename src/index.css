@@ -1281,3 +1281,24 @@ input[type="password"]::placeholder {
   opacity: 0.2;
   cursor: not-allowed;
 }
+
+/* Ponytail: Aumentar el tamaño de los textos que eran demasiado pequeños (menores a 12px) */
+*[style*="font-size: 8px"], *[style*="font-size:8px"] { font-size: 11px !important; }
+*[style*="font-size: 9px"], *[style*="font-size:9px"] { font-size: 12px !important; }
+*[style*="font-size: 10px"], *[style*="font-size:10px"] { font-size: 13px !important; }
+*[style*="font-size: 11px"], *[style*="font-size:11px"] { font-size: 14px !important; }
+
+/* Aumentar textos pequeños de clases globales */
+.routine-row-sub,
+.profile-level,
+.exercise-tag,
+.exercise-meta,
+.lvl-text,
+.profile-name,
+label {
+  font-size: 13px !important;
+}
+input, button, select {
+  font-size: 14px !important;
+}
+

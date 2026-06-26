@@ -14,7 +14,6 @@ import {
   Award, 
   Flame, 
   Clock,
-  ChevronUp,
   Search,
   BookOpen,
   Zap,
@@ -41,7 +40,7 @@ import type {
 } from './db/localDb';
 import { seedDatabase } from './db/seed';
 import { supabase, isSupabaseConfigured } from './db/supabaseClient';
-import { syncLocalQueueToCloud, pullCloudDataToLocal } from './db/sync';
+import { syncLocalQueueToCloud, pullCloudDataToLocal, migrateGuestDataToUser } from './db/sync';
 
 // Web Audio API beep for rest timer completion
 const playBeep = () => {
@@ -118,7 +117,9 @@ function App() {
   
   // Search & Filtering
   const [exerciseSearch, setExerciseSearch] = useState('');
-  const [expandedExerciseId, setExpandedExerciseId] = useState<string | null>(null);
+  const [selectedExerciseForGlosario, setSelectedExerciseForGlosario] = useState<Exercise | null>(null);
+  const [routineExerciseSearch, setRoutineExerciseSearch] = useState('');
+  const [isTimerMinimized, setIsTimerMinimized] = useState(false);
 
   // Routine Creator Modal State
   const [showRoutineCreator, setShowRoutineCreator] = useState(false);
@@ -182,6 +183,7 @@ function App() {
   const [authMode, setAuthMode] = useState<'login' | 'signup' | 'reset_password'>('login');
   const [authLoading, setAuthLoading] = useState(false);
   const [guestMode, setGuestMode] = useState<boolean>(() => localStorage.getItem('guestMode') === 'true');
+  const [editingRoutineId, setEditingRoutineId] = useState<string | null>(null);
 
   // Dynamic JJK Routine Name Generator
   const isNameManuallyEdited = useRef(false);
@@ -298,7 +300,11 @@ function App() {
     record: any,
     action: 'CREATE' | 'UPDATE' | 'DELETE' = 'CREATE'
   ) => {
-    await addRecord(tableName, record);
+    if (action === 'DELETE') {
+      await deleteRecord(tableName, record.id);
+    } else {
+      await addRecord(tableName, record);
+    }
 
     if (isSupabaseConfigured && session) {
       await queueSyncItem({
@@ -321,9 +327,11 @@ function App() {
       if (session) {
         setGuestMode(false);
         localStorage.removeItem('guestMode');
-        syncLocalQueueToCloud();
-        pullCloudDataToLocal().then(() => {
-          loadData();
+        migrateGuestDataToUser(session.user.id).then(() => {
+          syncLocalQueueToCloud();
+          pullCloudDataToLocal().then(() => {
+            loadData();
+          });
         });
       }
     });
@@ -333,9 +341,11 @@ function App() {
       if (session) {
         setGuestMode(false);
         localStorage.removeItem('guestMode');
-        syncLocalQueueToCloud();
-        pullCloudDataToLocal().then(() => {
-          loadData();
+        migrateGuestDataToUser(session.user.id).then(() => {
+          syncLocalQueueToCloud();
+          pullCloudDataToLocal().then(() => {
+            loadData();
+          });
         });
       } else {
         loadData();
@@ -355,6 +365,40 @@ function App() {
     window.addEventListener('online', handleOnline);
     return () => window.removeEventListener('online', handleOnline);
   }, [session]);
+
+  // Auto-sync when app becomes hidden (user switches apps, closes tab, etc.)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        if (isSupabaseConfigured && session && navigator.onLine) {
+          syncLocalQueueToCloud();
+        }
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [session]);
+
+  const handleGoogleLogin = async () => {
+    if (!isSupabaseConfigured || !supabase) {
+      alert('Supabase no está configurado.');
+      return;
+    }
+    setAuthLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin
+        }
+      });
+      if (error) throw error;
+    } catch (err: any) {
+      alert(err.message || 'Error al iniciar sesión con Google');
+    } finally {
+      setAuthLoading(false);
+    }
+  };
 
   const handleAuthAction = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -815,20 +859,38 @@ function App() {
     setRoutines(prev => prev.map(r => r.id === routineId ? updatedRoutine : r));
   };
 
-  // Create Routine
+  // Create / Edit Routine
   const handleCreateRoutine = async () => {
     if (!newRoutineName.trim() || newRoutineSelectedExercises.length === 0 || !profile) return;
 
-    const routineId = generateUUID();
-    const newRoutine: Routine = {
-      id: routineId,
-      user_id: profile.id,
-      name: newRoutineName,
-      day_of_week: newRoutineDays,
-      created_at: new Date().toISOString()
-    };
+    const routineId = editingRoutineId || generateUUID();
+    const isEditMode = !!editingRoutineId;
 
-    await saveRecord('routines', newRoutine, 'CREATE');
+    if (isEditMode) {
+      const existingRoutine = routines.find(r => r.id === routineId);
+      if (!existingRoutine) return;
+      const updatedRoutine: Routine = {
+        ...existingRoutine,
+        name: newRoutineName,
+        day_of_week: newRoutineDays
+      };
+      await saveRecord('routines', updatedRoutine, 'UPDATE');
+
+      // Delete old associations
+      const oldAssocs = routineExercises.filter(re => re.routine_id === routineId);
+      for (const assoc of oldAssocs) {
+        await saveRecord('routine_exercises', assoc, 'DELETE');
+      }
+    } else {
+      const newRoutine: Routine = {
+        id: routineId,
+        user_id: profile.id,
+        name: newRoutineName,
+        day_of_week: newRoutineDays,
+        created_at: new Date().toISOString()
+      };
+      await saveRecord('routines', newRoutine, 'CREATE');
+    }
 
     // Save routine exercises
     for (let index = 0; index < newRoutineSelectedExercises.length; index++) {
@@ -855,6 +917,7 @@ function App() {
     setNewRoutineName('');
     setNewRoutineDays([]);
     setNewRoutineSelectedExercises([]);
+    setEditingRoutineId(null);
     setShowRoutineCreator(false);
   };
 
@@ -982,6 +1045,7 @@ function App() {
             setTimerDuration(set.rest_time);
             setTimerRemaining(set.rest_time);
             setIsTimerRunning(true);
+            setIsTimerMinimized(false);
             triggerVibration(50);
 
             // Check if this set breaks a personal record (1RM)
@@ -1204,6 +1268,11 @@ function App() {
     return acc;
   }, {} as { [category: string]: Exercise[] });
 
+  // Sort exercises inside each category alphabetically (A-Z)
+  for (const cat in groupedExercises) {
+    groupedExercises[cat].sort((a, b) => a.name.localeCompare(b.name));
+  }
+
   if (!session && !guestMode) {
     return (
       <div className="app-container flex flex-col justify-center items-center px-6 py-12 min-h-screen bg-background text-on-background relative overflow-hidden" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: '100svh', padding: '24px' }}>
@@ -1334,6 +1403,62 @@ function App() {
                       ? 'Registrarse ⚔️' 
                       : 'Enviar enlace ✉️'}
               </button>
+
+              {authMode !== 'reset_password' && (
+                <>
+                  <div style={{ display: 'flex', alignItems: 'center', margin: '12px 0', gap: '8px' }}>
+                    <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--border-color)', opacity: 0.3 }}></div>
+                    <span style={{ fontSize: '10px', color: 'var(--text-tertiary)', textTransform: 'uppercase', fontWeight: 'bold' }}>o continuar con</span>
+                    <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--border-color)', opacity: 0.3 }}></div>
+                  </div>
+                  
+                  <button
+                    type="button"
+                    onClick={handleGoogleLogin}
+                    disabled={authLoading}
+                    className="btn-secondary w-full py-2.5 flex items-center justify-center gap-2 text-xs font-bold transition-all border border-border"
+                    style={{
+                      width: '100%',
+                      padding: '10px 0',
+                      borderRadius: '10px',
+                      cursor: 'pointer',
+                      fontWeight: 'bold',
+                      fontSize: '11px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      border: '1px solid var(--border-color)',
+                      backgroundColor: 'transparent',
+                      color: 'var(--text-primary)'
+                    }}
+                  >
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" style={{ width: '16px', height: '16px' }}>
+                      <path
+                        fill="currentColor"
+                        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                        style={{ fill: '#4285F4' }}
+                      />
+                      <path
+                        fill="currentColor"
+                        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                        style={{ fill: '#34A853' }}
+                      />
+                      <path
+                        fill="currentColor"
+                        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                        style={{ fill: '#FBBC05' }}
+                      />
+                      <path
+                        fill="currentColor"
+                        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                        style={{ fill: '#EA4335' }}
+                      />
+                    </svg>
+                    Google
+                  </button>
+                </>
+              )}
 
               {authMode === 'reset_password' && (
                 <button
@@ -1668,67 +1793,217 @@ function App() {
             </div>
 
             {/* Active Rest Timer Banner (Side to Side) */}
+            {/* Active Rest Timer Overlay or Banner */}
             {timerRemaining > 0 && (
-              <div className="workout-rest-timer-banner">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
-                  <div className="timer-circle-wrap">
-                    <svg className="timer-circle-svg">
-                      <circle cx="20" cy="20" r="17" stroke="rgba(255,255,255,0.05)" strokeWidth="2.5" fill="transparent" />
-                      <circle cx="20" cy="20" r="17" stroke="var(--accent-primary)" strokeWidth="2.5" fill="transparent" 
-                        strokeDasharray="106.8"
-                        strokeDashoffset={106.8 - (106.8 * timerRemaining) / timerDuration}
+              isTimerMinimized ? (
+                /* Minimized state: show compact banner with a maximize button */
+                <div className="workout-rest-timer-banner" style={{ cursor: 'pointer' }} onClick={() => setIsTimerMinimized(false)}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+                    <div className="timer-circle-wrap">
+                      <svg className="timer-circle-svg">
+                        <circle cx="20" cy="20" r="17" stroke="rgba(255,255,255,0.05)" strokeWidth="2.5" fill="transparent" />
+                        <circle cx="20" cy="20" r="17" stroke="var(--accent-primary)" strokeWidth="2.5" fill="transparent" 
+                          strokeDasharray="106.8"
+                          strokeDashoffset={106.8 - (106.8 * timerRemaining) / timerDuration}
+                        />
+                      </svg>
+                      <span className="timer-seconds">{timerRemaining}</span>
+                    </div>
+                    
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--accent-primary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        Intervalo de Recarga
+                      </span>
+                      <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>
+                        Toca para maximizar el descanso
+                      </span>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
+                    <button 
+                      onClick={() => setIsTimerRunning(!isTimerRunning)} 
+                      style={{
+                        width: '28px',
+                        height: '28px',
+                        borderRadius: '50%',
+                        border: '1px solid var(--border-color)',
+                        backgroundColor: 'rgba(255,255,255,0.03)',
+                        color: 'var(--text-primary)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {isTimerRunning ? <Pause size={12} /> : <Play size={12} />}
+                    </button>
+                    <button 
+                      onClick={() => setTimerRemaining(0)} 
+                      style={{
+                        width: '28px',
+                        height: '28px',
+                        borderRadius: '50%',
+                        border: '1px solid var(--border-color)',
+                        backgroundColor: 'rgba(255,255,255,0.03)',
+                        color: 'var(--text-primary)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <SkipForward size={12} />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                /* Full-screen rest overlay with JJK premium styling and backdrop blur */
+                <div 
+                  className="overlay-screen animate-slide"
+                  style={{
+                    backgroundColor: 'rgba(7, 7, 10, 0.96)',
+                    backdropFilter: 'blur(20px)',
+                    WebkitBackdropFilter: 'blur(20px)',
+                    zIndex: 150,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    padding: '24px',
+                    textAlign: 'center'
+                  }}
+                >
+                  <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--accent-primary)', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '16px' }}>
+                    ⚡ Intervalo de Recarga ⚡
+                  </span>
+                  
+                  {/* Big SVG Countdown Wheel */}
+                  <div style={{ position: 'relative', width: '200px', height: '200px', marginBottom: '32px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                    <svg style={{ width: '200px', height: '200px', transform: 'rotate(-90deg)' }}>
+                      <circle cx="100" cy="100" r="85" stroke="rgba(255, 255, 255, 0.05)" strokeWidth="6" fill="transparent" />
+                      <circle 
+                        cx="100" 
+                        cy="100" 
+                        r="85" 
+                        stroke="var(--accent-primary)" 
+                        strokeWidth="6" 
+                        fill="transparent" 
+                        strokeDasharray="534.07"
+                        strokeDashoffset={534.07 - (534.07 * timerRemaining) / timerDuration}
+                        strokeLinecap="round"
+                        style={{ transition: 'stroke-dashoffset 1s linear, stroke 0.3s' }}
                       />
                     </svg>
-                    <span className="timer-seconds">{timerRemaining}</span>
+                    <div style={{ position: 'absolute', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                      <span style={{ fontSize: '56px', fontWeight: 900, color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>{timerRemaining}</span>
+                      <span style={{ fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px' }}>segundos</span>
+                    </div>
                   </div>
-                  
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--accent-primary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                      Intervalo de Recarga
-                    </span>
-                    <span style={{ fontSize: '11px', color: 'var(--text-secondary)', lineHeight: '1.3' }}>
-                      {REST_REMINDERS[Math.floor((timerDuration - timerRemaining) / 5) % REST_REMINDERS.length]}
-                    </span>
-                  </div>
-                </div>
 
-                <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
-                  <button 
-                    onClick={() => setIsTimerRunning(!isTimerRunning)} 
+                  {/* Motivational / Rest Reminder card */}
+                  <div 
                     style={{
-                      width: '28px',
-                      height: '28px',
-                      borderRadius: '50%',
-                      border: '1px solid var(--border-color)',
-                      backgroundColor: 'rgba(255,255,255,0.03)',
-                      color: 'var(--text-primary)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer'
+                      width: '100%',
+                      maxWidth: '360px',
+                      padding: '16px 20px',
+                      borderRadius: '16px',
+                      backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                      border: '1px solid rgba(255, 255, 255, 0.08)',
+                      marginBottom: '40px',
+                      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)'
                     }}
                   >
-                    {isTimerRunning ? <Pause size={12} /> : <Play size={12} />}
-                  </button>
-                  <button 
-                    onClick={() => setTimerRemaining(0)} 
-                    style={{
-                      width: '28px',
-                      height: '28px',
-                      borderRadius: '50%',
-                      border: '1px solid var(--border-color)',
-                      backgroundColor: 'rgba(255,255,255,0.03)',
-                      color: 'var(--text-primary)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    <SkipForward size={12} />
-                  </button>
+                    <p style={{ fontSize: '13px', color: 'var(--text-secondary)', fontStyle: 'italic', lineHeight: '1.5', margin: 0 }}>
+                      {REST_REMINDERS[Math.floor((timerDuration - timerRemaining) / 5) % REST_REMINDERS.length]}
+                    </p>
+                  </div>
+
+                  {/* Control buttons */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', maxWidth: '320px' }}>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      {/* Pause / Resume */}
+                      <button 
+                        onClick={() => setIsTimerRunning(!isTimerRunning)}
+                        className="btn-secondary"
+                        style={{
+                          flex: 1,
+                          height: '48px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '8px',
+                          fontSize: '14px',
+                          fontWeight: 700
+                        }}
+                      >
+                        {isTimerRunning ? <Pause size={16} /> : <Play size={16} />}
+                        {isTimerRunning ? 'Pausar' : 'Reanudar'}
+                      </button>
+
+                      {/* Add +30s */}
+                      <button 
+                        onClick={() => {
+                          setTimerRemaining(prev => prev + 30);
+                          setTimerDuration(prev => prev + 30);
+                        }}
+                        className="btn-secondary"
+                        style={{
+                          flex: 1,
+                          height: '48px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px',
+                          fontSize: '14px',
+                          fontWeight: 700
+                        }}
+                      >
+                        <span style={{ fontSize: '14px', fontWeight: 800 }}>+30s</span>
+                      </button>
+                    </div>
+
+                    {/* Skip Timer */}
+                    <button 
+                      onClick={() => setTimerRemaining(0)}
+                      className="btn-primary"
+                      style={{
+                        height: '48px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px',
+                        fontSize: '14px',
+                        fontWeight: 700
+                      }}
+                    >
+                      <SkipForward size={16} />
+                      Omitir descanso
+                    </button>
+
+                    {/* Minimize Overlay */}
+                    <button 
+                      onClick={() => setIsTimerMinimized(true)}
+                      style={{
+                        height: '40px',
+                        background: 'transparent',
+                        border: 'none',
+                        color: 'var(--text-secondary)',
+                        fontSize: '12px',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        marginTop: '12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px'
+                      }}
+                    >
+                      Minimizar descanso
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )
             )}
 
             {/* Exercise Navigation Footer */}
@@ -2189,12 +2464,39 @@ function App() {
                           Entrenar
                         </button>
                         <button
+                          type="button"
+                          onClick={() => {
+                            const assocs = routineExercises.filter(re => re.routine_id === routine.id);
+                            assocs.sort((a, b) => a.order_index - b.order_index);
+                            const selectedExs = assocs.map(re => {
+                              const ex = exercises.find(e => e.id === re.exercise_id);
+                              return {
+                                id: re.exercise_id,
+                                name: ex ? ex.name : 'Ejercicio desconocido',
+                                sets: re.default_sets,
+                                reps: re.default_reps,
+                                rest: re.default_rest_time
+                              };
+                            });
+                            setEditingRoutineId(routine.id);
+                            setNewRoutineName(routine.name);
+                            setNewRoutineDays(routine.day_of_week);
+                            setNewRoutineSelectedExercises(selectedExs);
+                            setShowRoutineCreator(true);
+                          }}
+                          className="btn-secondary-outline"
+                          style={{ padding: '6px 8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                          title="Editar rutina"
+                        >
+                          <span className="material-symbols-outlined text-[14px]">edit</span>
+                        </button>
+                        <button
                           onClick={async () => {
                             if (confirm('¿Seguro que deseas eliminar esta rutina?')) {
-                              await deleteRecord('routines', routine.id);
+                              await saveRecord('routines', routine, 'DELETE');
                               const associations = routineExercises.filter(re => re.routine_id === routine.id);
                               for (const assoc of associations) {
-                                await deleteRecord('routine_exercises', assoc.id);
+                                await saveRecord('routine_exercises', assoc, 'DELETE');
                               }
                               setRoutines(await getAllRecords<Routine>('routines'));
                               setRoutineExercises(await getAllRecords<RoutineExercise>('routine_exercises'));
@@ -2215,9 +2517,16 @@ function App() {
             {showRoutineCreator && (
               <div className="overlay-screen animate-slide overflow-y-auto pb-32">
                 <header className="overlay-header">
-                  <h3 className="overlay-header-title">Forjar Dominio</h3>
+                  <h3 className="overlay-header-title">{editingRoutineId ? 'Reconfigurar Dominio' : 'Forjar Dominio'}</h3>
                   <button 
-                    onClick={() => setShowRoutineCreator(false)}
+                    onClick={() => {
+                      setShowRoutineCreator(false);
+                      setEditingRoutineId(null);
+                      setNewRoutineName('');
+                      setNewRoutineDays([]);
+                      setNewRoutineSelectedExercises([]);
+                      setRoutineExerciseSearch('');
+                    }}
                     className="btn-secondary"
                     style={{ padding: '6px 12px', fontSize: '11px' }}
                   >
@@ -2312,59 +2621,104 @@ function App() {
                   {/* Collapsible Exercise List */}
                   <section className="flex flex-col gap-md">
                     <div className="flex items-center justify-between">
-                      <h3 className="font-headline-md text-headline-md text-on-surface">Compendio de Técnicas</h3>
+                      <h3 className="font-headline-md text-headline-md text-on-surface" style={{ fontSize: '18px', fontWeight: 700 }}>Compendio de Técnicas</h3>
                     </div>
 
-                    {Object.entries(groupedExercises).map(([category, catExercises]) => {
-                      const isExpanded = !!expandedCategories[category];
-                      const selectedInCat = newRoutineSelectedExercises.filter(item => 
-                        catExercises.some(ex => ex.id === item.id)
-                      );
+                    {/* Integrated Mini-search bar */}
+                    <div className="search-wrapper" style={{ margin: '8px 0', position: 'relative' }}>
+                      <input 
+                        type="text"
+                        placeholder="Buscar técnica o categoría..."
+                        value={routineExerciseSearch}
+                        onChange={(e) => setRoutineExerciseSearch(e.target.value)}
+                        className="search-input w-full bg-obsidian-zero border border-border-subtle rounded-lg px-4 py-3 text-on-surface font-body-md"
+                        style={{ paddingLeft: '40px', fontSize: '15px' }}
+                      />
+                      <Search size={16} className="search-icon" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
+                    </div>
 
-                      // Dynamic icon for muscle category
-                      let catIcon = "fitness_center";
-                      let iconBg = "bg-primary/10 text-primary";
-                      const upperCat = category.toUpperCase();
-                      if (upperCat.includes('ABDOMEN') || upperCat.includes('ABS') || upperCat.includes('NÚCLEO') || upperCat.includes('CORE')) {
-                        catIcon = "accessibility_new";
-                        iconBg = "bg-secondary-container/30 text-secondary";
-                      } else if (upperCat.includes('ESPALDA')) {
-                        catIcon = "shield";
-                        iconBg = "bg-primary/10 text-primary";
-                      } else if (upperCat.includes('HOMBRO')) {
-                        catIcon = "sports_martial_arts";
-                        iconBg = "bg-secondary-container/30 text-secondary";
-                      }
+                    {/* Category tabs/chips for quick navigation when search is empty */}
+                    {routineExerciseSearch.trim() === '' ? (
+                      <>
+                        <div className="flex flex-wrap gap-2 mb-3">
+                          {Object.keys(groupedExercises).sort().map(category => {
+                            const isExpanded = !!expandedCategories[category];
+                            return (
+                              <button
+                                key={category}
+                                type="button"
+                                onClick={() => {
+                                  setExpandedCategories(prev => ({
+                                    ...prev,
+                                    [category]: !prev[category]
+                                  }));
+                                }}
+                                className="btn-secondary"
+                                style={{ 
+                                  padding: '6px 12px', 
+                                  fontSize: '11px', 
+                                  borderRadius: '20px',
+                                  border: isExpanded ? '1.5px solid var(--accent-primary)' : '1px solid var(--border-color)',
+                                  backgroundColor: isExpanded ? 'rgba(184, 211, 0, 0.1)' : 'transparent',
+                                  color: isExpanded ? 'var(--text-primary)' : 'var(--text-secondary)'
+                                }}
+                              >
+                                {category}
+                              </button>
+                            );
+                          })}
+                        </div>
 
-                      return (
-                        <div key={category} className="bg-surface-level-1 rounded-xl border border-border-subtle overflow-hidden transition-all duration-300">
-                          <button 
-                            type="button"
-                            className="w-full flex justify-between items-center p-4 hover:bg-white/5 transition-colors focus:outline-none" 
-                            onClick={() => {
-                              setExpandedCategories(prev => ({
-                                ...prev,
-                                [category]: !prev[category]
-                              }));
-                            }}
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className={`w-8 h-8 rounded flex items-center justify-center ${iconBg}`}>
-                                <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>{catIcon}</span>
-                              </div>
-                              <span className="font-headline-md text-body-lg text-on-surface">{category}</span>
-                              <span className="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant font-label-md text-[10px]">
-                                {selectedInCat.length} Técnica{selectedInCat.length !== 1 ? 's' : ''}
-                              </span>
-                            </div>
-                            <span 
-                              className={`material-symbols-outlined text-on-surface-variant transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}
-                            >
-                              expand_more
-                            </span>
-                          </button>
+                        {Object.entries(groupedExercises).sort(([catA], [catB]) => catA.localeCompare(catB)).map(([category, catExercises]) => {
+                          const isExpanded = !!expandedCategories[category];
+                          const selectedInCat = newRoutineSelectedExercises.filter(item => 
+                            catExercises.some(ex => ex.id === item.id)
+                          );
 
-                          {isExpanded && (
+                          // Dynamic icon for muscle category
+                          let catIcon = "fitness_center";
+                          let iconBg = "bg-primary/10 text-primary";
+                          const upperCat = category.toUpperCase();
+                          if (upperCat.includes('ABDOMEN') || upperCat.includes('ABS') || upperCat.includes('NÚCLEO') || upperCat.includes('CORE')) {
+                            catIcon = "accessibility_new";
+                            iconBg = "bg-secondary-container/30 text-secondary";
+                          } else if (upperCat.includes('ESPALDA')) {
+                            catIcon = "shield";
+                            iconBg = "bg-primary/10 text-primary";
+                          } else if (upperCat.includes('HOMBRO')) {
+                            catIcon = "sports_martial_arts";
+                            iconBg = "bg-secondary-container/30 text-secondary";
+                          }
+
+                          return (
+                            <div key={category} className="bg-surface-level-1 rounded-xl border border-border-subtle overflow-hidden transition-all duration-300">
+                              <button 
+                                type="button"
+                                className="w-full flex justify-between items-center p-4 hover:bg-white/5 transition-colors focus:outline-none" 
+                                onClick={() => {
+                                  setExpandedCategories(prev => ({
+                                    ...prev,
+                                    [category]: !prev[category]
+                                  }));
+                                }}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <div className={`w-8 h-8 rounded flex items-center justify-center ${iconBg}`}>
+                                    <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>{catIcon}</span>
+                                  </div>
+                                  <span className="font-headline-md text-body-lg text-on-surface" style={{ fontSize: '16px', fontWeight: 600 }}>{category}</span>
+                                  <span className="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant font-label-md text-[10px]">
+                                    {selectedInCat.length} Técnica{selectedInCat.length !== 1 ? 's' : ''}
+                                  </span>
+                                </div>
+                                <span 
+                                  className={`material-symbols-outlined text-on-surface-variant transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}
+                                >
+                                  expand_more
+                                </span>
+                              </button>
+
+                              {isExpanded && (
                             <div className="px-4 pb-4 flex flex-col gap-sm">
                               {/* Selected exercises in this category */}
                               {selectedInCat.length === 0 ? (
@@ -2612,6 +2966,76 @@ function App() {
                         </div>
                       );
                     })}
+                  </>
+                    ) : (
+                      <div className="flex flex-col gap-md">
+                        {(() => {
+                          const matchingExercises = exercises.filter(ex => 
+                            ex.name.toLowerCase().includes(routineExerciseSearch.toLowerCase()) ||
+                            ex.category.toLowerCase().includes(routineExerciseSearch.toLowerCase())
+                          );
+
+                          const groupedMatching = matchingExercises.reduce((acc, ex) => {
+                            if (!acc[ex.category]) {
+                              acc[ex.category] = [];
+                            }
+                            acc[ex.category].push(ex);
+                            return acc;
+                          }, {} as { [category: string]: Exercise[] });
+
+                          for (const cat in groupedMatching) {
+                            groupedMatching[cat].sort((a, b) => a.name.localeCompare(b.name));
+                          }
+
+                          const availableGroups = Object.entries(groupedMatching).sort(([a], [b]) => a.localeCompare(b));
+                          const matchingAvailable = matchingExercises.filter(ex => !newRoutineSelectedExercises.some(item => item.id === ex.id));
+
+                          if (matchingAvailable.length === 0) {
+                            return (
+                              <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontStyle: 'italic', textAlign: 'center', padding: '16px' }}>
+                                No hay técnicas coincidentes disponibles.
+                              </span>
+                            );
+                          }
+
+                          return availableGroups.map(([category, catExercises]) => {
+                            const availableExs = catExercises.filter(ex => !newRoutineSelectedExercises.some(item => item.id === ex.id));
+                            if (availableExs.length === 0) return null;
+                            return (
+                              <div key={category} style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '12px' }}>
+                                <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--accent-primary)', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                                  {category}
+                                </span>
+                                <div className="flex flex-col gap-1">
+                                  {availableExs.map((ex) => (
+                                    <button
+                                      key={ex.id}
+                                      type="button"
+                                      onClick={() => {
+                                        setNewRoutineSelectedExercises(prev => [
+                                          ...prev,
+                                          { id: ex.id, name: ex.name, sets: 4, reps: 10, rest: 60 }
+                                        ]);
+                                      }}
+                                      className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-white/5 transition-colors text-left border border-border-subtle bg-surface-level-1"
+                                      style={{ minHeight: '52px' }}
+                                    >
+                                      <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded overflow-hidden bg-obsidian-zero border border-white/5 flex-shrink-0">
+                                          {renderExerciseMedia(ex, { style: { width: '100%', height: '100%', objectFit: 'cover' } })}
+                                        </div>
+                                        <span style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)' }}>{ex.name}</span>
+                                      </div>
+                                      <span className="material-symbols-outlined text-md text-primary">add_circle</span>
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          });
+                        })()}
+                      </div>
+                    )}
                   </section>
 
                   {/* Save Action */}
@@ -2623,7 +3047,7 @@ function App() {
                     >
                       <div className="absolute inset-0 bg-white/20 w-full translate-x-[-100%] skew-x-[-15deg] group-hover:animate-[shimmer_1s_infinite]" aria-hidden="true"></div>
                       <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>vpn_key</span>
-                      Sellar Ritual
+                      {editingRoutineId ? 'Actualizar Ritual ⚡' : 'Sellar Ritual'}
                     </button>
                   </div>
                 </main>
@@ -2797,14 +3221,13 @@ function App() {
 
             <div className="exercise-list">
               {filteredExercises.map((ex) => {
-                const isExpanded = expandedExerciseId === ex.id;
                 return (
                   <div 
                     key={ex.id}
                     className="exercise-item"
                   >
                     <button
-                      onClick={() => setExpandedExerciseId(isExpanded ? null : ex.id)}
+                      onClick={() => setSelectedExerciseForGlosario(ex)}
                       className="exercise-item-header"
                     >
                       <div>
@@ -2812,25 +3235,9 @@ function App() {
                         <span className="exercise-item-category">{ex.category}</span>
                       </div>
                       <div style={{ color: 'var(--text-tertiary)' }}>
-                        {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                        <BookOpen size={16} />
                       </div>
                     </button>
-
-                    {isExpanded && (
-                      <div className="exercise-item-details animate-pop">
-                        <div className="exercise-image-fallback">
-                          {renderExerciseMedia(ex)}
-                          <div className="exercise-image-fallback-text">Visualización</div>
-                        </div>
-
-                        <h5 className="exercise-tips-label">Tips de técnica</h5>
-                        <ul className="exercise-tips-bullets">
-                          {ex.tips.map((tip, idx) => (
-                            <li key={idx}>{tip}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
                   </div>
                 );
               })}
@@ -3354,6 +3761,131 @@ function App() {
               Guardar Cambios
             </button>
           </footer>
+        </div>
+      )}
+
+      {/* GLOSARIO DE TÉCNICAS (MODAL DE DOMINIO EXPANSIÓN) */}
+      {selectedExerciseForGlosario && (
+        <div 
+          className="overlay-screen animate-slide"
+          style={{ 
+            backgroundColor: 'rgba(7, 7, 10, 0.96)', 
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            zIndex: 200,
+            overflowY: 'auto'
+          }}
+        >
+          <header className="overlay-header" style={{ borderBottom: '1px solid var(--border-color)', backgroundColor: 'transparent', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <span className="overlay-header-title-sub" style={{ color: 'var(--accent-primary)', fontSize: '11px', display: 'block' }}>Glosario de Técnicas</span>
+              <h3 className="overlay-header-title" style={{ fontSize: '1.25rem', fontWeight: 800, marginTop: '2px', color: 'var(--text-primary)' }}>{selectedExerciseForGlosario.name}</h3>
+            </div>
+            <span className="badge" style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--accent-primary)', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '4px 8px', fontSize: '11px' }}>
+              {selectedExerciseForGlosario.category}
+            </span>
+          </header>
+
+          <div className="overlay-body" style={{ display: 'flex', flexDirection: 'column', gap: '20px', padding: '16px', paddingBottom: '100px' }}>
+            {/* GIF Demostrativo */}
+            <div 
+              className="exercise-image-container" 
+              style={{ 
+                width: '100%', 
+                borderRadius: '16px', 
+                overflow: 'hidden', 
+                backgroundColor: 'var(--bg-secondary)',
+                border: '1.5px solid var(--border-color)',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                minHeight: '200px'
+              }}
+            >
+              {renderExerciseMedia(selectedExerciseForGlosario)}
+            </div>
+
+            {/* Structured Details */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              
+              {/* Posición Inicial */}
+              {selectedExerciseForGlosario.posicion_inicial && selectedExerciseForGlosario.posicion_inicial.length > 0 && (
+                <div style={{ padding: '14px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)', backgroundColor: 'rgba(255, 255, 255, 0.02)' }}>
+                  <h4 style={{ color: 'var(--accent-primary)', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px', margin: 0 }}>
+                    <span>🥋</span> Posición Inicial
+                  </h4>
+                  <ul style={{ paddingLeft: '18px', margin: 0, marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                    {selectedExerciseForGlosario.posicion_inicial.map((step, i) => (
+                      <li key={i}>{step}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Ejecución */}
+              {selectedExerciseForGlosario.ejecucion && selectedExerciseForGlosario.ejecucion.length > 0 && (
+                <div style={{ padding: '14px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)', backgroundColor: 'rgba(255, 255, 255, 0.02)' }}>
+                  <h4 style={{ color: 'var(--accent-primary)', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px', margin: 0 }}>
+                    <span>⚔️</span> Ejecución
+                  </h4>
+                  <ul style={{ paddingLeft: '18px', margin: 0, marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                    {selectedExerciseForGlosario.ejecucion.map((step, i) => (
+                      <li key={i}>{step}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Consejos */}
+              {selectedExerciseForGlosario.consejos && selectedExerciseForGlosario.consejos.length > 0 && (
+                <div style={{ padding: '14px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)', backgroundColor: 'rgba(255, 255, 255, 0.02)' }}>
+                  <h4 style={{ color: 'var(--accent-primary)', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px', margin: 0 }}>
+                    <span>💡</span> Tips e Indicaciones
+                  </h4>
+                  <ul style={{ paddingLeft: '18px', margin: 0, marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                    {selectedExerciseForGlosario.consejos.map((tip, i) => (
+                      <li key={i}>{tip}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Variantes */}
+              {selectedExerciseForGlosario.variantes && selectedExerciseForGlosario.variantes.length > 0 && (
+                <div style={{ padding: '14px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)', backgroundColor: 'rgba(255, 255, 255, 0.02)' }}>
+                  <h4 style={{ color: 'var(--accent-primary)', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px', margin: 0 }}>
+                    <span>🌀</span> Variantes
+                  </h4>
+                  <ul style={{ paddingLeft: '18px', margin: 0, marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                    {selectedExerciseForGlosario.variantes.map((variant, i) => (
+                      <li key={i}>{variant}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+            </div>
+          </div>
+
+          {/* Botón flotante para cerrar */}
+          <div style={{ position: 'absolute', bottom: '20px', left: '0', right: '0', display: 'flex', justifyContent: 'center' }}>
+            <button 
+              onClick={() => setSelectedExerciseForGlosario(null)}
+              className="btn-primary"
+              style={{ 
+                padding: '10px 24px', 
+                borderRadius: '30px', 
+                fontWeight: 700, 
+                fontSize: '12px',
+                letterSpacing: '1px',
+                textTransform: 'uppercase',
+                boxShadow: '0 4px 15px rgba(229, 9, 20, 0.4)'
+              }}
+            >
+              🔴 Cerrar Dominio
+            </button>
+          </div>
         </div>
       )}
 

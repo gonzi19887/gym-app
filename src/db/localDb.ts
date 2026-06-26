@@ -21,6 +21,10 @@ export interface Exercise {
   user_id?: string;
   media_blob?: Blob;
   runtime_media_url?: string;
+  posicion_inicial?: string[];
+  ejecucion?: string[];
+  consejos?: string[];
+  variantes?: string[];
 }
 
 export interface Routine {
