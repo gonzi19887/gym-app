@@ -30,6 +30,9 @@ export async function syncLocalQueueToCloud(): Promise<void> {
           // Enforce current user ID
           if (tableName === 'profiles') {
             tablePayload.id = session.user.id;
+            if (tablePayload.last_workout_date === '') {
+              tablePayload.last_workout_date = null;
+            }
           } else if ('user_id' in tablePayload && tableName !== 'exercises') {
             tablePayload.user_id = session.user.id;
           } else if (tableName === 'exercises' && tablePayload.is_custom) {

@@ -21,7 +21,8 @@ import {
   Camera,
   User,
   Upload,
-  UserCheck
+  UserCheck,
+  Dumbbell
 } from 'lucide-react';
 import { 
   initDB, 
@@ -187,6 +188,8 @@ function App() {
   const [authLoading, setAuthLoading] = useState(false);
   const [guestMode, setGuestMode] = useState<boolean>(() => localStorage.getItem('guestMode') === 'true');
   const [editingRoutineId, setEditingRoutineId] = useState<string | null>(null);
+  const [isSealingPact, setIsSealingPact] = useState(false);
+  const [pactStatus, setPactStatus] = useState<string | null>(null);
 
   // Dynamic JJK Routine Name Generator
   const isNameManuallyEdited = useRef(false);
@@ -282,14 +285,17 @@ function App() {
     return combos[Math.floor(Math.random() * combos.length)];
   };
 
+  const lastProfileIdRef = useRef<string | null>(null);
+
   useEffect(() => {
-    if (profile && !editUsername) {
+    if (profile && lastProfileIdRef.current !== profile.id) {
       setEditUsername(profile.username);
       setEditAvatarUrl(profile.avatar_url);
-      setEditClan(profile.clan || '');
+      setEditClan(profile.clan || 'none');
       setEditCursedTechnique(profile.cursed_technique || '');
+      lastProfileIdRef.current = profile.id;
     }
-  }, [profile, editUsername]);
+  }, [profile]);
 
   useEffect(() => {
     if (showRoutineCreator) {
@@ -501,20 +507,48 @@ function App() {
     // Load Profile
     const userId = session?.user?.id || 'user-default-id';
     let currentProfile = await getRecord<Profile>('profiles', userId);
+    
     if (!currentProfile) {
-      currentProfile = {
-        id: userId,
-        username: session?.user?.user_metadata?.username || 'Yuji Itadori (Chamán Novato)',
-        avatar_url: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=150&auto=format&fit=crop',
-        created_at: new Date().toISOString(),
-        level: 1,
-        experience_points: 0,
-        current_streak: 0,
-        last_workout_date: ''
-      };
-      await saveRecord('profiles', currentProfile, 'CREATE');
+      if (session && isSupabaseConfigured && supabase) {
+        try {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', userId)
+            .maybeSingle();
+          if (data) {
+            currentProfile = data;
+            await addRecord('profiles', currentProfile);
+          }
+        } catch (err) {
+          console.error('Failed to fetch profile from cloud:', err);
+        }
+      }
+      
+      if (!currentProfile) {
+        currentProfile = {
+          id: userId,
+          username: session?.user?.user_metadata?.full_name || 
+                    session?.user?.user_metadata?.name || 
+                    session?.user?.user_metadata?.username || 
+                    (session?.user?.email ? session.user.email.split('@')[0] : 'Yuji Itadori (Chamán Novato)'),
+          avatar_url: session?.user?.user_metadata?.avatar_url || 
+                      session?.user?.user_metadata?.picture || 
+                      '',
+          created_at: new Date().toISOString(),
+          level: 1,
+          experience_points: 0,
+          current_streak: 0,
+          last_workout_date: ''
+        };
+        await saveRecord('profiles', currentProfile, 'CREATE');
+      }
     }
     setProfile(currentProfile);
+    setEditUsername(currentProfile.username);
+    setEditAvatarUrl(currentProfile.avatar_url);
+    setEditClan(currentProfile.clan || 'none');
+    setEditCursedTechnique(currentProfile.cursed_technique || '');
 
     // Load rest
     let loadedExercises = await getAllRecords<Exercise>('exercises');
@@ -725,29 +759,60 @@ function App() {
 
   const handleSaveProfile = async () => {
     if (!profile || !editUsername.trim()) return;
-    
-    let finalAvatarUrl = editAvatarUrl;
-    if (editAvatarUrl && editAvatarUrl.startsWith('data:')) {
-      finalAvatarUrl = await compressAvatar(editAvatarUrl);
-    }
+    setIsSealingPact(true);
+    setPactStatus('Guardando perfil...');
 
-    const updated = {
-      ...profile,
-      username: editUsername,
-      avatar_url: finalAvatarUrl,
-      clan: editClan,
-      cursed_technique: editCursedTechnique
-    };
-    await saveRecord('profiles', updated, 'UPDATE');
-    setProfile(updated);
-    // Stop camera if still running
-    if (cameraStream) {
-      cameraStream.getTracks().forEach(track => track.stop());
-      setCameraStream(null);
+    try {
+      let finalAvatarUrl = editAvatarUrl;
+      if (editAvatarUrl && editAvatarUrl.startsWith('data:')) {
+        finalAvatarUrl = await compressAvatar(editAvatarUrl);
+      }
+
+      const updated = {
+        ...profile,
+        username: editUsername,
+        avatar_url: finalAvatarUrl,
+        clan: editClan,
+        cursed_technique: editCursedTechnique
+      };
+      
+      await saveRecord('profiles', updated, 'UPDATE');
+      setProfile(updated);
+
+      // Stop camera if still running
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+        setCameraStream(null);
+      }
+      setIsCameraActive(false);
+
+      if (isSupabaseConfigured && session && navigator.onLine) {
+        setPactStatus('Sincronizando datos en la nube...');
+        await syncLocalQueueToCloud();
+        
+        // Comprobar si queda algo en la cola
+        const remainingQueue = await getAllRecords<any>('sync_queue');
+        if (remainingQueue.length === 0) {
+          setPactStatus('¡Pacto sellado y sincronizado! ⚡');
+          alert('¡Pacto sellado y sincronizado en la nube! ⚡');
+        } else {
+          setPactStatus('Pacto sellado localmente (sincronización pendiente).');
+          alert('Perfil guardado localmente, pero quedan elementos pendientes en la cola de sincronización.');
+        }
+      } else {
+        setPactStatus('¡Pacto sellado localmente! ⚡');
+        alert('¡Perfil de hechicero guardado localmente! ✅');
+      }
+
+      setActiveTab('hoy');
+    } catch (err: any) {
+      console.error(err);
+      setPactStatus('Error al sellar pacto.');
+      alert('Error al sellar pacto: ' + (err.message || err));
+    } finally {
+      setIsSealingPact(false);
+      setPactStatus(null);
     }
-    setIsCameraActive(false);
-    alert('¡Perfil de hechicero guardado! ✅');
-    setActiveTab('hoy');
   };
 
   const startCamera = async () => {
@@ -3137,13 +3202,20 @@ function App() {
                 border: '2px solid var(--accent-primary)',
                 boxShadow: '0 0 25px rgba(184, 211, 0, 0.2)',
                 backgroundColor: 'var(--bg-secondary)',
-                marginTop: '12px'
+                marginTop: '12px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
               }}>
-                <img 
-                  src={editAvatarUrl || 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=150&auto=format&fit=crop'} 
-                  alt="Profile Photo" 
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                />
+                {editAvatarUrl ? (
+                  <img 
+                    src={editAvatarUrl} 
+                    alt="Profile Photo" 
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                ) : (
+                  <Dumbbell size={48} color="var(--accent-primary)" style={{ opacity: 0.8 }} />
+                )}
               </div>
 
               {isCameraActive ? (
@@ -3210,91 +3282,6 @@ function App() {
                   />
                 </div>
               )}
-            </section>
-
-            {/* Horizontal Sliding Carousel of JJK Avatars */}
-            <section className="card" style={{ overflow: 'hidden' }}>
-              <label className="form-label" style={{ marginBottom: '12px', display: 'block', fontSize: '13px', fontWeight: 'bold' }}>
-                Avatares Preestablecidos (Desliza para elegir)
-              </label>
-              <div style={{ 
-                display: 'flex', 
-                overflowX: 'auto', 
-                gap: '16px', 
-                padding: '8px 4px',
-                scrollbarWidth: 'none',
-                msOverflowStyle: 'none'
-              }} className="hide-scrollbar">
-                {JJK_CHARACTER_AVATARS.map((char) => {
-                  const isSelected = editAvatarUrl === char.url;
-                  return (
-                    <button
-                      key={char.name}
-                      type="button"
-                      onClick={() => setEditAvatarUrl(char.url)}
-                      style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        gap: '8px',
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        flexShrink: 0,
-                        width: '80px',
-                        transition: 'transform 0.2s ease'
-                      }}
-                    >
-                      <div style={{
-                        position: 'relative',
-                        width: '60px',
-                        height: '60px',
-                        borderRadius: '50%',
-                        padding: '2px',
-                        border: isSelected ? '2px solid var(--accent-primary)' : '2px solid var(--border-color)',
-                        boxShadow: isSelected ? '0 0 10px rgba(184, 211, 0, 0.4)' : 'none',
-                        transition: 'all 0.2s ease',
-                        backgroundColor: 'var(--bg-secondary)',
-                      }}>
-                        <img 
-                          src={char.url} 
-                          alt={char.name} 
-                          style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
-                        />
-                        {isSelected && (
-                          <div style={{
-                            position: 'absolute',
-                            bottom: '-2px',
-                            right: '-2px',
-                            backgroundColor: 'var(--accent-primary)',
-                            borderRadius: '50%',
-                            width: '16px',
-                            height: '16px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            border: '1.5px solid var(--bg-primary)'
-                          }}>
-                            <Check size={9} color="#000" strokeWidth={3} />
-                          </div>
-                        )}
-                      </div>
-                      <span style={{ 
-                        fontSize: '12px', 
-                        color: isSelected ? 'var(--accent-primary)' : 'var(--text-secondary)',
-                        fontWeight: isSelected ? '700' : '400',
-                        textAlign: 'center',
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        width: '100%'
-                      }}>
-                        {char.name.split(' ')[1] || char.name}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
             </section>
 
             {/* Configuración de Datos */}
@@ -3377,49 +3364,12 @@ function App() {
             </section>
 
             {/* Supabase Cloud Connection & Authentication */}
-            <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <h4 style={{ fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--accent-primary)', margin: 0, letterSpacing: '0.5px' }}>
-                ☁️ Sincronización en la Nube
-              </h4>
-
-              {!isSupabaseConfigured ? (
-                <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', fontStyle: 'italic' }}>
-                  El modo nube no está configurado. Agrega las variables `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` en Vercel/.env para habilitar.
-                </div>
-              ) : session ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                      Conectado como:
-                    </span>
-                    <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '180px', whiteSpace: 'nowrap' }}>
-                      {session.user.email}
-                    </span>
-                  </div>
-                  
-                  <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        await syncLocalQueueToCloud();
-                        alert('¡Cola de sincronización enviada a la nube!');
-                      }}
-                      className="btn-primary"
-                      style={{ flex: 1, padding: '10px 14px', fontSize: '12px' }}
-                    >
-                      Sincronizar ahora 🔄
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleLogout}
-                      className="btn-secondary"
-                      style={{ flex: 1, padding: '10px 14px', fontSize: '12px', borderColor: '#ef4444', color: '#ef4444' }}
-                    >
-                      Cerrar Sesión
-                    </button>
-                  </div>
-                </div>
-              ) : (
+            {!session ? (
+              <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <h4 style={{ fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--accent-primary)', margin: 0, letterSpacing: '0.5px' }}>
+                  ☁️ Alianza con la Nube (Iniciar Sesión)
+                </h4>
+                
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   <div style={{ display: 'flex', gap: '8px', marginBottom: '4px' }}>
                     <button
@@ -3487,9 +3437,62 @@ function App() {
                   >
                     {authLoading ? 'Procesando...' : authMode === 'login' ? 'Entrar ⚡' : 'Registrarse ⚔️'}
                   </button>
+
+                  <button
+                    type="button"
+                    onClick={handleGoogleLogin}
+                    disabled={authLoading}
+                    className="btn-secondary"
+                    style={{ 
+                      padding: '12px', 
+                      fontSize: '12px', 
+                      marginTop: '6px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <svg viewBox="0 0 24 24" width="16" height="16" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
+                      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/>
+                    </svg>
+                    <span>Entrar con Google</span>
+                  </button>
                 </div>
-              )}
-            </section>
+              </section>
+            ) : (
+              /* Romper Pacto / Estado de Alianza */
+              <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: '12px', border: '1px solid #ef4444' }}>
+                <h4 style={{ fontSize: '13px', fontWeight: 'bold', color: '#ef4444', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span>💀 Estado de Alianza</span>
+                </h4>
+                <p style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                  Conectado como: <strong>{session.user.email}</strong>. Al romper el pacto, se cerrará tu sesión actual y se limpiará el templo local de este dispositivo.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="btn-secondary"
+                  style={{ 
+                    padding: '12px', 
+                    fontSize: '13px', 
+                    borderColor: '#ef4444', 
+                    color: '#ef4444',
+                    width: '100%',
+                    borderRadius: '8px',
+                    backgroundColor: 'rgba(239, 68, 68, 0.05)',
+                    fontWeight: 'bold',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Romper Pacto (Cerrar Sesión)
+                </button>
+              </section>
+            )}
 
             {/* Save Button */}
             <div style={{ 
@@ -3501,7 +3504,7 @@ function App() {
             }}>
               <button
                 onClick={handleSaveProfile}
-                disabled={!editUsername.trim()}
+                disabled={!editUsername.trim() || isSealingPact}
                 className="btn-primary"
                 style={{ 
                   width: '100%',
@@ -3521,7 +3524,7 @@ function App() {
                   gap: '8px'
                 }}
               >
-                <span>Sellar Pacto</span>
+                <span>{pactStatus || 'Sellar Pacto'}</span>
                 <UserCheck size={16} strokeWidth={3} />
               </button>
             </div>
