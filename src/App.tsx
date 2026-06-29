@@ -494,16 +494,18 @@ function App() {
     });
   };
 
-  async function loadData() {
+  async function loadData(overrideUserId?: string) {
     await initDB();
     await seedDatabase();
 
-    // Load Profile
-    const userId = session?.user?.id || 'user-default-id';
+    // Load Profile — use overrideUserId to avoid stale session state on login
+    const userId = overrideUserId || session?.user?.id || 'user-default-id';
     let currentProfile = await getRecord<Profile>('profiles', userId);
     
     if (!currentProfile) {
-      if (session && isSupabaseConfigured && supabase) {
+      // Use overrideUserId check when session state may still be null (e.g. during login sync)
+      const hasAuth = overrideUserId || session;
+      if (hasAuth && isSupabaseConfigured && supabase) {
         try {
           const { data } = await supabase
             .from('profiles')
@@ -520,14 +522,22 @@ function App() {
       }
       
       if (!currentProfile) {
+        // If overrideUserId provided, get fresh user data from Supabase auth
+        let authUser = session?.user;
+        if (!authUser && overrideUserId && supabase) {
+          try {
+            const { data: { user } } = await supabase.auth.getUser();
+            authUser = user ?? undefined;
+          } catch (_) { /* ignore */ }
+        }
         currentProfile = {
           id: userId,
-          username: session?.user?.user_metadata?.full_name || 
-                    session?.user?.user_metadata?.name || 
-                    session?.user?.user_metadata?.username || 
-                    (session?.user?.email ? session.user.email.split('@')[0] : 'Yuji Itadori (Chamán Novato)'),
-          avatar_url: session?.user?.user_metadata?.avatar_url || 
-                      session?.user?.user_metadata?.picture || 
+          username: authUser?.user_metadata?.full_name || 
+                    authUser?.user_metadata?.name || 
+                    authUser?.user_metadata?.username || 
+                    (authUser?.email ? authUser.email.split('@')[0] : 'Yuji Itadori (Chamán Novato)'),
+          avatar_url: authUser?.user_metadata?.avatar_url || 
+                      authUser?.user_metadata?.picture || 
                       '',
           created_at: new Date().toISOString(),
           level: 1,
@@ -826,8 +836,8 @@ function App() {
       setSyncSteps(prev => ({ ...prev, calendar: 'error' }));
     }
 
-    // Load local data into state
-    await loadData();
+    // Load local data into state — pass userId to avoid stale session closure
+    await loadData(userId);
   };
 
   const handleSaveProfile = async () => {
