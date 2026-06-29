@@ -183,7 +183,7 @@ input[type="password"]::placeholder {
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--accent-primary);
   margin-top: 2px;
   font-weight: 600;
@@ -226,7 +226,7 @@ input[type="password"]::placeholder {
   background: none;
   border: none;
   color: var(--text-tertiary);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   transition: var(--transition-smooth);
@@ -324,7 +324,7 @@ input[type="password"]::placeholder {
 .level-range {
   display: flex;
   justify-content: space-between;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--text-tertiary);
 }
 
@@ -342,7 +342,7 @@ input[type="password"]::placeholder {
 }
 
 .calendar-day-name {
-  font-size: 10px;
+  font-size: 12px;
   color: var(--text-tertiary);
   margin-bottom: 6px;
   font-weight: 600;
@@ -410,7 +410,7 @@ input[type="password"]::placeholder {
 }
 
 .routine-meta {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--text-tertiary);
   margin-top: 2px;
 }
@@ -450,7 +450,7 @@ input[type="password"]::placeholder {
 }
 
 .overlay-header-title-sub {
-  font-size: 10px;
+  font-size: 12px;
   color: var(--accent-primary);
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -523,7 +523,7 @@ input[type="password"]::placeholder {
 }
 
 .exercise-tag {
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
   color: var(--accent-primary);
@@ -567,7 +567,7 @@ input[type="password"]::placeholder {
   background-color: rgba(9, 9, 14, 0.6);
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius-smooth);
-  font-size: 11px;
+  font-size: 12px;
   color: var(--text-secondary);
   list-style-type: disc;
   padding-left: 24px;
@@ -585,7 +585,7 @@ input[type="password"]::placeholder {
 .set-table-header {
   display: grid;
   grid-template-columns: 0.8fr 1.2fr 1fr 1fr;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--text-tertiary);
   padding-bottom: 8px;
@@ -770,13 +770,13 @@ input[type="password"]::placeholder {
 }
 
 .timer-info-title {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--text-primary);
 }
 
 .timer-info-subtitle {
-  font-size: 9px;
+  font-size: 12px;
   color: var(--text-tertiary);
 }
 
@@ -893,7 +893,7 @@ input[type="password"]::placeholder {
 }
 
 .record-date {
-  font-size: 9px;
+  font-size: 12px;
   color: var(--text-tertiary);
   margin-top: 2px;
 }
@@ -906,7 +906,7 @@ input[type="password"]::placeholder {
 }
 
 .record-details {
-  font-size: 10px;
+  font-size: 12px;
   color: var(--text-tertiary);
   margin-top: 2px;
   display: block;
@@ -1146,11 +1146,11 @@ input[type="password"]::placeholder {
   background-color: rgba(0,0,0,0.6);
   padding: 2px 6px;
   border-radius: 4px;
-  font-size: 9px;
+  font-size: 12px;
 }
 
 .exercise-tips-label {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--accent-primary);
   text-transform: uppercase;
@@ -1159,7 +1159,7 @@ input[type="password"]::placeholder {
 }
 
 .exercise-tips-bullets {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--text-secondary);
   list-style-type: disc;
   padding-left: 18px;
@@ -1281,3 +1281,24 @@ input[type="password"]::placeholder {
   opacity: 0.2;
   cursor: not-allowed;
 }
+
+/* Ponytail: Aumentar el tamaño de los textos que eran demasiado pequeños (menores a 12px) */
+*[style*="font-size: 8px"], *[style*="font-size:8px"] { font-size: 11px !important; }
+*[style*="font-size: 9px"], *[style*="font-size:9px"] { font-size: 12px !important; }
+*[style*="font-size: 10px"], *[style*="font-size:10px"] { font-size: 13px !important; }
+*[style*="font-size: 11px"], *[style*="font-size:11px"] { font-size: 14px !important; }
+
+/* Aumentar textos pequeños de clases globales */
+.routine-row-sub,
+.profile-level,
+.exercise-tag,
+.exercise-meta,
+.lvl-text,
+.profile-name,
+label {
+  font-size: 13px !important;
+}
+input, button, select {
+  font-size: 14px !important;
+}
+

@@ -1,6 +1,6 @@
 import { supabase, isSupabaseConfigured } from './supabaseClient';
-import { getAllRecords, deleteRecord, addRecord } from './localDb';
-import type { SyncQueueItem } from './localDb';
+import { getAllRecords, deleteRecord, addRecord, getRecord, queueSyncItem } from './localDb';
+import type { SyncQueueItem, Profile, Exercise, Routine, Workout } from './localDb';
 
 // Sync local queue to Supabase
 export async function syncLocalQueueToCloud(): Promise<void> {
@@ -101,5 +101,68 @@ export async function pullCloudDataToLocal(): Promise<void> {
     }
   } catch (err) {
     console.error('Pull data error:', err);
+  }
+}
+
+// Migrate guest data to authenticated user
+export async function migrateGuestDataToUser(newUserId: string): Promise<void> {
+  // 1. Profile Migration
+  const guestProfile = await getRecord<Profile>('profiles', 'user-default-id');
+  if (guestProfile) {
+    // Delete old profile
+    await deleteRecord('profiles', 'user-default-id');
+    // Save new profile
+    const newProfile = {
+      ...guestProfile,
+      id: newUserId,
+    };
+    await addRecord('profiles', newProfile);
+    await queueSyncItem({
+      action: 'CREATE',
+      tableName: 'profiles',
+      payload: newProfile
+    });
+  }
+
+  // 2. Routines Migration
+  const routines = await getAllRecords<Routine>('routines');
+  for (const routine of routines) {
+    if (routine.user_id === 'user-default-id') {
+      const updatedRoutine = { ...routine, user_id: newUserId };
+      await addRecord('routines', updatedRoutine);
+      await queueSyncItem({
+        action: 'CREATE',
+        tableName: 'routines',
+        payload: updatedRoutine
+      });
+    }
+  }
+
+  // 3. Workouts Migration
+  const workouts = await getAllRecords<Workout>('workouts');
+  for (const workout of workouts) {
+    if (workout.user_id === 'user-default-id') {
+      const updatedWorkout = { ...workout, user_id: newUserId };
+      await addRecord('workouts', updatedWorkout);
+      await queueSyncItem({
+        action: 'CREATE',
+        tableName: 'workouts',
+        payload: updatedWorkout
+      });
+    }
+  }
+
+  // 4. Custom Exercises Migration
+  const exercises = await getAllRecords<Exercise>('exercises');
+  for (const exercise of exercises) {
+    if (exercise.is_custom && exercise.user_id === 'user-default-id') {
+      const updatedExercise = { ...exercise, user_id: newUserId };
+      await addRecord('exercises', updatedExercise);
+      await queueSyncItem({
+        action: 'CREATE',
+        tableName: 'exercises',
+        payload: updatedExercise
+      });
+    }
   }
 }

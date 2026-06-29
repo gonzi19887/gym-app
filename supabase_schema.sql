@@ -158,8 +158,18 @@ begin
   insert into public.profiles (id, username, avatar_url, level, experience_points, current_streak)
   values (
     new.id,
-    coalesce(new.raw_user_meta_data->>'username', 'Chamán Novato'),
-    coalesce(new.raw_user_meta_data->>'avatar_url', 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=150&auto=format&fit=crop'),
+    coalesce(
+      new.raw_user_meta_data->>'username',
+      new.raw_user_meta_data->>'full_name',
+      new.raw_user_meta_data->>'name',
+      split_part(new.email, '@', 1),
+      'Chamán Novato'
+    ),
+    coalesce(
+      new.raw_user_meta_data->>'avatar_url',
+      new.raw_user_meta_data->>'picture',
+      'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=150&auto=format&fit=crop'
+    ),
     1,
     0,
     0

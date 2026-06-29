@@ -14,12 +14,12 @@ import {
   Award, 
   Flame, 
   Clock,
-  ChevronUp,
   Search,
   BookOpen,
   Zap,
   Home,
-  Camera
+  Camera,
+  User
 } from 'lucide-react';
 import { 
   initDB, 
@@ -41,7 +41,7 @@ import type {
 } from './db/localDb';
 import { seedDatabase } from './db/seed';
 import { supabase, isSupabaseConfigured } from './db/supabaseClient';
-import { syncLocalQueueToCloud, pullCloudDataToLocal } from './db/sync';
+import { syncLocalQueueToCloud, pullCloudDataToLocal, migrateGuestDataToUser } from './db/sync';
 
 // Web Audio API beep for rest timer completion
 const playBeep = () => {
@@ -106,7 +106,7 @@ const REST_REMINDERS = [
 
 function App() {
   // Navigation & General Tabs
-  const [activeTab, setActiveTab] = useState<'hoy' | 'calendario' | 'rutinas' | 'ejercicios' | 'progreso'>('hoy');
+  const [activeTab, setActiveTab] = useState<'hoy' | 'calendario' | 'rutinas' | 'progreso' | 'perfil'>('hoy');
   
   // Database States
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -118,7 +118,10 @@ function App() {
   
   // Search & Filtering
   const [exerciseSearch, setExerciseSearch] = useState('');
-  const [expandedExerciseId, setExpandedExerciseId] = useState<string | null>(null);
+  const [selectedExerciseForGlosario, setSelectedExerciseForGlosario] = useState<Exercise | null>(null);
+  const [showGlossary, setShowGlossary] = useState(false);
+  const [routineExerciseSearch, setRoutineExerciseSearch] = useState('');
+  const [isTimerMinimized, setIsTimerMinimized] = useState(false);
 
   // Routine Creator Modal State
   const [showRoutineCreator, setShowRoutineCreator] = useState(false);
@@ -131,8 +134,7 @@ function App() {
     reps: number;
     rest: number;
   }[]>([]);
-  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
-  const [activeCategoryToSelect, setActiveCategoryToSelect] = useState<string | null>(null);
+
 
   // Active Workout State
   const [activeWorkout, setActiveWorkout] = useState<Workout | null>(null);
@@ -151,7 +153,7 @@ function App() {
   const [showBlackFlash, setShowBlackFlash] = useState(false); // Jujutsu personal record burst
 
   // Profile Editor Modal State
-  const [showProfileEditor, setShowProfileEditor] = useState(false);
+
   const [editUsername, setEditUsername] = useState('');
   const [editAvatarUrl, setEditAvatarUrl] = useState('');
   const [editClan, setEditClan] = useState('');
@@ -182,6 +184,7 @@ function App() {
   const [authMode, setAuthMode] = useState<'login' | 'signup' | 'reset_password'>('login');
   const [authLoading, setAuthLoading] = useState(false);
   const [guestMode, setGuestMode] = useState<boolean>(() => localStorage.getItem('guestMode') === 'true');
+  const [editingRoutineId, setEditingRoutineId] = useState<string | null>(null);
 
   // Dynamic JJK Routine Name Generator
   const isNameManuallyEdited = useRef(false);
@@ -278,6 +281,15 @@ function App() {
   };
 
   useEffect(() => {
+    if (profile && !editUsername) {
+      setEditUsername(profile.username);
+      setEditAvatarUrl(profile.avatar_url);
+      setEditClan(profile.clan || '');
+      setEditCursedTechnique(profile.cursed_technique || '');
+    }
+  }, [profile, editUsername]);
+
+  useEffect(() => {
     if (showRoutineCreator) {
       isNameManuallyEdited.current = false;
       setNewRoutineName('');
@@ -298,7 +310,11 @@ function App() {
     record: any,
     action: 'CREATE' | 'UPDATE' | 'DELETE' = 'CREATE'
   ) => {
-    await addRecord(tableName, record);
+    if (action === 'DELETE') {
+      await deleteRecord(tableName, record.id);
+    } else {
+      await addRecord(tableName, record);
+    }
 
     if (isSupabaseConfigured && session) {
       await queueSyncItem({
@@ -321,9 +337,11 @@ function App() {
       if (session) {
         setGuestMode(false);
         localStorage.removeItem('guestMode');
-        syncLocalQueueToCloud();
-        pullCloudDataToLocal().then(() => {
-          loadData();
+        migrateGuestDataToUser(session.user.id).then(() => {
+          syncLocalQueueToCloud();
+          pullCloudDataToLocal().then(() => {
+            loadData();
+          });
         });
       }
     });
@@ -333,9 +351,11 @@ function App() {
       if (session) {
         setGuestMode(false);
         localStorage.removeItem('guestMode');
-        syncLocalQueueToCloud();
-        pullCloudDataToLocal().then(() => {
-          loadData();
+        migrateGuestDataToUser(session.user.id).then(() => {
+          syncLocalQueueToCloud();
+          pullCloudDataToLocal().then(() => {
+            loadData();
+          });
         });
       } else {
         loadData();
@@ -355,6 +375,40 @@ function App() {
     window.addEventListener('online', handleOnline);
     return () => window.removeEventListener('online', handleOnline);
   }, [session]);
+
+  // Auto-sync when app becomes hidden (user switches apps, closes tab, etc.)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        if (isSupabaseConfigured && session && navigator.onLine) {
+          syncLocalQueueToCloud();
+        }
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [session]);
+
+  const handleGoogleLogin = async () => {
+    if (!isSupabaseConfigured || !supabase) {
+      alert('Supabase no está configurado.');
+      return;
+    }
+    setAuthLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin
+        }
+      });
+      if (error) throw error;
+    } catch (err: any) {
+      alert(err.message || 'Error al iniciar sesión con Google');
+    } finally {
+      setAuthLoading(false);
+    }
+  };
 
   const handleAuthAction = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -390,7 +444,7 @@ function App() {
           password: authPassword
         });
         if (error) throw error;
-        setShowProfileEditor(false); // Close modal on success
+        setActiveTab('hoy');
       }
     } catch (err: any) {
       alert(err.message || 'Error al procesar solicitud');
@@ -627,14 +681,7 @@ function App() {
     };
   }, []);
 
-  const openProfileEditor = () => {
-    if (!profile) return;
-    setEditUsername(profile.username);
-    setEditAvatarUrl(profile.avatar_url);
-    setEditClan(profile.clan || '');
-    setEditCursedTechnique(profile.cursed_technique || '');
-    setShowProfileEditor(true);
-  };
+
 
   const handleSaveProfile = async () => {
     if (!profile || !editUsername.trim()) return;
@@ -653,7 +700,8 @@ function App() {
       setCameraStream(null);
     }
     setIsCameraActive(false);
-    setShowProfileEditor(false);
+    alert('¡Perfil de hechicero guardado! ✅');
+    setActiveTab('hoy');
   };
 
   const startCamera = async () => {
@@ -815,20 +863,38 @@ function App() {
     setRoutines(prev => prev.map(r => r.id === routineId ? updatedRoutine : r));
   };
 
-  // Create Routine
+  // Create / Edit Routine
   const handleCreateRoutine = async () => {
     if (!newRoutineName.trim() || newRoutineSelectedExercises.length === 0 || !profile) return;
 
-    const routineId = generateUUID();
-    const newRoutine: Routine = {
-      id: routineId,
-      user_id: profile.id,
-      name: newRoutineName,
-      day_of_week: newRoutineDays,
-      created_at: new Date().toISOString()
-    };
+    const routineId = editingRoutineId || generateUUID();
+    const isEditMode = !!editingRoutineId;
 
-    await saveRecord('routines', newRoutine, 'CREATE');
+    if (isEditMode) {
+      const existingRoutine = routines.find(r => r.id === routineId);
+      if (!existingRoutine) return;
+      const updatedRoutine: Routine = {
+        ...existingRoutine,
+        name: newRoutineName,
+        day_of_week: newRoutineDays
+      };
+      await saveRecord('routines', updatedRoutine, 'UPDATE');
+
+      // Delete old associations
+      const oldAssocs = routineExercises.filter(re => re.routine_id === routineId);
+      for (const assoc of oldAssocs) {
+        await saveRecord('routine_exercises', assoc, 'DELETE');
+      }
+    } else {
+      const newRoutine: Routine = {
+        id: routineId,
+        user_id: profile.id,
+        name: newRoutineName,
+        day_of_week: newRoutineDays,
+        created_at: new Date().toISOString()
+      };
+      await saveRecord('routines', newRoutine, 'CREATE');
+    }
 
     // Save routine exercises
     for (let index = 0; index < newRoutineSelectedExercises.length; index++) {
@@ -855,6 +921,7 @@ function App() {
     setNewRoutineName('');
     setNewRoutineDays([]);
     setNewRoutineSelectedExercises([]);
+    setEditingRoutineId(null);
     setShowRoutineCreator(false);
   };
 
@@ -982,6 +1049,7 @@ function App() {
             setTimerDuration(set.rest_time);
             setTimerRemaining(set.rest_time);
             setIsTimerRunning(true);
+            setIsTimerMinimized(false);
             triggerVibration(50);
 
             // Check if this set breaks a personal record (1RM)
@@ -1204,6 +1272,11 @@ function App() {
     return acc;
   }, {} as { [category: string]: Exercise[] });
 
+  // Sort exercises inside each category alphabetically (A-Z)
+  for (const cat in groupedExercises) {
+    groupedExercises[cat].sort((a, b) => a.name.localeCompare(b.name));
+  }
+
   if (!session && !guestMode) {
     return (
       <div className="app-container flex flex-col justify-center items-center px-6 py-12 min-h-screen bg-background text-on-background relative overflow-hidden" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: '100svh', padding: '24px' }}>
@@ -1216,7 +1289,7 @@ function App() {
             <h1 className="font-headline text-primary mb-2 uppercase tracking-wide drop-shadow-md" style={{ fontSize: '32px', color: 'var(--accent-primary)', marginBottom: '8px', fontWeight: '800' }}>
               Hechicería Fitness
             </h1>
-            <p className="text-on-surface-variant uppercase tracking-widest font-semibold" style={{ fontSize: '10px', color: 'var(--text-secondary)', letterSpacing: '2px' }}>
+            <p className="text-on-surface-variant uppercase tracking-widest font-semibold" style={{ fontSize: '12px', color: 'var(--text-secondary)', letterSpacing: '2px' }}>
               Expande tu Dominio • Forja tu Fuerza
             </p>
           </div>
@@ -1237,7 +1310,7 @@ function App() {
                     borderRadius: '10px',
                     cursor: 'pointer',
                     fontWeight: 'bold',
-                    fontSize: '11px'
+                    fontSize: '12px'
                   }}
                 >
                   Iniciar Sesión
@@ -1255,7 +1328,7 @@ function App() {
                     borderRadius: '10px',
                     cursor: 'pointer',
                     fontWeight: 'bold',
-                    fontSize: '11px'
+                    fontSize: '12px'
                   }}
                 >
                   Crear Cuenta
@@ -1264,14 +1337,14 @@ function App() {
             ) : (
               <div style={{ textAlign: 'center', marginBottom: '12px' }}>
                 <h3 style={{ color: 'var(--text-primary)', fontSize: '15px', fontWeight: 'bold', margin: 0 }}>Restablecer Contraseña</h3>
-                <p style={{ color: 'var(--text-tertiary)', fontSize: '10px', marginTop: '4px' }}>Te enviaremos un enlace de recuperación.</p>
+                <p style={{ color: 'var(--text-tertiary)', fontSize: '12px', marginTop: '4px' }}>Te enviaremos un enlace de recuperación.</p>
               </div>
             )}
 
             <form onSubmit={handleAuthAction} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {authMode === 'signup' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '9px', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontWeight: 'bold' }}>Apodo / Username</label>
+                  <label style={{ fontSize: '12px', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontWeight: 'bold' }}>Apodo / Username</label>
                   <input
                     type="text"
                     placeholder="Ej: Gojo Satoru"
@@ -1284,7 +1357,7 @@ function App() {
               )}
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '9px', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontWeight: 'bold' }}>Email</label>
+                <label style={{ fontSize: '12px', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontWeight: 'bold' }}>Email</label>
                 <input
                   type="email"
                   placeholder="chaman@jjk.com"
@@ -1298,12 +1371,12 @@ function App() {
               {authMode !== 'reset_password' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <label style={{ fontSize: '9px', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontWeight: 'bold' }}>Contraseña</label>
+                    <label style={{ fontSize: '12px', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontWeight: 'bold' }}>Contraseña</label>
                     {authMode === 'login' && (
                       <button
                         type="button"
                         onClick={() => setAuthMode('reset_password')}
-                        style={{ background: 'none', border: 'none', color: 'var(--accent-secondary)', fontSize: '9px', fontWeight: 'bold', cursor: 'pointer', padding: 0 }}
+                        style={{ background: 'none', border: 'none', color: 'var(--accent-secondary)', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', padding: 0 }}
                       >
                         ¿Olvidaste tu contraseña?
                       </button>
@@ -1334,6 +1407,62 @@ function App() {
                       ? 'Registrarse ⚔️' 
                       : 'Enviar enlace ✉️'}
               </button>
+
+              {authMode !== 'reset_password' && (
+                <>
+                  <div style={{ display: 'flex', alignItems: 'center', margin: '12px 0', gap: '8px' }}>
+                    <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--border-color)', opacity: 0.3 }}></div>
+                    <span style={{ fontSize: '12px', color: 'var(--text-tertiary)', textTransform: 'uppercase', fontWeight: 'bold' }}>o continuar con</span>
+                    <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--border-color)', opacity: 0.3 }}></div>
+                  </div>
+                  
+                  <button
+                    type="button"
+                    onClick={handleGoogleLogin}
+                    disabled={authLoading}
+                    className="btn-secondary w-full py-2.5 flex items-center justify-center gap-2 text-xs font-bold transition-all border border-border"
+                    style={{
+                      width: '100%',
+                      padding: '10px 0',
+                      borderRadius: '10px',
+                      cursor: 'pointer',
+                      fontWeight: 'bold',
+                      fontSize: '12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      border: '1px solid var(--border-color)',
+                      backgroundColor: 'transparent',
+                      color: 'var(--text-primary)'
+                    }}
+                  >
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" style={{ width: '16px', height: '16px' }}>
+                      <path
+                        fill="currentColor"
+                        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                        style={{ fill: '#4285F4' }}
+                      />
+                      <path
+                        fill="currentColor"
+                        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                        style={{ fill: '#34A853' }}
+                      />
+                      <path
+                        fill="currentColor"
+                        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                        style={{ fill: '#FBBC05' }}
+                      />
+                      <path
+                        fill="currentColor"
+                        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                        style={{ fill: '#EA4335' }}
+                      />
+                    </svg>
+                    Google
+                  </button>
+                </>
+              )}
 
               {authMode === 'reset_password' && (
                 <button
@@ -1388,7 +1517,7 @@ function App() {
       {/* Header Profile Summary */}
       {!activeWorkout && profile && levelInfo && (
         <header className="app-header">
-          <div className="profile-section" style={{ cursor: 'pointer' }} onClick={openProfileEditor} title="Editar hechicero">
+          <div className="profile-section" style={{ cursor: 'pointer' }} onClick={() => setActiveTab('perfil')} title="Ver perfil del hechicero">
             <img 
               src={profile.avatar_url} 
               alt="Avatar" 
@@ -1396,15 +1525,15 @@ function App() {
             />
             <div className="profile-details">
               <h3 className="profile-name" style={{ display: 'flex', alignItems: 'center', gap: '4px', margin: 0, fontSize: '15px' }}>
-                {profile.username} <span style={{ fontSize: '10px', color: 'var(--text-tertiary)' }}>✏️</span>
+                {profile.username} <span style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>✏️</span>
               </h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <div className="profile-level" style={{ fontSize: '11px' }}>
+                <div className="profile-level" style={{ fontSize: '12px' }}>
                   <Award size={12} />
                   <span>{getJJKGrade(levelInfo.level)}</span>
                 </div>
                 {(profile.clan || profile.cursed_technique) && (
-                  <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>
+                  <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
                     {profile.clan ? `Clan ${profile.clan}` : ''} 
                     {profile.clan && profile.cursed_technique ? ' • ' : ''}
                     {profile.cursed_technique ? `${profile.cursed_technique}` : ''}
@@ -1668,67 +1797,217 @@ function App() {
             </div>
 
             {/* Active Rest Timer Banner (Side to Side) */}
+            {/* Active Rest Timer Overlay or Banner */}
             {timerRemaining > 0 && (
-              <div className="workout-rest-timer-banner">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
-                  <div className="timer-circle-wrap">
-                    <svg className="timer-circle-svg">
-                      <circle cx="20" cy="20" r="17" stroke="rgba(255,255,255,0.05)" strokeWidth="2.5" fill="transparent" />
-                      <circle cx="20" cy="20" r="17" stroke="var(--accent-primary)" strokeWidth="2.5" fill="transparent" 
-                        strokeDasharray="106.8"
-                        strokeDashoffset={106.8 - (106.8 * timerRemaining) / timerDuration}
+              isTimerMinimized ? (
+                /* Minimized state: show compact banner with a maximize button */
+                <div className="workout-rest-timer-banner" style={{ cursor: 'pointer' }} onClick={() => setIsTimerMinimized(false)}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+                    <div className="timer-circle-wrap">
+                      <svg className="timer-circle-svg">
+                        <circle cx="20" cy="20" r="17" stroke="rgba(255,255,255,0.05)" strokeWidth="2.5" fill="transparent" />
+                        <circle cx="20" cy="20" r="17" stroke="var(--accent-primary)" strokeWidth="2.5" fill="transparent" 
+                          strokeDasharray="106.8"
+                          strokeDashoffset={106.8 - (106.8 * timerRemaining) / timerDuration}
+                        />
+                      </svg>
+                      <span className="timer-seconds">{timerRemaining}</span>
+                    </div>
+                    
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--accent-primary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        Intervalo de Recarga
+                      </span>
+                      <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>
+                        Toca para maximizar el descanso
+                      </span>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
+                    <button 
+                      onClick={() => setIsTimerRunning(!isTimerRunning)} 
+                      style={{
+                        width: '28px',
+                        height: '28px',
+                        borderRadius: '50%',
+                        border: '1px solid var(--border-color)',
+                        backgroundColor: 'rgba(255,255,255,0.03)',
+                        color: 'var(--text-primary)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {isTimerRunning ? <Pause size={12} /> : <Play size={12} />}
+                    </button>
+                    <button 
+                      onClick={() => setTimerRemaining(0)} 
+                      style={{
+                        width: '28px',
+                        height: '28px',
+                        borderRadius: '50%',
+                        border: '1px solid var(--border-color)',
+                        backgroundColor: 'rgba(255,255,255,0.03)',
+                        color: 'var(--text-primary)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <SkipForward size={12} />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                /* Full-screen rest overlay with JJK premium styling and backdrop blur */
+                <div 
+                  className="overlay-screen animate-slide"
+                  style={{
+                    backgroundColor: 'rgba(7, 7, 10, 0.96)',
+                    backdropFilter: 'blur(20px)',
+                    WebkitBackdropFilter: 'blur(20px)',
+                    zIndex: 150,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    padding: '24px',
+                    textAlign: 'center'
+                  }}
+                >
+                  <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--accent-primary)', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '16px' }}>
+                    ⚡ Intervalo de Recarga ⚡
+                  </span>
+                  
+                  {/* Big SVG Countdown Wheel */}
+                  <div style={{ position: 'relative', width: '200px', height: '200px', marginBottom: '32px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                    <svg style={{ width: '200px', height: '200px', transform: 'rotate(-90deg)' }}>
+                      <circle cx="100" cy="100" r="85" stroke="rgba(255, 255, 255, 0.05)" strokeWidth="6" fill="transparent" />
+                      <circle 
+                        cx="100" 
+                        cy="100" 
+                        r="85" 
+                        stroke="var(--accent-primary)" 
+                        strokeWidth="6" 
+                        fill="transparent" 
+                        strokeDasharray="534.07"
+                        strokeDashoffset={534.07 - (534.07 * timerRemaining) / timerDuration}
+                        strokeLinecap="round"
+                        style={{ transition: 'stroke-dashoffset 1s linear, stroke 0.3s' }}
                       />
                     </svg>
-                    <span className="timer-seconds">{timerRemaining}</span>
+                    <div style={{ position: 'absolute', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                      <span style={{ fontSize: '56px', fontWeight: 900, color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>{timerRemaining}</span>
+                      <span style={{ fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px' }}>segundos</span>
+                    </div>
                   </div>
-                  
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--accent-primary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                      Intervalo de Recarga
-                    </span>
-                    <span style={{ fontSize: '11px', color: 'var(--text-secondary)', lineHeight: '1.3' }}>
-                      {REST_REMINDERS[Math.floor((timerDuration - timerRemaining) / 5) % REST_REMINDERS.length]}
-                    </span>
-                  </div>
-                </div>
 
-                <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
-                  <button 
-                    onClick={() => setIsTimerRunning(!isTimerRunning)} 
+                  {/* Motivational / Rest Reminder card */}
+                  <div 
                     style={{
-                      width: '28px',
-                      height: '28px',
-                      borderRadius: '50%',
-                      border: '1px solid var(--border-color)',
-                      backgroundColor: 'rgba(255,255,255,0.03)',
-                      color: 'var(--text-primary)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer'
+                      width: '100%',
+                      maxWidth: '360px',
+                      padding: '16px 20px',
+                      borderRadius: '16px',
+                      backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                      border: '1px solid rgba(255, 255, 255, 0.08)',
+                      marginBottom: '40px',
+                      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)'
                     }}
                   >
-                    {isTimerRunning ? <Pause size={12} /> : <Play size={12} />}
-                  </button>
-                  <button 
-                    onClick={() => setTimerRemaining(0)} 
-                    style={{
-                      width: '28px',
-                      height: '28px',
-                      borderRadius: '50%',
-                      border: '1px solid var(--border-color)',
-                      backgroundColor: 'rgba(255,255,255,0.03)',
-                      color: 'var(--text-primary)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    <SkipForward size={12} />
-                  </button>
+                    <p style={{ fontSize: '13px', color: 'var(--text-secondary)', fontStyle: 'italic', lineHeight: '1.5', margin: 0 }}>
+                      {REST_REMINDERS[Math.floor((timerDuration - timerRemaining) / 5) % REST_REMINDERS.length]}
+                    </p>
+                  </div>
+
+                  {/* Control buttons */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', maxWidth: '320px' }}>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      {/* Pause / Resume */}
+                      <button 
+                        onClick={() => setIsTimerRunning(!isTimerRunning)}
+                        className="btn-secondary"
+                        style={{
+                          flex: 1,
+                          height: '48px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '8px',
+                          fontSize: '14px',
+                          fontWeight: 700
+                        }}
+                      >
+                        {isTimerRunning ? <Pause size={16} /> : <Play size={16} />}
+                        {isTimerRunning ? 'Pausar' : 'Reanudar'}
+                      </button>
+
+                      {/* Add +30s */}
+                      <button 
+                        onClick={() => {
+                          setTimerRemaining(prev => prev + 30);
+                          setTimerDuration(prev => prev + 30);
+                        }}
+                        className="btn-secondary"
+                        style={{
+                          flex: 1,
+                          height: '48px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px',
+                          fontSize: '14px',
+                          fontWeight: 700
+                        }}
+                      >
+                        <span style={{ fontSize: '14px', fontWeight: 800 }}>+30s</span>
+                      </button>
+                    </div>
+
+                    {/* Skip Timer */}
+                    <button 
+                      onClick={() => setTimerRemaining(0)}
+                      className="btn-primary"
+                      style={{
+                        height: '48px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px',
+                        fontSize: '14px',
+                        fontWeight: 700
+                      }}
+                    >
+                      <SkipForward size={16} />
+                      Omitir descanso
+                    </button>
+
+                    {/* Minimize Overlay */}
+                    <button 
+                      onClick={() => setIsTimerMinimized(true)}
+                      style={{
+                        height: '40px',
+                        background: 'transparent',
+                        border: 'none',
+                        color: 'var(--text-secondary)',
+                        fontSize: '12px',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        marginTop: '12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px'
+                      }}
+                    >
+                      Minimizar descanso
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )
             )}
 
             {/* Exercise Navigation Footer */}
@@ -1853,6 +2132,18 @@ function App() {
                 </div>
               )}
             </section>
+
+            {/* Glossary Trigger Card */}
+            <section className="card" style={{ cursor: 'pointer', marginTop: '4px' }} onClick={() => setShowGlossary(true)}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <BookOpen size={16} className="text-purple-400" />
+                  <span style={{ fontWeight: '700', fontSize: '13px', color: 'var(--text-primary)' }}>Glosario de Técnicas</span>
+                </div>
+                <span style={{ fontSize: '12px', color: 'var(--accent-primary)', fontWeight: 'bold' }}>Ver Catálogo →</span>
+              </div>
+            </section>
+
           </div>
         )}
 
@@ -2189,12 +2480,39 @@ function App() {
                           Entrenar
                         </button>
                         <button
+                          type="button"
+                          onClick={() => {
+                            const assocs = routineExercises.filter(re => re.routine_id === routine.id);
+                            assocs.sort((a, b) => a.order_index - b.order_index);
+                            const selectedExs = assocs.map(re => {
+                              const ex = exercises.find(e => e.id === re.exercise_id);
+                              return {
+                                id: re.exercise_id,
+                                name: ex ? ex.name : 'Ejercicio desconocido',
+                                sets: re.default_sets,
+                                reps: re.default_reps,
+                                rest: re.default_rest_time
+                              };
+                            });
+                            setEditingRoutineId(routine.id);
+                            setNewRoutineName(routine.name);
+                            setNewRoutineDays(routine.day_of_week);
+                            setNewRoutineSelectedExercises(selectedExs);
+                            setShowRoutineCreator(true);
+                          }}
+                          className="btn-secondary-outline"
+                          style={{ padding: '6px 8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                          title="Editar rutina"
+                        >
+                          <span className="material-symbols-outlined text-[14px]">edit</span>
+                        </button>
+                        <button
                           onClick={async () => {
                             if (confirm('¿Seguro que deseas eliminar esta rutina?')) {
-                              await deleteRecord('routines', routine.id);
+                              await saveRecord('routines', routine, 'DELETE');
                               const associations = routineExercises.filter(re => re.routine_id === routine.id);
                               for (const assoc of associations) {
-                                await deleteRecord('routine_exercises', assoc.id);
+                                await saveRecord('routine_exercises', assoc, 'DELETE');
                               }
                               setRoutines(await getAllRecords<Routine>('routines'));
                               setRoutineExercises(await getAllRecords<RoutineExercise>('routine_exercises'));
@@ -2215,9 +2533,16 @@ function App() {
             {showRoutineCreator && (
               <div className="overlay-screen animate-slide overflow-y-auto pb-32">
                 <header className="overlay-header">
-                  <h3 className="overlay-header-title">Forjar Dominio</h3>
+                  <h3 className="overlay-header-title">{editingRoutineId ? 'Reconfigurar Dominio' : 'Forjar Dominio'}</h3>
                   <button 
-                    onClick={() => setShowRoutineCreator(false)}
+                    onClick={() => {
+                      setShowRoutineCreator(false);
+                      setEditingRoutineId(null);
+                      setNewRoutineName('');
+                      setNewRoutineDays([]);
+                      setNewRoutineSelectedExercises([]);
+                      setRoutineExerciseSearch('');
+                    }}
                     className="btn-secondary"
                     style={{ padding: '6px 12px', fontSize: '11px' }}
                   >
@@ -2309,309 +2634,295 @@ function App() {
                     </div>
                   </section>
 
-                  {/* Collapsible Exercise List */}
+                  {/* Flat Selected Exercises List */}
                   <section className="flex flex-col gap-md">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-headline-md text-headline-md text-on-surface">Compendio de Técnicas</h3>
+                    <div className="flex flex-col gap-sm">
+                      <h4 className="font-label-md text-label-md text-primary uppercase tracking-wider" style={{ fontSize: '13px', fontWeight: 'bold' }}>
+                        Técnicas Seleccionadas ({newRoutineSelectedExercises.length})
+                      </h4>
+                      {newRoutineSelectedExercises.length === 0 ? (
+                        <div className="py-6 flex flex-col items-center justify-center text-center gap-2 border border-dashed border-border-subtle rounded-xl bg-obsidian-zero">
+                          <span className="material-symbols-outlined text-on-surface-variant/30 text-4xl">do_not_disturb_off</span>
+                          <p className="text-on-surface-variant font-label-md" style={{ fontSize: '12px' }}>
+                            No hay técnicas seleccionadas. Usa el buscador de abajo para añadir técnicas.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col gap-sm">
+                          {newRoutineSelectedExercises.map((config) => {
+                            const exerciseObj = exercises.find(e => e.id === config.id);
+                            return (
+                              <div 
+                                key={config.id} 
+                                className="flex flex-col gap-3 p-3 bg-obsidian-zero rounded-lg border border-border-subtle hover:border-primary/30 transition-colors group"
+                              >
+                                <div className="flex justify-between items-center">
+                                  <div className="flex items-center gap-4">
+                                    <div className="w-14 h-14 rounded-md bg-surface-bright overflow-hidden flex-shrink-0 relative border border-white/5">
+                                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10 pointer-events-none" aria-hidden="true"></div>
+                                      <div className="w-full h-full bg-surface-container flex items-center justify-center">
+                                        {exerciseObj ? renderExerciseMedia(exerciseObj, { style: { width: '100%', height: '100%', objectFit: 'cover' } }) : (
+                                          <span className="material-symbols-outlined text-on-surface-variant text-2xl opacity-50">smart_display</span>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <div className="flex flex-col">
+                                      <h4 className="font-label-lg text-label-lg text-on-surface group-hover:text-primary transition-colors" style={{ fontSize: '13px', fontWeight: 'bold' }}>
+                                        {config.name}
+                                      </h4>
+                                      <p className="font-label-md text-label-md text-on-surface-variant mt-0.5" style={{ fontSize: '12px' }}>
+                                        {config.sets} sets × {config.reps} reps • {config.rest}s desc
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <button 
+                                      type="button"
+                                      onClick={() => {
+                                        setNewRoutineSelectedExercises(prev => prev.filter(item => item.id !== config.id));
+                                      }}
+                                      className="w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant hover:text-error hover:bg-error/10 transition-colors" 
+                                      aria-label="Eliminar ejercicio"
+                                    >
+                                      <span className="material-symbols-outlined text-sm">delete</span>
+                                    </button>
+                                  </div>
+                                </div>
+
+                                {/* Edit Fields */}
+                                <div className="grid grid-cols-3 gap-2 pt-2 border-t border-white/5">
+                                  <div>
+                                    <label className="text-[11px] text-on-surface-variant/80 uppercase block mb-1" style={{ fontSize: '12px' }}>Series</label>
+                                    <div className="flex items-center bg-surface-container-high border border-border-subtle rounded overflow-hidden h-8">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const val = Math.max(1, (config.sets || 1) - 1);
+                                          setNewRoutineSelectedExercises(prev => 
+                                            prev.map(item => item.id === config.id ? { ...item, sets: val } : item)
+                                          );
+                                        }}
+                                        className="px-3 text-xs text-on-surface-variant hover:text-primary h-full hover:bg-white/5 transition-colors font-bold"
+                                        style={{ fontSize: '12px' }}
+                                      >
+                                        -
+                                      </button>
+                                      <input 
+                                        type="number"
+                                        min="1"
+                                        max="12"
+                                        value={config.sets}
+                                        onFocus={(e) => e.target.select()}
+                                        onChange={(e) => {
+                                          const val = Math.max(1, parseInt(e.target.value) || 1);
+                                          setNewRoutineSelectedExercises(prev => 
+                                            prev.map(item => item.id === config.id ? { ...item, sets: val } : item)
+                                          );
+                                        }}
+                                        className="w-full bg-transparent border-none text-xs text-on-surface text-center focus:outline-none p-0 h-full [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                        style={{ fontSize: '12px' }}
+                                      />
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const val = Math.min(12, (config.sets || 1) + 1);
+                                          setNewRoutineSelectedExercises(prev => 
+                                            prev.map(item => item.id === config.id ? { ...item, sets: val } : item)
+                                          );
+                                        }}
+                                        className="px-3 text-xs text-on-surface-variant hover:text-primary h-full hover:bg-white/5 transition-colors font-bold"
+                                        style={{ fontSize: '12px' }}
+                                      >
+                                        +
+                                      </button>
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <label className="text-[11px] text-on-surface-variant/80 uppercase block mb-1" style={{ fontSize: '12px' }}>Reps</label>
+                                    <div className="flex items-center bg-surface-container-high border border-border-subtle rounded overflow-hidden h-8">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const val = Math.max(1, (config.reps || 1) - 1);
+                                          setNewRoutineSelectedExercises(prev => 
+                                            prev.map(item => item.id === config.id ? { ...item, reps: val } : item)
+                                          );
+                                        }}
+                                        className="px-3 text-xs text-on-surface-variant hover:text-primary h-full hover:bg-white/5 transition-colors font-bold"
+                                        style={{ fontSize: '12px' }}
+                                      >
+                                        -
+                                      </button>
+                                      <input 
+                                        type="number"
+                                        min="1"
+                                        max="100"
+                                        value={config.reps}
+                                        onFocus={(e) => e.target.select()}
+                                        onChange={(e) => {
+                                          const val = Math.max(1, parseInt(e.target.value) || 1);
+                                          setNewRoutineSelectedExercises(prev => 
+                                            prev.map(item => item.id === config.id ? { ...item, reps: val } : item)
+                                          );
+                                        }}
+                                        className="w-full bg-transparent border-none text-xs text-on-surface text-center focus:outline-none p-0 h-full [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                        style={{ fontSize: '12px' }}
+                                      />
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const val = Math.min(100, (config.reps || 1) + 1);
+                                          setNewRoutineSelectedExercises(prev => 
+                                            prev.map(item => item.id === config.id ? { ...item, reps: val } : item)
+                                          );
+                                        }}
+                                        className="px-3 text-xs text-on-surface-variant hover:text-primary h-full hover:bg-white/5 transition-colors font-bold"
+                                        style={{ fontSize: '12px' }}
+                                      >
+                                        +
+                                      </button>
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <label className="text-[11px] text-on-surface-variant/80 uppercase block mb-1" style={{ fontSize: '12px' }}>Descanso (s)</label>
+                                    <div className="flex items-center bg-surface-container-high border border-border-subtle rounded overflow-hidden h-8">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const val = Math.max(0, (config.rest || 0) - 5);
+                                          setNewRoutineSelectedExercises(prev => 
+                                            prev.map(item => item.id === config.id ? { ...item, rest: val } : item)
+                                          );
+                                        }}
+                                        className="px-3 text-xs text-on-surface-variant hover:text-primary h-full hover:bg-white/5 transition-colors font-bold"
+                                        style={{ fontSize: '12px' }}
+                                      >
+                                        -
+                                      </button>
+                                      <input 
+                                        type="number"
+                                        min="0"
+                                        step="5"
+                                        value={config.rest}
+                                        onFocus={(e) => e.target.select()}
+                                        onChange={(e) => {
+                                          const val = Math.max(0, parseInt(e.target.value) || 0);
+                                          setNewRoutineSelectedExercises(prev => 
+                                            prev.map(item => item.id === config.id ? { ...item, rest: val } : item)
+                                          );
+                                        }}
+                                        className="w-full bg-transparent border-none text-xs text-on-surface text-center focus:outline-none p-0 h-full [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                        style={{ fontSize: '12px' }}
+                                      />
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const val = (config.rest || 0) + 5;
+                                          setNewRoutineSelectedExercises(prev => 
+                                            prev.map(item => item.id === config.id ? { ...item, rest: val } : item)
+                                          );
+                                        }}
+                                        className="px-3 text-xs text-on-surface-variant hover:text-primary h-full hover:bg-white/5 transition-colors font-bold"
+                                        style={{ fontSize: '12px' }}
+                                      >
+                                        +
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </section>
+
+                  {/* Add Exercises Panel (Search-to-add flat list) */}
+                  <section className="flex flex-col gap-md">
+                    <label className="font-label-md text-label-md text-primary uppercase tracking-wider" style={{ fontSize: '13px', fontWeight: 'bold' }}>
+                      Añadir Técnicas
+                    </label>
+                    <div className="search-wrapper" style={{ margin: '4px 0', position: 'relative' }}>
+                      <input 
+                        type="text"
+                        placeholder="Buscar técnica para agregar..."
+                        value={routineExerciseSearch}
+                        onChange={(e) => setRoutineExerciseSearch(e.target.value)}
+                        className="search-input w-full bg-obsidian-zero border border-border-subtle rounded-lg px-4 py-3 text-on-surface font-body-md"
+                        style={{ paddingLeft: '40px', fontSize: '13px' }}
+                      />
+                      <Search size={16} className="search-icon" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
                     </div>
 
-                    {Object.entries(groupedExercises).map(([category, catExercises]) => {
-                      const isExpanded = !!expandedCategories[category];
-                      const selectedInCat = newRoutineSelectedExercises.filter(item => 
-                        catExercises.some(ex => ex.id === item.id)
-                      );
+                    <div className="flex flex-col gap-2 max-h-80 overflow-y-auto pr-1">
+                      {(() => {
+                        const matchingExercises = exercises.filter(ex => 
+                          ex.name.toLowerCase().includes(routineExerciseSearch.toLowerCase()) ||
+                          ex.category.toLowerCase().includes(routineExerciseSearch.toLowerCase())
+                        );
 
-                      // Dynamic icon for muscle category
-                      let catIcon = "fitness_center";
-                      let iconBg = "bg-primary/10 text-primary";
-                      const upperCat = category.toUpperCase();
-                      if (upperCat.includes('ABDOMEN') || upperCat.includes('ABS') || upperCat.includes('NÚCLEO') || upperCat.includes('CORE')) {
-                        catIcon = "accessibility_new";
-                        iconBg = "bg-secondary-container/30 text-secondary";
-                      } else if (upperCat.includes('ESPALDA')) {
-                        catIcon = "shield";
-                        iconBg = "bg-primary/10 text-primary";
-                      } else if (upperCat.includes('HOMBRO')) {
-                        catIcon = "sports_martial_arts";
-                        iconBg = "bg-secondary-container/30 text-secondary";
-                      }
+                        // Only display available exercises (not already in newRoutineSelectedExercises)
+                        const availableMatching = matchingExercises.filter(ex => 
+                          !newRoutineSelectedExercises.some(item => item.id === ex.id)
+                        );
 
-                      return (
-                        <div key={category} className="bg-surface-level-1 rounded-xl border border-border-subtle overflow-hidden transition-all duration-300">
-                          <button 
-                            type="button"
-                            className="w-full flex justify-between items-center p-4 hover:bg-white/5 transition-colors focus:outline-none" 
-                            onClick={() => {
-                              setExpandedCategories(prev => ({
-                                ...prev,
-                                [category]: !prev[category]
-                              }));
+                        if (routineExerciseSearch.trim() === '') {
+                          return (
+                            <span style={{ fontSize: '12px', color: 'var(--text-tertiary)', fontStyle: 'italic', textAlign: 'center', padding: '12px' }}>
+                              Escribe en el buscador de arriba para encontrar y añadir técnicas...
+                            </span>
+                          );
+                        }
+
+                        if (availableMatching.length === 0) {
+                          return (
+                            <span style={{ fontSize: '12px', color: 'var(--text-tertiary)', fontStyle: 'italic', textAlign: 'center', padding: '12px' }}>
+                              No se encontraron técnicas disponibles.
+                            </span>
+                          );
+                        }
+
+                        return availableMatching.map((ex) => (
+                          <div
+                            key={ex.id}
+                            style={{ 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              justifyContent: 'space-between', 
+                              padding: '10px 12px', 
+                              borderRadius: '8px', 
+                              border: '1px solid var(--border-color)', 
+                              backgroundColor: 'var(--bg-secondary)'
                             }}
                           >
                             <div className="flex items-center gap-3">
-                              <div className={`w-8 h-8 rounded flex items-center justify-center ${iconBg}`}>
-                                <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>{catIcon}</span>
+                              <div className="w-10 h-10 rounded overflow-hidden bg-obsidian-zero border border-white/5 flex-shrink-0">
+                                {renderExerciseMedia(ex, { style: { width: '100%', height: '100%', objectFit: 'cover' } })}
                               </div>
-                              <span className="font-headline-md text-body-lg text-on-surface">{category}</span>
-                              <span className="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant font-label-md text-[10px]">
-                                {selectedInCat.length} Técnica{selectedInCat.length !== 1 ? 's' : ''}
-                              </span>
+                              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{ex.name}</span>
+                                <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{ex.category}</span>
+                              </div>
                             </div>
-                            <span 
-                              className={`material-symbols-outlined text-on-surface-variant transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setNewRoutineSelectedExercises(prev => [
+                                  ...prev,
+                                  { id: ex.id, name: ex.name, sets: 4, reps: 10, rest: 60 }
+                                ]);
+                              }}
+                              className="btn-primary"
+                              style={{ padding: '6px 12px', fontSize: '12px', minWidth: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
                             >
-                              expand_more
-                            </span>
-                          </button>
-
-                          {isExpanded && (
-                            <div className="px-4 pb-4 flex flex-col gap-sm">
-                              {/* Selected exercises in this category */}
-                              {selectedInCat.length === 0 ? (
-                                <div className="py-6 flex flex-col items-center justify-center text-center gap-2">
-                                  <span className="material-symbols-outlined text-on-surface-variant/30 text-4xl">do_not_disturb_off</span>
-                                  <p className="text-on-surface-variant font-label-md">No hay técnicas asignadas a este grupo.</p>
-                                </div>
-                              ) : (
-                                <div className="flex flex-col gap-sm">
-                                  {selectedInCat.map((config) => {
-                                    const exerciseObj = catExercises.find(e => e.id === config.id);
-                                    return (
-                                      <div 
-                                        key={config.id} 
-                                        className="flex flex-col gap-3 p-3 bg-obsidian-zero rounded-lg border border-border-subtle hover:border-primary/30 transition-colors group"
-                                      >
-                                        <div className="flex justify-between items-center">
-                                          <div className="flex items-center gap-4">
-                                            <div className="w-14 h-14 rounded-md bg-surface-bright overflow-hidden flex-shrink-0 relative border border-white/5">
-                                              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10 pointer-events-none" aria-hidden="true"></div>
-                                              <div className="w-full h-full bg-surface-container flex items-center justify-center">
-                                                {exerciseObj ? renderExerciseMedia(exerciseObj, { style: { width: '100%', height: '100%', objectFit: 'cover' } }) : (
-                                                  <span className="material-symbols-outlined text-on-surface-variant text-2xl opacity-50">smart_display</span>
-                                                )}
-                                              </div>
-                                            </div>
-                                            <div className="flex flex-col">
-                                              <h4 className="font-label-lg text-label-lg text-on-surface group-hover:text-primary transition-colors">
-                                                {config.name}
-                                              </h4>
-                                              <p className="font-label-md text-label-md text-on-surface-variant mt-0.5">
-                                                {config.sets} sets × {config.reps} reps • {config.rest}s desc
-                                              </p>
-                                            </div>
-                                          </div>
-                                          <div className="flex items-center gap-2">
-                                            <button 
-                                              type="button"
-                                              onClick={() => {
-                                                setNewRoutineSelectedExercises(prev => prev.filter(item => item.id !== config.id));
-                                              }}
-                                              className="w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant hover:text-error hover:bg-error/10 transition-colors" 
-                                              aria-label="Eliminar ejercicio"
-                                            >
-                                              <span className="material-symbols-outlined text-sm">delete</span>
-                                            </button>
-                                            <div className="w-8 h-8 rounded-full flex items-center justify-center text-primary bg-primary/10">
-                                              <span className="material-symbols-outlined text-sm">drag_indicator</span>
-                                            </div>
-                                          </div>
-                                        </div>
-
-                                        {/* Edit Fields */}
-                                        <div className="grid grid-cols-3 gap-2 pt-2 border-t border-white/5">
-                                          <div>
-                                            <label className="text-[10px] text-on-surface-variant/80 uppercase block mb-1">Series</label>
-                                            <div className="flex items-center bg-surface-container-high border border-border-subtle rounded overflow-hidden h-7">
-                                              <button
-                                                type="button"
-                                                onClick={() => {
-                                                  const val = Math.max(1, (config.sets || 1) - 1);
-                                                  setNewRoutineSelectedExercises(prev => 
-                                                    prev.map(item => item.id === config.id ? { ...item, sets: val } : item)
-                                                  );
-                                                }}
-                                                className="px-2 text-xs text-on-surface-variant hover:text-primary h-full hover:bg-white/5 transition-colors font-bold"
-                                              >
-                                                -
-                                              </button>
-                                              <input 
-                                                type="number"
-                                                min="1"
-                                                max="12"
-                                                value={config.sets}
-                                                onFocus={(e) => e.target.select()}
-                                                onChange={(e) => {
-                                                  const val = Math.max(1, parseInt(e.target.value) || 1);
-                                                  setNewRoutineSelectedExercises(prev => 
-                                                    prev.map(item => item.id === config.id ? { ...item, sets: val } : item)
-                                                  );
-                                                }}
-                                                className="w-full bg-transparent border-none text-xs text-on-surface text-center focus:outline-none p-0 h-full [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                              />
-                                              <button
-                                                type="button"
-                                                onClick={() => {
-                                                  const val = Math.min(12, (config.sets || 1) + 1);
-                                                  setNewRoutineSelectedExercises(prev => 
-                                                    prev.map(item => item.id === config.id ? { ...item, sets: val } : item)
-                                                  );
-                                                }}
-                                                className="px-2 text-xs text-on-surface-variant hover:text-primary h-full hover:bg-white/5 transition-colors font-bold"
-                                              >
-                                                +
-                                              </button>
-                                            </div>
-                                          </div>
-                                          <div>
-                                            <label className="text-[10px] text-on-surface-variant/80 uppercase block mb-1">Reps</label>
-                                            <div className="flex items-center bg-surface-container-high border border-border-subtle rounded overflow-hidden h-7">
-                                              <button
-                                                type="button"
-                                                onClick={() => {
-                                                  const val = Math.max(1, (config.reps || 1) - 1);
-                                                  setNewRoutineSelectedExercises(prev => 
-                                                    prev.map(item => item.id === config.id ? { ...item, reps: val } : item)
-                                                  );
-                                                }}
-                                                className="px-2 text-xs text-on-surface-variant hover:text-primary h-full hover:bg-white/5 transition-colors font-bold"
-                                              >
-                                                -
-                                              </button>
-                                              <input 
-                                                type="number"
-                                                min="1"
-                                                max="100"
-                                                value={config.reps}
-                                                onFocus={(e) => e.target.select()}
-                                                onChange={(e) => {
-                                                  const val = Math.max(1, parseInt(e.target.value) || 1);
-                                                  setNewRoutineSelectedExercises(prev => 
-                                                    prev.map(item => item.id === config.id ? { ...item, reps: val } : item)
-                                                  );
-                                                }}
-                                                className="w-full bg-transparent border-none text-xs text-on-surface text-center focus:outline-none p-0 h-full [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                              />
-                                              <button
-                                                type="button"
-                                                onClick={() => {
-                                                  const val = Math.min(100, (config.reps || 1) + 1);
-                                                  setNewRoutineSelectedExercises(prev => 
-                                                    prev.map(item => item.id === config.id ? { ...item, reps: val } : item)
-                                                  );
-                                                }}
-                                                className="px-2 text-xs text-on-surface-variant hover:text-primary h-full hover:bg-white/5 transition-colors font-bold"
-                                              >
-                                                +
-                                              </button>
-                                            </div>
-                                          </div>
-                                          <div>
-                                            <label className="text-[10px] text-on-surface-variant/80 uppercase block mb-1">Descanso (s)</label>
-                                            <div className="flex items-center bg-surface-container-high border border-border-subtle rounded overflow-hidden h-7">
-                                              <button
-                                                type="button"
-                                                onClick={() => {
-                                                  const val = Math.max(0, (config.rest || 0) - 5);
-                                                  setNewRoutineSelectedExercises(prev => 
-                                                    prev.map(item => item.id === config.id ? { ...item, rest: val } : item)
-                                                  );
-                                                }}
-                                                className="px-2 text-xs text-on-surface-variant hover:text-primary h-full hover:bg-white/5 transition-colors font-bold"
-                                              >
-                                                -
-                                              </button>
-                                              <input 
-                                                type="number"
-                                                min="0"
-                                                step="5"
-                                                value={config.rest}
-                                                onFocus={(e) => e.target.select()}
-                                                onChange={(e) => {
-                                                  const val = Math.max(0, parseInt(e.target.value) || 0);
-                                                  setNewRoutineSelectedExercises(prev => 
-                                                    prev.map(item => item.id === config.id ? { ...item, rest: val } : item)
-                                                  );
-                                                }}
-                                                className="w-full bg-transparent border-none text-xs text-on-surface text-center focus:outline-none p-0 h-full [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                              />
-                                              <button
-                                                type="button"
-                                                onClick={() => {
-                                                  const val = (config.rest || 0) + 5;
-                                                  setNewRoutineSelectedExercises(prev => 
-                                                    prev.map(item => item.id === config.id ? { ...item, rest: val } : item)
-                                                  );
-                                                }}
-                                                className="px-2 text-xs text-on-surface-variant hover:text-primary h-full hover:bg-white/5 transition-colors font-bold"
-                                              >
-                                                +
-                                              </button>
-                                            </div>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              )}
-
-                              {/* Toggle Add Exercises Panel */}
-                              {activeCategoryToSelect === category ? (
-                                <div className="mt-3 p-3 bg-surface-container-low rounded-lg border border-border-subtle flex flex-col gap-2">
-                                  <div className="flex justify-between items-center mb-1">
-                                    <span className="font-label-md text-label-md text-primary uppercase tracking-wider">Añadir Técnicas</span>
-                                    <button 
-                                      type="button"
-                                      onClick={() => setActiveCategoryToSelect(null)}
-                                      className="text-xs text-on-surface-variant hover:text-on-surface transition-colors"
-                                    >
-                                      Ocultar
-                                    </button>
-                                  </div>
-                                  <div className="flex flex-col gap-1 max-h-60 overflow-y-auto hide-scrollbar">
-                                    {catExercises
-                                      .filter(ex => !newRoutineSelectedExercises.some(item => item.id === ex.id))
-                                      .map((ex) => (
-                                        <button
-                                          key={ex.id}
-                                          type="button"
-                                          onClick={() => {
-                                            setNewRoutineSelectedExercises(prev => [
-                                              ...prev, 
-                                              { id: ex.id, name: ex.name, sets: 4, reps: 10, rest: 60 }
-                                            ]);
-                                          }}
-                                          className="w-full flex items-center justify-between p-2 rounded hover:bg-white/5 transition-colors text-left"
-                                        >
-                                          <div className="flex items-center gap-2">
-                                            <div className="w-8 h-8 rounded overflow-hidden bg-obsidian-zero border border-white/5 flex-shrink-0">
-                                              {renderExerciseMedia(ex, { style: { width: '100%', height: '100%', objectFit: 'cover' } })}
-                                            </div>
-                                            <span className="text-xs text-on-surface font-body-md">{ex.name}</span>
-                                          </div>
-                                          <span className="material-symbols-outlined text-sm text-primary">add_circle</span>
-                                        </button>
-                                      ))
-                                    }
-                                    {catExercises.filter(ex => !newRoutineSelectedExercises.some(item => item.id === ex.id)).length === 0 && (
-                                      <span className="text-xs text-on-surface-variant italic py-2 text-center">Todas las técnicas han sido añadidas.</span>
-                                    )}
-                                  </div>
-                                </div>
-                              ) : (
-                                <button 
-                                  type="button"
-                                  onClick={() => setActiveCategoryToSelect(category)}
-                                  className="w-full py-3 mt-2 border border-dashed border-border-subtle rounded-lg text-on-surface-variant font-label-md flex items-center justify-center gap-2 hover:bg-white/5 hover:text-primary transition-colors"
-                                >
-                                  <span className="material-symbols-outlined text-sm">add_circle</span> Añadir Ejercicio a {category}
-                                </button>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
+                              <Plus size={14} />
+                              <span>Agregar</span>
+                            </button>
+                          </div>
+                        ));
+                      })()}
+                    </div>
                   </section>
 
                   {/* Save Action */}
@@ -2623,218 +2934,12 @@ function App() {
                     >
                       <div className="absolute inset-0 bg-white/20 w-full translate-x-[-100%] skew-x-[-15deg] group-hover:animate-[shimmer_1s_infinite]" aria-hidden="true"></div>
                       <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>vpn_key</span>
-                      Sellar Ritual
+                      {editingRoutineId ? 'Actualizar Ritual ⚡' : 'Sellar Ritual'}
                     </button>
                   </div>
                 </main>
               </div>
             )}
-
-          </div>
-        )}
-
-        {/* TAB: EJERCICIOS */}
-        {activeTab === 'ejercicios' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              <div className="search-wrapper" style={{ flex: 1, margin: 0 }}>
-                <input 
-                  type="text"
-                  placeholder="Buscar ejercicio..."
-                  value={exerciseSearch}
-                  onChange={(e) => setExerciseSearch(e.target.value)}
-                  className="search-input"
-                />
-                <Search size={15} className="search-icon" />
-              </div>
-              <button
-                onClick={() => setShowExerciseCreator(true)}
-                className="btn-primary"
-                style={{ padding: '10px 14px', fontSize: '12px', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '4px' }}
-              >
-                + Ejercicio
-              </button>
-            </div>
-
-            {/* Exercise Creator Modal */}
-            {showExerciseCreator && (
-              <div className="overlay-screen animate-slide">
-                <header className="overlay-header">
-                  <h3 className="overlay-header-title">Crear Ejercicio Personalizado</h3>
-                  <button 
-                    onClick={() => setShowExerciseCreator(false)}
-                    className="btn-secondary"
-                    style={{ padding: '6px 12px', fontSize: '11px' }}
-                  >
-                    Cerrar
-                  </button>
-                </header>
-
-                <div className="overlay-body">
-                  {/* Name */}
-                  <div className="form-group">
-                    <label className="form-label">Nombre del Ejercicio</label>
-                    <input 
-                      type="text"
-                      placeholder="Ej: Curl de bíceps con barra"
-                      value={newExerciseName}
-                      onChange={(e) => setNewExerciseName(e.target.value)}
-                      className="form-input"
-                    />
-                  </div>
-
-                  {/* Category */}
-                  <div className="form-group">
-                    <label className="form-label">Categoría</label>
-                    <select
-                      value={newExerciseCategory}
-                      onChange={(e) => setNewExerciseCategory(e.target.value)}
-                      className="form-input"
-                      style={{ background: 'var(--bg-primary)', color: 'var(--text-primary)' }}
-                    >
-                      <option value="Pecho">Pecho</option>
-                      <option value="Espalda">Espalda</option>
-                      <option value="Piernas">Piernas</option>
-                      <option value="Hombros">Hombros</option>
-                      <option value="Brazos">Brazos</option>
-                      <option value="Abdomen">Abdomen</option>
-                      <option value="Cardio">Cardio</option>
-                    </select>
-                  </div>
-
-                  {/* Media Mode selector */}
-                  <div className="form-group">
-                    <label className="form-label">Multimedia (Video o Imagen)</label>
-                    <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
-                      <button
-                        type="button"
-                        onClick={() => setNewExerciseMediaMode('upload')}
-                        className={`btn-secondary ${newExerciseMediaMode === 'upload' ? 'completed' : ''}`}
-                        style={{ flex: 1, padding: '8px', fontSize: '11px', border: newExerciseMediaMode === 'upload' ? '1.5px solid var(--accent-primary)' : '1px solid var(--border-color)' }}
-                      >
-                        Subir Archivo (Offline)
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setNewExerciseMediaMode('url')}
-                        className={`btn-secondary ${newExerciseMediaMode === 'url' ? 'completed' : ''}`}
-                        style={{ flex: 1, padding: '8px', fontSize: '11px', border: newExerciseMediaMode === 'url' ? '1.5px solid var(--accent-primary)' : '1px solid var(--border-color)' }}
-                      >
-                        Pegar Enlace URL
-                      </button>
-                    </div>
-
-                    {newExerciseMediaMode === 'upload' ? (
-                      <div style={{
-                        border: '1.5px dashed var(--border-color)',
-                        borderRadius: '12px',
-                        padding: '16px',
-                        textAlign: 'center',
-                        backgroundColor: 'rgba(255, 255, 255, 0.01)',
-                        cursor: 'pointer'
-                      }}
-                        onClick={() => document.getElementById('exercise-media-input')?.click()}
-                      >
-                        <input 
-                          id="exercise-media-input"
-                          type="file"
-                          accept="image/*,video/*"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) setNewExerciseMediaFile(file);
-                          }}
-                          style={{ display: 'none' }}
-                        />
-                        <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                          {newExerciseMediaFile ? `📂 ${newExerciseMediaFile.name}` : 'Selecciona una foto, video o GIF'}
-                        </span>
-                      </div>
-                    ) : (
-                      <input 
-                        type="text"
-                        placeholder="Ej: https://v1.pinimg.com/...mp4"
-                        value={newExerciseMediaUrl}
-                        onChange={(e) => setNewExerciseMediaUrl(e.target.value)}
-                        className="form-input"
-                      />
-                    )}
-                  </div>
-
-                  {/* Technique Tips */}
-                  <div className="form-group">
-                    <label className="form-label">Tips de técnica (uno por línea)</label>
-                    <textarea
-                      placeholder="Ej: Mantén los codos pegados al cuerpo&#10;Contrae el abdomen durante el levantamiento"
-                      value={newExerciseTipsText}
-                      onChange={(e) => setNewExerciseTipsText(e.target.value)}
-                      className="form-input"
-                      rows={4}
-                      style={{ resize: 'none' }}
-                    />
-                  </div>
-                </div>
-
-                <footer className="overlay-footer">
-                  <button
-                    onClick={() => setShowExerciseCreator(false)}
-                    className="btn-secondary"
-                    style={{ flex: 1 }}
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={handleCreateExercise}
-                    disabled={!newExerciseName.trim() || (newExerciseMediaMode === 'upload' && !newExerciseMediaFile) || (newExerciseMediaMode === 'url' && !newExerciseMediaUrl.trim())}
-                    className="btn-primary"
-                    style={{ flex: 1 }}
-                  >
-                    Guardar Ejercicio
-                  </button>
-                </footer>
-              </div>
-            )}
-
-            <div className="exercise-list">
-              {filteredExercises.map((ex) => {
-                const isExpanded = expandedExerciseId === ex.id;
-                return (
-                  <div 
-                    key={ex.id}
-                    className="exercise-item"
-                  >
-                    <button
-                      onClick={() => setExpandedExerciseId(isExpanded ? null : ex.id)}
-                      className="exercise-item-header"
-                    >
-                      <div>
-                        <h4 className="exercise-item-name">{ex.name}</h4>
-                        <span className="exercise-item-category">{ex.category}</span>
-                      </div>
-                      <div style={{ color: 'var(--text-tertiary)' }}>
-                        {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                      </div>
-                    </button>
-
-                    {isExpanded && (
-                      <div className="exercise-item-details animate-pop">
-                        <div className="exercise-image-fallback">
-                          {renderExerciseMedia(ex)}
-                          <div className="exercise-image-fallback-text">Visualización</div>
-                        </div>
-
-                        <h5 className="exercise-tips-label">Tips de técnica</h5>
-                        <ul className="exercise-tips-bullets">
-                          {ex.tips.map((tip, idx) => (
-                            <li key={idx}>{tip}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
 
           </div>
         )}
@@ -2861,7 +2966,7 @@ function App() {
               </h3>
               
               {Object.keys(personalRecords).length === 0 ? (
-                <p className="no-routines-text" style={{ textAlign: 'center', padding: '16px 0' }}>
+                <p className="no-routines-text" style={{ textAlign: 'center', padding: '16px 0', fontSize: '12px' }}>
                   Aún no has ejecutado ningún Destello Negro.
                 </p>
               ) : (
@@ -2872,12 +2977,12 @@ function App() {
                     return (
                       <div key={exId} className="record-row">
                         <div>
-                          <h4 className="record-title">{ex.name}</h4>
-                          <span className="record-date">Logrado el {record.date}</span>
+                          <h4 className="record-title" style={{ fontSize: '13px' }}>{ex.name}</h4>
+                          <span className="record-date" style={{ fontSize: '12px' }}>Logrado el {record.date}</span>
                         </div>
                         <div>
-                          <span className="record-value" style={{ color: 'var(--accent-secondary)' }}>{record.oneRM.toFixed(1)} kg</span>
-                          <span className="record-details">
+                          <span className="record-value" style={{ color: 'var(--accent-secondary)', fontSize: '13px' }}>{record.oneRM.toFixed(1)} kg</span>
+                          <span className="record-details" style={{ fontSize: '12px' }}>
                             {record.weight} kg x {record.reps} reps
                           </span>
                         </div>
@@ -2895,7 +3000,7 @@ function App() {
               </h3>
 
               {workouts.length === 0 ? (
-                <p className="no-routines-text" style={{ textAlign: 'center', padding: '16px 0' }}>No hay registros.</p>
+                <p className="no-routines-text" style={{ textAlign: 'center', padding: '16px 0', fontSize: '12px' }}>No hay registros.</p>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {workouts
@@ -2913,7 +3018,7 @@ function App() {
                         <div key={w.id} className="record-row">
                           <div>
                             <h4 className="record-title" style={{ fontSize: '13px' }}>{routine?.name || 'Ritual Libre'}</h4>
-                            <span className="record-date">{wDate}</span>
+                            <span className="record-date" style={{ fontSize: '12px' }}>{wDate}</span>
                           </div>
                           <span className="record-value" style={{ fontSize: '12px', color: 'var(--accent-tertiary)' }}>
                             +{w.experience_earned} EM
@@ -2937,6 +3042,407 @@ function App() {
             >
               Restablecer Templo (Vaciar Base de Datos)
             </button>
+
+          </div>
+        )}
+
+        {/* TAB: PERFIL */}
+        {activeTab === 'perfil' && profile && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', paddingBottom: '160px' }}>
+            
+            {/* Horizontal Sliding Carousel of JJK Avatars */}
+            <section className="card" style={{ overflow: 'hidden' }}>
+              <label className="form-label" style={{ marginBottom: '12px', display: 'block', fontSize: '13px', fontWeight: 'bold' }}>
+                Avatar de Hechicero (Desliza para elegir)
+              </label>
+              <div style={{ 
+                display: 'flex', 
+                overflowX: 'auto', 
+                gap: '16px', 
+                padding: '8px 4px',
+                scrollbarWidth: 'none',
+                msOverflowStyle: 'none'
+              }} className="hide-scrollbar">
+                {JJK_CHARACTER_AVATARS.map((char) => {
+                  const isSelected = editAvatarUrl === char.url;
+                  return (
+                    <button
+                      key={char.name}
+                      type="button"
+                      onClick={() => setEditAvatarUrl(char.url)}
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '8px',
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        flexShrink: 0,
+                        width: '80px',
+                        transition: 'transform 0.2s ease'
+                      }}
+                    >
+                      <div style={{
+                        position: 'relative',
+                        width: '60px',
+                        height: '60px',
+                        borderRadius: '50%',
+                        padding: '2px',
+                        border: isSelected ? '2px solid var(--accent-primary)' : '2px solid var(--border-color)',
+                        boxShadow: isSelected ? '0 0 10px rgba(184, 211, 0, 0.4)' : 'none',
+                        transition: 'all 0.2s ease',
+                        backgroundColor: 'var(--bg-secondary)',
+                      }}>
+                        <img 
+                          src={char.url} 
+                          alt={char.name} 
+                          style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
+                        />
+                        {isSelected && (
+                          <div style={{
+                            position: 'absolute',
+                            bottom: '-2px',
+                            right: '-2px',
+                            backgroundColor: 'var(--accent-primary)',
+                            borderRadius: '50%',
+                            width: '16px',
+                            height: '16px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            border: '1.5px solid var(--bg-primary)'
+                          }}>
+                            <Check size={9} color="#000" strokeWidth={3} />
+                          </div>
+                        )}
+                      </div>
+                      <span style={{ 
+                        fontSize: '12px', 
+                        color: isSelected ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                        fontWeight: isSelected ? '700' : '400',
+                        textAlign: 'center',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        width: '100%'
+                      }}>
+                        {char.name.split(' ')[1] || char.name}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+
+            {/* Configuración de Datos */}
+            <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <h3 className="card-title">
+                <User size={15} className="text-purple-400" />
+                <span>Datos del Chamán</span>
+              </h3>
+
+              <div className="form-group">
+                <label className="form-label" style={{ fontSize: '13px', fontWeight: 'bold' }}>Nombre del Chamán</label>
+                <input 
+                  type="text"
+                  placeholder="Ej: Yuji Itadori"
+                  value={editUsername}
+                  onChange={(e) => setEditUsername(e.target.value)}
+                  className="form-input"
+                  style={{ fontSize: '13px' }}
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label" style={{ fontSize: '13px', fontWeight: 'bold' }}>Clan Hechicero</label>
+                <input 
+                  type="text"
+                  placeholder="Ej: Gojo, Zen'in, Itadori..."
+                  value={editClan}
+                  onChange={(e) => setEditClan(e.target.value)}
+                  className="form-input"
+                  style={{ fontSize: '13px' }}
+                />
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '8px' }}>
+                  {['Gojo', 'Zen\'in', 'Itadori', 'Fushiguro', 'Inumaki', 'Kamo'].map(c => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => setEditClan(c)}
+                      style={{
+                        padding: '6px 12px',
+                        fontSize: '12px',
+                        backgroundColor: editClan === c ? 'rgba(184, 211, 0, 0.15)' : 'rgba(255,255,255,0.03)',
+                        border: `1px solid ${editClan === c ? 'var(--accent-primary)' : 'var(--border-color)'}`,
+                        borderRadius: '16px',
+                        color: editClan === c ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Clan {c}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label" style={{ fontSize: '13px', fontWeight: 'bold' }}>Técnica Ritual / Habilidad Especial</label>
+                <input 
+                  type="text"
+                  placeholder="Ej: Destello Negro, Diez Sombras..."
+                  value={editCursedTechnique}
+                  onChange={(e) => setEditCursedTechnique(e.target.value)}
+                  className="form-input"
+                  style={{ fontSize: '13px' }}
+                />
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '8px' }}>
+                  {['Destello Negro ⚡', 'Ilimitado ♾️', 'Diez Sombras 🐺', 'Discurso Maldito 🗣️', 'Restricción Celestial 🏋️', 'Manipulación de Sangre 🩸'].map(t => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setEditCursedTechnique(t)}
+                      style={{
+                        padding: '6px 12px',
+                        fontSize: '12px',
+                        backgroundColor: editCursedTechnique === t ? 'rgba(184, 211, 0, 0.15)' : 'rgba(255,255,255,0.03)',
+                        border: `1px solid ${editCursedTechnique === t ? 'var(--accent-primary)' : 'var(--border-color)'}`,
+                        borderRadius: '16px',
+                        color: editCursedTechnique === t ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Foto de Perfil (Cámara o Galería) */}
+              <div className="form-group">
+                <label className="form-label" style={{ fontSize: '13px', fontWeight: 'bold' }}>Foto de Perfil (Opcional)</label>
+                
+                {isCameraActive ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', backgroundColor: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+                    <video 
+                      ref={videoRef} 
+                      autoPlay 
+                      playsInline 
+                      style={{ width: '100%', maxWidth: '240px', height: '240px', objectFit: 'cover', borderRadius: '12px', border: '2px solid var(--accent-primary)', transform: 'scaleX(-1)' }}
+                    />
+                    <div style={{ display: 'flex', gap: '8px', width: '100%', maxWidth: '240px' }}>
+                      <button
+                        type="button"
+                        onClick={capturePhoto}
+                        className="btn-primary"
+                        style={{ flex: 1, padding: '10px 14px', fontSize: '12px' }}
+                      >
+                        Capturar 📸
+                      </button>
+                      <button
+                        type="button"
+                        onClick={stopCamera}
+                        className="btn-secondary"
+                        style={{ flex: 1, padding: '10px 14px', fontSize: '12px', borderColor: '#ef4444', color: '#ef4444' }}
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <button
+                      type="button"
+                      onClick={startCamera}
+                      className="btn-secondary"
+                      style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px', fontSize: '12px' }}
+                    >
+                      <Camera size={14} />
+                      <span>Tomar Foto</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="btn-secondary"
+                      style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px', fontSize: '12px' }}
+                    >
+                      <span>Subir Galería</span>
+                    </button>
+                    <input 
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFileChange}
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                    />
+                    <input 
+                      type="file"
+                      ref={cameraFallbackInputRef}
+                      onChange={handleFileChange}
+                      accept="image/*"
+                      capture="user"
+                      style={{ display: 'none' }}
+                    />
+                  </div>
+                )}
+                
+                {editAvatarUrl && editAvatarUrl.startsWith('data:') && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px' }}>
+                    <img 
+                      src={editAvatarUrl} 
+                      alt="Vista previa foto" 
+                      style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--accent-primary)' }}
+                    />
+                    <span style={{ fontSize: '12px', color: 'var(--accent-tertiary)' }}>¡Foto cargada con éxito! ✅</span>
+                  </div>
+                )}
+              </div>
+            </section>
+
+            {/* Supabase Cloud Connection & Authentication */}
+            <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <h4 style={{ fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--accent-primary)', margin: 0, letterSpacing: '0.5px' }}>
+                ☁️ Sincronización en la Nube
+              </h4>
+
+              {!isSupabaseConfigured ? (
+                <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', fontStyle: 'italic' }}>
+                  El modo nube no está configurado. Agrega las variables `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` en Vercel/.env para habilitar.
+                </div>
+              ) : session ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                      Conectado como:
+                    </span>
+                    <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '180px', whiteSpace: 'nowrap' }}>
+                      {session.user.email}
+                    </span>
+                  </div>
+                  
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        await syncLocalQueueToCloud();
+                        alert('¡Cola de sincronización enviada a la nube!');
+                      }}
+                      className="btn-primary"
+                      style={{ flex: 1, padding: '10px 14px', fontSize: '12px' }}
+                    >
+                      Sincronizar ahora 🔄
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      className="btn-secondary"
+                      style={{ flex: 1, padding: '10px 14px', fontSize: '12px', borderColor: '#ef4444', color: '#ef4444' }}
+                    >
+                      Cerrar Sesión
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <div style={{ display: 'flex', gap: '8px', marginBottom: '4px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setAuthMode('login')}
+                      className={`btn-secondary ${authMode === 'login' ? 'completed' : ''}`}
+                      style={{ flex: 1, padding: '10px', fontSize: '12px', border: authMode === 'login' ? '1.5px solid var(--accent-primary)' : '1px solid var(--border-color)', backgroundColor: authMode === 'login' ? 'rgba(168, 85, 247, 0.05)' : 'transparent' }}
+                    >
+                      Iniciar Sesión
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAuthMode('signup')}
+                      className={`btn-secondary ${authMode === 'signup' ? 'completed' : ''}`}
+                      style={{ flex: 1, padding: '10px', fontSize: '12px', border: authMode === 'signup' ? '1.5px solid var(--accent-primary)' : '1px solid var(--border-color)', backgroundColor: authMode === 'signup' ? 'rgba(168, 85, 247, 0.05)' : 'transparent' }}
+                    >
+                      Crear Cuenta
+                    </button>
+                  </div>
+
+                  {authMode === 'signup' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label style={{ fontSize: '12px', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontWeight: 'bold' }}>Apodo / Username</label>
+                      <input
+                        type="text"
+                        placeholder="Ej: Gojo Satoru"
+                        value={authUsername}
+                        onChange={(e) => setAuthUsername(e.target.value)}
+                        className="form-input"
+                        style={{ padding: '10px', fontSize: '13px' }}
+                      />
+                    </div>
+                  )}
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <label style={{ fontSize: '12px', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontWeight: 'bold' }}>Email</label>
+                    <input
+                      type="email"
+                      placeholder="chaman@jjk.com"
+                      value={authEmail}
+                      onChange={(e) => setAuthEmail(e.target.value)}
+                      className="form-input"
+                      style={{ padding: '10px', fontSize: '13px' }}
+                    />
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <label style={{ fontSize: '12px', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontWeight: 'bold' }}>Contraseña</label>
+                    <input
+                      type="password"
+                      placeholder="••••••••"
+                      value={authPassword}
+                      onChange={(e) => setAuthPassword(e.target.value)}
+                      className="form-input"
+                      style={{ padding: '10px', fontSize: '13px' }}
+                    />
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleAuthAction}
+                    disabled={authLoading}
+                    className="btn-primary"
+                    style={{ padding: '12px', fontSize: '12px', marginTop: '6px' }}
+                  >
+                    {authLoading ? 'Procesando...' : authMode === 'login' ? 'Entrar ⚡' : 'Registrarse ⚔️'}
+                  </button>
+                </div>
+              )}
+            </section>
+
+            {/* Save Button */}
+            <div style={{ 
+              position: 'fixed',
+              bottom: '76px', 
+              left: '16px',
+              right: '16px',
+              zIndex: 90
+            }}>
+              <button
+                onClick={handleSaveProfile}
+                disabled={!editUsername.trim()}
+                className="btn-primary"
+                style={{ 
+                  width: '100%',
+                  padding: '14px', 
+                  borderRadius: '30px', 
+                  fontWeight: 700, 
+                  fontSize: '14px',
+                  letterSpacing: '1px',
+                  textTransform: 'uppercase',
+                  boxShadow: '0 0 20px rgba(184, 211, 0, 0.4)',
+                  border: 'none',
+                  backgroundColor: 'var(--accent-primary)',
+                  color: '#000'
+                }}
+              >
+                Guardar Cambios
+              </button>
+            </div>
 
           </div>
         )}
@@ -2976,16 +3482,6 @@ function App() {
         </button>
 
         <button
-          onClick={() => setActiveTab('ejercicios')}
-          className={`tab-button ${activeTab === 'ejercicios' ? 'active' : ''}`}
-        >
-          <div className="tab-icon-wrapper">
-            <BookOpen size={18} />
-          </div>
-          <span>Ejercicios</span>
-        </button>
-
-        <button
           onClick={() => setActiveTab('progreso')}
           className={`tab-button ${activeTab === 'progreso' ? 'active' : ''}`}
         >
@@ -2994,366 +3490,351 @@ function App() {
           </div>
           <span>Progreso</span>
         </button>
+
+        <button
+          onClick={() => setActiveTab('perfil')}
+          className={`tab-button ${activeTab === 'perfil' ? 'active' : ''}`}
+        >
+          <div className="tab-icon-wrapper">
+            <User size={18} />
+          </div>
+          <span>Perfil</span>
+        </button>
       </nav>
 
-      {/* PROFILE EDITOR MODAL */}
-      {showProfileEditor && (
-        <div className="overlay-screen animate-slide">
+      {/* GLOSARIO DE TÉCNICAS (MODAL DE DOMINIO EXPANSIÓN) */}
+      {showGlossary && (
+        <div 
+          className="overlay-screen animate-slide"
+          style={{ 
+            backgroundColor: 'rgba(7, 7, 10, 0.96)', 
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            zIndex: 150,
+            overflowY: 'auto',
+            paddingBottom: '100px'
+          }}
+        >
           <header className="overlay-header">
-            <h3 className="overlay-header-title">Configurar Hechicero</h3>
+            <h3 className="overlay-header-title">Glosario de Técnicas</h3>
             <button 
-              onClick={() => setShowProfileEditor(false)}
+              onClick={() => setShowGlossary(false)}
               className="btn-secondary"
-              style={{ padding: '6px 12px', fontSize: '11px' }}
+              style={{ padding: '6px 12px', fontSize: '12px' }}
             >
               Cerrar
             </button>
           </header>
 
-          <div className="overlay-body" style={{ display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto' }}>
-            <div className="form-group">
-              <label className="form-label">Nombre del Chamán</label>
-              <input 
-                type="text"
-                placeholder="Ej: Yuji Itadori"
-                value={editUsername}
-                onChange={(e) => setEditUsername(e.target.value)}
-                className="form-input"
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Clan Hechicero</label>
-              <input 
-                type="text"
-                placeholder="Ej: Gojo, Zen'in, Itadori..."
-                value={editClan}
-                onChange={(e) => setEditClan(e.target.value)}
-                className="form-input"
-              />
-              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '6px' }}>
-                {['Gojo', 'Zen\'in', 'Itadori', 'Fushiguro', 'Inumaki', 'Kamo'].map(c => (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => setEditClan(c)}
-                    style={{
-                      padding: '4px 8px',
-                      fontSize: '10px',
-                      backgroundColor: editClan === c ? 'rgba(168, 85, 247, 0.2)' : 'rgba(255,255,255,0.03)',
-                      border: `1px solid ${editClan === c ? 'var(--accent-primary)' : 'var(--border-color)'}`,
-                      borderRadius: '16px',
-                      color: editClan === c ? 'var(--accent-primary)' : 'var(--text-secondary)',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Clan {c}
-                  </button>
-                ))}
+          <div className="overlay-body" style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '16px' }}>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <div className="search-wrapper" style={{ flex: 1, margin: 0 }}>
+                <input 
+                  type="text"
+                  placeholder="Buscar ejercicio..."
+                  value={exerciseSearch}
+                  onChange={(e) => setExerciseSearch(e.target.value)}
+                  className="search-input"
+                  style={{ fontSize: '13px' }}
+                />
+                <Search size={15} className="search-icon" />
               </div>
+              <button
+                onClick={() => setShowExerciseCreator(true)}
+                className="btn-primary"
+                style={{ padding: '10px 14px', fontSize: '12px', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '4px' }}
+              >
+                + Ejercicio
+              </button>
             </div>
 
-            <div className="form-group">
-              <label className="form-label">Técnica Ritual / Habilidad Especial</label>
-              <input 
-                type="text"
-                placeholder="Ej: Destello Negro, Diez Sombras..."
-                value={editCursedTechnique}
-                onChange={(e) => setEditCursedTechnique(e.target.value)}
-                className="form-input"
-              />
-              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '6px' }}>
-                {['Destello Negro ⚡', 'Ilimitado ♾️', 'Diez Sombras 🐺', 'Discurso Maldito 🗣️', 'Restricción Celestial 🏋️', 'Manipulación de Sangre 🩸'].map(t => (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => setEditCursedTechnique(t)}
-                    style={{
-                      padding: '4px 8px',
-                      fontSize: '10px',
-                      backgroundColor: editCursedTechnique === t ? 'rgba(168, 85, 247, 0.2)' : 'rgba(255,255,255,0.03)',
-                      border: `1px solid ${editCursedTechnique === t ? 'var(--accent-primary)' : 'var(--border-color)'}`,
-                      borderRadius: '16px',
-                      color: editCursedTechnique === t ? 'var(--accent-primary)' : 'var(--text-secondary)',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    {t}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Camera / Upload Area */}
-            <div className="form-group">
-              <label className="form-label">Foto de Perfil (Cámara o Galería)</label>
-              
-              {isCameraActive ? (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', backgroundColor: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
-                  <video 
-                    ref={videoRef} 
-                    autoPlay 
-                    playsInline 
-                    style={{ width: '100%', maxWidth: '240px', height: '240px', objectFit: 'cover', borderRadius: '12px', border: '2px solid var(--accent-primary)', transform: 'scaleX(-1)' }}
-                  />
-                  <div style={{ display: 'flex', gap: '8px', width: '100%', maxWidth: '240px' }}>
-                    <button
-                      type="button"
-                      onClick={capturePhoto}
-                      className="btn-primary"
-                      style={{ flex: 1, padding: '8px 12px', fontSize: '12px' }}
-                    >
-                      Capturar 📸
-                    </button>
-                    <button
-                      type="button"
-                      onClick={stopCamera}
-                      className="btn-secondary"
-                      style={{ flex: 1, padding: '8px 12px', fontSize: '12px', borderColor: '#ef4444', color: '#ef4444' }}
-                    >
-                      Cancelar
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <button
-                    type="button"
-                    onClick={startCamera}
+            {/* Exercise Creator Modal */}
+            {showExerciseCreator && (
+              <div className="overlay-screen animate-slide" style={{ zIndex: 180 }}>
+                <header className="overlay-header">
+                  <h3 className="overlay-header-title">Crear Ejercicio Personalizado</h3>
+                  <button 
+                    onClick={() => setShowExerciseCreator(false)}
                     className="btn-secondary"
-                    style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px', fontSize: '12px' }}
+                    style={{ padding: '6px 12px', fontSize: '12px' }}
                   >
-                    <Camera size={14} />
-                    <span>Tomar Foto</span>
+                    Cerrar
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="btn-secondary"
-                    style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px', fontSize: '12px' }}
-                  >
-                    <span>Subir Galería</span>
-                  </button>
-                  <input 
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleFileChange}
-                    accept="image/*"
-                    style={{ display: 'none' }}
-                  />
-                  <input 
-                    type="file"
-                    ref={cameraFallbackInputRef}
-                    onChange={handleFileChange}
-                    accept="image/*"
-                    capture="user"
-                    style={{ display: 'none' }}
-                  />
-                </div>
-              )}
-              
-              {editAvatarUrl && editAvatarUrl.startsWith('data:') && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px' }}>
-                  <img 
-                    src={editAvatarUrl} 
-                    alt="Vista previa foto" 
-                    style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--accent-primary)' }}
-                  />
-                  <span style={{ fontSize: '11px', color: 'var(--accent-tertiary)' }}>¡Foto cargada con éxito! ✅</span>
-                </div>
-              )}
-            </div>
+                </header>
 
-            {/* Supabase Cloud Connection & Authentication */}
-            <div style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.02)',
-              border: '1.5px solid var(--border-color)',
-              borderRadius: '12px',
-              padding: '14px',
-              marginTop: '10px',
-              marginBottom: '10px'
-            }}>
-              <h4 style={{ fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--accent-primary)', margin: '0 0 10px 0', letterSpacing: '0.5px' }}>
-                ☁️ Sincronización en la Nube
-              </h4>
-
-              {!isSupabaseConfigured ? (
-                <div style={{ fontSize: '11px', color: 'var(--text-tertiary)', fontStyle: 'italic' }}>
-                  El modo nube no está configurado. Agrega las variables `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` en Vercel/.env para habilitar.
-                </div>
-              ) : session ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                      Conectado como:
-                    </span>
-                    <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '180px', whiteSpace: 'nowrap' }}>
-                      {session.user.email}
-                    </span>
-                  </div>
-                  
-                  <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        await syncLocalQueueToCloud();
-                        alert('¡Cola de sincronización enviada a la nube!');
-                      }}
-                      className="btn-primary"
-                      style={{ flex: 1, padding: '6px 12px', fontSize: '11px' }}
-                    >
-                      Sincronizar ahora 🔄
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleLogout}
-                      className="btn-secondary"
-                      style={{ flex: 1, padding: '6px 12px', fontSize: '11px', borderColor: '#ef4444', color: '#ef4444' }}
-                    >
-                      Cerrar Sesión
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <div style={{ display: 'flex', gap: '8px', marginBottom: '4px' }}>
-                    <button
-                      type="button"
-                      onClick={() => setAuthMode('login')}
-                      className={`btn-secondary ${authMode === 'login' ? 'completed' : ''}`}
-                      style={{ flex: 1, padding: '6px', fontSize: '11px', border: authMode === 'login' ? '1.5px solid var(--accent-primary)' : '1px solid var(--border-color)', backgroundColor: authMode === 'login' ? 'rgba(168, 85, 247, 0.05)' : 'transparent' }}
-                    >
-                      Iniciar Sesión
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setAuthMode('signup')}
-                      className={`btn-secondary ${authMode === 'signup' ? 'completed' : ''}`}
-                      style={{ flex: 1, padding: '6px', fontSize: '11px', border: authMode === 'signup' ? '1.5px solid var(--accent-primary)' : '1px solid var(--border-color)', backgroundColor: authMode === 'signup' ? 'rgba(168, 85, 247, 0.05)' : 'transparent' }}
-                    >
-                      Crear Cuenta
-                    </button>
+                <div className="overlay-body" style={{ padding: '16px' }}>
+                  {/* Name */}
+                  <div className="form-group">
+                    <label className="form-label">Nombre del Ejercicio</label>
+                    <input 
+                      type="text"
+                      placeholder="Ej: Curl de bíceps con barra"
+                      value={newExerciseName}
+                      onChange={(e) => setNewExerciseName(e.target.value)}
+                      className="form-input"
+                      style={{ fontSize: '13px' }}
+                    />
                   </div>
 
-                  {authMode === 'signup' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <label style={{ fontSize: '9px', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontWeight: 'bold' }}>Apodo / Username</label>
-                      <input
-                        type="text"
-                        placeholder="Ej: Gojo Satoru"
-                        value={authUsername}
-                        onChange={(e) => setAuthUsername(e.target.value)}
-                        className="form-input"
-                        style={{ padding: '8px', fontSize: '12px' }}
-                      />
+                  {/* Category */}
+                  <div className="form-group">
+                    <label className="form-label">Categoría</label>
+                    <select
+                      value={newExerciseCategory}
+                      onChange={(e) => setNewExerciseCategory(e.target.value)}
+                      className="form-input"
+                      style={{ background: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: '13px' }}
+                    >
+                      <option value="Pecho">Pecho</option>
+                      <option value="Espalda">Espalda</option>
+                      <option value="Piernas">Piernas</option>
+                      <option value="Hombros">Hombros</option>
+                      <option value="Brazos">Brazos</option>
+                      <option value="Abdomen">Abdomen</option>
+                      <option value="Cardio">Cardio</option>
+                    </select>
+                  </div>
+
+                  {/* Media Mode selector */}
+                  <div className="form-group">
+                    <label className="form-label">Multimedia (Video o Imagen)</label>
+                    <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
+                      <button
+                        type="button"
+                        onClick={() => setNewExerciseMediaMode('upload')}
+                        className={`btn-secondary ${newExerciseMediaMode === 'upload' ? 'completed' : ''}`}
+                        style={{ flex: 1, padding: '10px', fontSize: '12px', border: newExerciseMediaMode === 'upload' ? '1.5px solid var(--accent-primary)' : '1px solid var(--border-color)' }}
+                      >
+                        Subir Archivo (Offline)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setNewExerciseMediaMode('url')}
+                        className={`btn-secondary ${newExerciseMediaMode === 'url' ? 'completed' : ''}`}
+                        style={{ flex: 1, padding: '10px', fontSize: '12px', border: newExerciseMediaMode === 'url' ? '1.5px solid var(--accent-primary)' : '1px solid var(--border-color)' }}
+                      >
+                        Pegar Enlace URL
+                      </button>
                     </div>
-                  )}
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '9px', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontWeight: 'bold' }}>Email</label>
-                    <input
-                      type="email"
-                      placeholder="chaman@jjk.com"
-                      value={authEmail}
-                      onChange={(e) => setAuthEmail(e.target.value)}
-                      className="form-input"
-                      style={{ padding: '8px', fontSize: '12px' }}
-                    />
+                    {newExerciseMediaMode === 'upload' ? (
+                      <div style={{
+                        border: '1.5px dashed var(--border-color)',
+                        borderRadius: '12px',
+                        padding: '16px',
+                        textAlign: 'center',
+                        backgroundColor: 'rgba(255, 255, 255, 0.01)',
+                        cursor: 'pointer'
+                      }}
+                        onClick={() => document.getElementById('exercise-media-input-glossary')?.click()}
+                      >
+                        <input 
+                          id="exercise-media-input-glossary"
+                          type="file"
+                          accept="image/*,video/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) setNewExerciseMediaFile(file);
+                          }}
+                          style={{ display: 'none' }}
+                        />
+                        <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                          {newExerciseMediaFile ? `📂 ${newExerciseMediaFile.name}` : 'Selecciona una foto, video o GIF'}
+                        </span>
+                      </div>
+                    ) : (
+                      <input 
+                        type="text"
+                        placeholder="Ej: https://v1.pinimg.com/...mp4"
+                        value={newExerciseMediaUrl}
+                        onChange={(e) => setNewExerciseMediaUrl(e.target.value)}
+                        className="form-input"
+                        style={{ fontSize: '13px' }}
+                      />
+                    )}
                   </div>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '9px', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontWeight: 'bold' }}>Contraseña</label>
-                    <input
-                      type="password"
-                      placeholder="••••••••"
-                      value={authPassword}
-                      onChange={(e) => setAuthPassword(e.target.value)}
+                  {/* Technique Tips */}
+                  <div className="form-group">
+                    <label className="form-label">Tips de técnica (uno por línea)</label>
+                    <textarea
+                      placeholder="Ej: Mantén los codos pegados al cuerpo&#10;Contrae el abdomen durante el levantamiento"
+                      value={newExerciseTipsText}
+                      onChange={(e) => setNewExerciseTipsText(e.target.value)}
                       className="form-input"
-                      style={{ padding: '8px', fontSize: '12px' }}
+                      rows={4}
+                      style={{ resize: 'none', fontSize: '13px' }}
                     />
                   </div>
+                </div>
 
+                <footer className="overlay-footer">
                   <button
-                    type="button"
-                    onClick={handleAuthAction}
-                    disabled={authLoading}
-                    className="btn-primary"
-                    style={{ padding: '10px', fontSize: '12px', marginTop: '6px' }}
+                    onClick={() => setShowExerciseCreator(false)}
+                    className="btn-secondary"
+                    style={{ flex: 1, padding: '12px', fontSize: '13px' }}
                   >
-                    {authLoading ? 'Procesando...' : authMode === 'login' ? 'Entrar ⚡' : 'Registrarse ⚔️'}
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleCreateExercise}
+                    disabled={!newExerciseName.trim() || (newExerciseMediaMode === 'upload' && !newExerciseMediaFile) || (newExerciseMediaMode === 'url' && !newExerciseMediaUrl.trim())}
+                    className="btn-primary"
+                    style={{ flex: 1, padding: '12px', fontSize: '13px' }}
+                  >
+                    Guardar Ejercicio
+                  </button>
+                </footer>
+              </div>
+            )}
+
+            <div className="exercise-list">
+              {filteredExercises.map((ex) => (
+                <div 
+                  key={ex.id}
+                  className="exercise-item"
+                >
+                  <button
+                    onClick={() => setSelectedExerciseForGlosario(ex)}
+                    className="exercise-item-header"
+                  >
+                    <div>
+                      <h4 className="exercise-item-name" style={{ fontSize: '13px', fontWeight: 'bold' }}>{ex.name}</h4>
+                      <span className="exercise-item-category" style={{ fontSize: '12px' }}>{ex.category}</span>
+                    </div>
+                    <div style={{ color: 'var(--text-tertiary)' }}>
+                      <BookOpen size={16} />
+                    </div>
                   </button>
                 </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* GLOSARIO DE TÉCNICAS (MODAL DE DOMINIO EXPANSIÓN) */}
+      {selectedExerciseForGlosario && (
+        <div 
+          className="overlay-screen animate-slide"
+          style={{ 
+            backgroundColor: 'rgba(7, 7, 10, 0.96)', 
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            zIndex: 200,
+            overflowY: 'auto'
+          }}
+        >
+          <header className="overlay-header" style={{ borderBottom: '1px solid var(--border-color)', backgroundColor: 'transparent', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <span className="overlay-header-title-sub" style={{ color: 'var(--accent-primary)', fontSize: '11px', display: 'block' }}>Glosario de Técnicas</span>
+              <h3 className="overlay-header-title" style={{ fontSize: '1.25rem', fontWeight: 800, marginTop: '2px', color: 'var(--text-primary)' }}>{selectedExerciseForGlosario.name}</h3>
+            </div>
+            <span className="badge" style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--accent-primary)', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '4px 8px', fontSize: '11px' }}>
+              {selectedExerciseForGlosario.category}
+            </span>
+          </header>
+
+          <div className="overlay-body" style={{ display: 'flex', flexDirection: 'column', gap: '20px', padding: '16px', paddingBottom: '100px' }}>
+            {/* GIF Demostrativo */}
+            <div 
+              className="exercise-image-container" 
+              style={{ 
+                width: '100%', 
+                borderRadius: '16px', 
+                overflow: 'hidden', 
+                backgroundColor: 'var(--bg-secondary)',
+                border: '1.5px solid var(--border-color)',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                minHeight: '200px'
+              }}
+            >
+              {renderExerciseMedia(selectedExerciseForGlosario)}
+            </div>
+
+            {/* Structured Details */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              
+              {/* Posición Inicial */}
+              {selectedExerciseForGlosario.posicion_inicial && selectedExerciseForGlosario.posicion_inicial.length > 0 && (
+                <div style={{ padding: '14px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)', backgroundColor: 'rgba(255, 255, 255, 0.02)' }}>
+                  <h4 style={{ color: 'var(--accent-primary)', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px', margin: 0 }}>
+                    <span>🥋</span> Posición Inicial
+                  </h4>
+                  <ul style={{ paddingLeft: '18px', margin: 0, marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                    {selectedExerciseForGlosario.posicion_inicial.map((step, i) => (
+                      <li key={i}>{step}</li>
+                    ))}
+                  </ul>
+                </div>
               )}
-            </div>
 
-            <div className="form-group">
-              <label className="form-label">Avatar URL (Personalizado o selecciona abajo)</label>
-              <input 
-                type="text"
-                placeholder="Pega aquí la URL de tu imagen de avatar..."
-                value={editAvatarUrl}
-                onChange={(e) => setEditAvatarUrl(e.target.value)}
-                className="form-input"
-                style={{ fontSize: '11px' }}
-              />
-            </div>
+              {/* Ejecución */}
+              {selectedExerciseForGlosario.ejecucion && selectedExerciseForGlosario.ejecucion.length > 0 && (
+                <div style={{ padding: '14px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)', backgroundColor: 'rgba(255, 255, 255, 0.02)' }}>
+                  <h4 style={{ color: 'var(--accent-primary)', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px', margin: 0 }}>
+                    <span>⚔️</span> Ejecución
+                  </h4>
+                  <ul style={{ paddingLeft: '18px', margin: 0, marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                    {selectedExerciseForGlosario.ejecucion.map((step, i) => (
+                      <li key={i}>{step}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
-            <div className="form-group">
-              <label className="form-label">Presets de Avatares Jujutsu</label>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
-                {JJK_CHARACTER_AVATARS.map((char) => {
-                  const isSelected = editAvatarUrl === char.url;
-                  return (
-                    <button
-                      key={char.name}
-                      type="button"
-                      onClick={() => setEditAvatarUrl(char.url)}
-                      style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        gap: '6px',
-                        background: 'none',
-                        border: isSelected ? '2px solid var(--accent-primary)' : '1px solid var(--border-color)',
-                        borderRadius: '12px',
-                        padding: '8px',
-                        cursor: 'pointer',
-                        backgroundColor: isSelected ? 'rgba(168, 85, 247, 0.05)' : 'transparent',
-                        transition: 'var(--transition-smooth)'
-                      }}
-                    >
-                      <img 
-                        src={char.url} 
-                        alt={char.name} 
-                        style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover', border: '1px solid var(--border-color)' }}
-                      />
-                      <span style={{ fontSize: '10px', color: isSelected ? 'var(--accent-primary)' : 'var(--text-secondary)', fontWeight: isSelected ? '700' : '400', textAlign: 'center' }}>
-                        {char.name}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
+              {/* Consejos */}
+              {selectedExerciseForGlosario.consejos && selectedExerciseForGlosario.consejos.length > 0 && (
+                <div style={{ padding: '14px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)', backgroundColor: 'rgba(255, 255, 255, 0.02)' }}>
+                  <h4 style={{ color: 'var(--accent-primary)', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px', margin: 0 }}>
+                    <span>💡</span> Tips e Indicaciones
+                  </h4>
+                  <ul style={{ paddingLeft: '18px', margin: 0, marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                    {selectedExerciseForGlosario.consejos.map((tip, i) => (
+                      <li key={i}>{tip}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Variantes */}
+              {selectedExerciseForGlosario.variantes && selectedExerciseForGlosario.variantes.length > 0 && (
+                <div style={{ padding: '14px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)', backgroundColor: 'rgba(255, 255, 255, 0.02)' }}>
+                  <h4 style={{ color: 'var(--accent-primary)', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px', margin: 0 }}>
+                    <span>🌀</span> Variantes
+                  </h4>
+                  <ul style={{ paddingLeft: '18px', margin: 0, marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                    {selectedExerciseForGlosario.variantes.map((variant, i) => (
+                      <li key={i}>{variant}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
             </div>
           </div>
 
-          <footer className="overlay-footer">
-            <button
-              onClick={() => setShowProfileEditor(false)}
-              className="btn-secondary"
-              style={{ flex: 1 }}
-            >
-              Volver
-            </button>
-            <button
-              onClick={handleSaveProfile}
-              disabled={!editUsername.trim()}
+          {/* Botón flotante para cerrar */}
+          <div style={{ position: 'absolute', bottom: '20px', left: '0', right: '0', display: 'flex', justifyContent: 'center' }}>
+            <button 
+              onClick={() => setSelectedExerciseForGlosario(null)}
               className="btn-primary"
-              style={{ flex: 1 }}
+              style={{ 
+                padding: '10px 24px', 
+                borderRadius: '30px', 
+                fontWeight: 700, 
+                fontSize: '12px',
+                letterSpacing: '1px',
+                textTransform: 'uppercase',
+                boxShadow: '0 4px 15px rgba(229, 9, 20, 0.4)'
+              }}
             >
-              Guardar Cambios
+              🔴 Cerrar Dominio
             </button>
-          </footer>
+          </div>
         </div>
       )}
 
