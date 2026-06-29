@@ -162,6 +162,35 @@ export async function pullCloudDataToLocal(): Promise<void> {
   }
 }
 
+// Pull a specific table from cloud to local IndexedDB (used for per-step login sync overlay)
+export async function pullTableFromCloud(
+  tableName: 'profiles' | 'exercises' | 'routines' | 'routine_exercises' | 'workouts' | 'workout_sets'
+): Promise<void> {
+  if (!isSupabaseConfigured || !supabase) return;
+
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return;
+
+  let query = supabase.from(tableName).select('*');
+
+  if (tableName === 'profiles') {
+    query = query.eq('id', session.user.id);
+  } else if (tableName === 'exercises') {
+    query = query.or(`user_id.eq.${session.user.id},user_id.is.null`);
+  } else if (tableName === 'routines' || tableName === 'workouts') {
+    query = query.eq('user_id', session.user.id);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+
+  if (data && data.length > 0) {
+    for (const row of data) {
+      await addRecord(tableName, row);
+    }
+  }
+}
+
 // Migrate guest data to authenticated user
 export async function migrateGuestDataToUser(newUserId: string): Promise<void> {
   // 1. Profile Migration
