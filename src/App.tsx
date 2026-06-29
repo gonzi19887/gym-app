@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
 import { 
-  Dumbbell, 
   Calendar, 
   TrendingUp, 
   Plus, 
@@ -89,14 +88,7 @@ const WEEKDAYS = [
   { label: 'D', value: 0, name: 'Domingo' }
 ];
 
-const JJK_CHARACTER_AVATARS = [
-  { name: 'Yuji Itadori', url: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=150&auto=format&fit=crop' },
-  { name: 'Satoru Gojo', url: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=150&auto=format&fit=crop' },
-  { name: 'Megumi Fushiguro', url: 'https://images.unsplash.com/photo-1560169897-fc0cdbdfa4d5?q=80&w=150&auto=format&fit=crop' },
-  { name: 'Nobara Kugisaki', url: 'https://images.unsplash.com/photo-1618336753974-aae8e04506aa?q=80&w=150&auto=format&fit=crop' },
-  { name: 'Kento Nanami', url: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=150&auto=format&fit=crop' },
-  { name: 'Maki Zen\'in', url: 'https://images.unsplash.com/photo-1504198453319-5ce911bafcde?q=80&w=150&auto=format&fit=crop' }
-];
+
 
 const REST_REMINDERS = [
   "💧 Recuerda tomar un sorbo de agua para rehidratar tus reservas de energía maldita.",
@@ -512,7 +504,7 @@ function App() {
     if (!currentProfile) {
       if (session && isSupabaseConfigured && supabase) {
         try {
-          const { data, error } = await supabase
+          const { data } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', userId)
