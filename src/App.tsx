@@ -44,7 +44,7 @@ import type {
 } from './db/localDb';
 import { seedDatabase } from './db/seed';
 import { supabase, isSupabaseConfigured } from './db/supabaseClient';
-import { syncLocalQueueToCloud, pullCloudDataToLocal, migrateGuestDataToUser, syncTableToCloud } from './db/sync';
+import { syncLocalQueueToCloud, pullCloudDataToLocal, migrateGuestDataToUser, syncTableToCloud, pullTableFromCloud } from './db/sync';
 
 // Web Audio API beep for rest timer completion
 const playBeep = () => {
@@ -184,6 +184,7 @@ function App() {
   const [isSealingPact, setIsSealingPact] = useState(false);
   const [pactStatus, setPactStatus] = useState<string | null>(null);
   const [showSyncOverlay, setShowSyncOverlay] = useState(false);
+  const [syncOverlayMode, setSyncOverlayMode] = useState<'upload' | 'download'>('upload');
   const [syncSteps, setSyncSteps] = useState<{[key: string]: 'pending' | 'syncing' | 'completed' | 'error'}>({
     profile: 'pending',
     exercises: 'pending',
@@ -346,12 +347,9 @@ function App() {
       if (session) {
         setGuestMode(false);
         localStorage.removeItem('guestMode');
-        migrateGuestDataToUser(session.user.id).then(() => {
-          syncLocalQueueToCloud();
-          pullCloudDataToLocal().then(() => {
-            loadData();
-          });
-        });
+        runLoginSync(session.user.id);
+      } else {
+        loadData();
       }
     });
 
@@ -360,12 +358,7 @@ function App() {
       if (session) {
         setGuestMode(false);
         localStorage.removeItem('guestMode');
-        migrateGuestDataToUser(session.user.id).then(() => {
-          syncLocalQueueToCloud();
-          pullCloudDataToLocal().then(() => {
-            loadData();
-          });
-        });
+        runLoginSync(session.user.id);
       } else {
         loadData();
       }
@@ -756,6 +749,85 @@ function App() {
       img.onerror = () => resolve(dataUrl);
       img.src = dataUrl;
     });
+  };
+  // Helper for the sequential step-by-step sync overlay
+  const resetSyncSteps = () => ({
+    profile: 'pending' as const,
+    exercises: 'pending' as const,
+    routines: 'pending' as const,
+    workouts: 'pending' as const,
+    calendar: 'pending' as const,
+  });
+
+  const runLoginSync = async (userId: string) => {
+    // Migrate any local guest data first (silent)
+    await migrateGuestDataToUser(userId);
+
+    // Show the download overlay
+    setSyncOverlayMode('download');
+    setSyncSteps(resetSyncSteps());
+    setShowSyncOverlay(true);
+
+    const sleep = (ms: number) => new Promise(res => setTimeout(res, ms));
+
+    // Step 1: Profile
+    setSyncSteps(prev => ({ ...prev, profile: 'syncing' }));
+    try {
+      await pullTableFromCloud('profiles');
+      setSyncSteps(prev => ({ ...prev, profile: 'completed' }));
+    } catch (err) {
+      console.error(err);
+      setSyncSteps(prev => ({ ...prev, profile: 'error' }));
+    }
+    await sleep(400);
+
+    // Step 2: Exercises
+    setSyncSteps(prev => ({ ...prev, exercises: 'syncing' }));
+    try {
+      await pullTableFromCloud('exercises');
+      setSyncSteps(prev => ({ ...prev, exercises: 'completed' }));
+    } catch (err) {
+      console.error(err);
+      setSyncSteps(prev => ({ ...prev, exercises: 'error' }));
+    }
+    await sleep(400);
+
+    // Step 3: Routines
+    setSyncSteps(prev => ({ ...prev, routines: 'syncing' }));
+    try {
+      await pullTableFromCloud('routines');
+      await pullTableFromCloud('routine_exercises');
+      setSyncSteps(prev => ({ ...prev, routines: 'completed' }));
+    } catch (err) {
+      console.error(err);
+      setSyncSteps(prev => ({ ...prev, routines: 'error' }));
+    }
+    await sleep(400);
+
+    // Step 4: Workouts
+    setSyncSteps(prev => ({ ...prev, workouts: 'syncing' }));
+    try {
+      await pullTableFromCloud('workouts');
+      await pullTableFromCloud('workout_sets');
+      setSyncSteps(prev => ({ ...prev, workouts: 'completed' }));
+    } catch (err) {
+      console.error(err);
+      setSyncSteps(prev => ({ ...prev, workouts: 'error' }));
+    }
+    await sleep(400);
+
+    // Step 5: Calendar / streak (also upload any pending queue)
+    setSyncSteps(prev => ({ ...prev, calendar: 'syncing' }));
+    try {
+      await syncLocalQueueToCloud();
+      setSyncSteps(prev => ({ ...prev, calendar: 'completed' }));
+    } catch (err) {
+      console.error(err);
+      setSyncSteps(prev => ({ ...prev, calendar: 'error' }));
+    }
+
+    // Load local data into state
+    await loadData();
   };
 
   const handleSaveProfile = async () => {
@@ -4046,9 +4118,6 @@ function App() {
               overflow: 'hidden'
             }}
           >
-            {/* Decorative Glow */}
-            <div className="absolute -top-20 -right-20 w-48 h-48 bg-primary/10 rounded-full blur-[60px] pointer-events-none" aria-hidden="true"></div>
-
             <div style={{ textAlign: 'center' }}>
               <div 
                 style={{ 
@@ -4065,101 +4134,137 @@ function App() {
               >
                 <Zap className="text-primary animate-pulse" size={28} />
               </div>
-              <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Estableciendo Pacto Celestial</h3>
+              <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                {syncOverlayMode === 'download' ? 'Despertando al Chamán' : 'Estableciendo Pacto Celestial'}
+              </h3>
               <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px', margin: 0 }}>
-                Sincronizando tu alma maldita con la base de datos celestial...
+                {syncOverlayMode === 'download'
+                  ? 'Restaurando tu alma maldita desde la nube...'
+                  : 'Sincronizando tu alma maldita con la base de datos celestial...'}
               </p>
             </div>
 
-            {/* Checklist items */}
+            {/* Checklist */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', margin: '8px 0' }}>
-              {/* 1. Chamán Profile */}
+
+              {/* 1. Profile */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: '10px', backgroundColor: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.04)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <User size={16} className={syncSteps.profile === 'syncing' ? 'text-primary' : 'text-text-secondary'} />
+                  <User size={16} style={{ color: syncSteps.profile === 'syncing' ? 'var(--accent-primary)' : 'var(--text-secondary)' }} />
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-primary)' }}>Identidad del Chamán</span>
-                    <span style={{ fontSize: '10px', color: 'var(--text-tertiary)' }}>Nombre, clan, nivel y foto</span>
+                    <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-primary)' }}>
+                      {syncOverlayMode === 'download' ? 'Reconociendo al Chamán' : 'Identidad del Chamán'}
+                    </span>
+                    <span style={{ fontSize: '10px', color: 'var(--text-tertiary)' }}>
+                      {syncOverlayMode === 'download' ? 'Descargando nombre, clan, nivel y foto' : 'Subiendo nombre, clan, nivel y foto'}
+                    </span>
                   </div>
                 </div>
-                {syncSteps.profile === 'pending' && <div style={{ width: '12px', height: '12px', borderRadius: '50%', border: '2.5px solid var(--border-color)' }}></div>}
-                {syncSteps.profile === 'syncing' && <div className="w-4 h-4 rounded-full border-2 border-primary border-t-transparent animate-spin"></div>}
-                {syncSteps.profile === 'completed' && <span className="text-primary" style={{ fontSize: '16px', fontWeight: 'bold' }}>✓</span>}
-                {syncSteps.profile === 'error' && <span className="text-error" style={{ fontSize: '16px', fontWeight: 'bold' }}>✗</span>}
+                {syncSteps.profile === 'pending' && <div style={{ width: '12px', height: '12px', borderRadius: '50%', border: '2.5px solid var(--border-color)', flexShrink: 0 }}></div>}
+                {syncSteps.profile === 'syncing' && <div style={{ width: '16px', height: '16px', borderRadius: '50%', border: '2px solid var(--accent-primary)', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite', flexShrink: 0 }}></div>}
+                {syncSteps.profile === 'completed' && <span style={{ fontSize: '16px', fontWeight: 'bold', color: 'var(--accent-primary)', flexShrink: 0 }}>✓</span>}
+                {syncSteps.profile === 'error' && <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#ef4444', flexShrink: 0 }}>✗</span>}
               </div>
 
               {/* 2. Exercises */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: '10px', backgroundColor: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.04)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <Zap size={16} className={syncSteps.exercises === 'syncing' ? 'text-primary' : 'text-text-secondary'} />
+                  <Zap size={16} style={{ color: syncSteps.exercises === 'syncing' ? 'var(--accent-primary)' : 'var(--text-secondary)' }} />
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-primary)' }}>Técnicas Guardadas</span>
-                    <span style={{ fontSize: '10px', color: 'var(--text-tertiary)' }}>Escaneando ejercicios personalizados</span>
+                    <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-primary)' }}>
+                      {syncOverlayMode === 'download' ? 'Recuperando Técnicas' : 'Técnicas Guardadas'}
+                    </span>
+                    <span style={{ fontSize: '10px', color: 'var(--text-tertiary)' }}>
+                      {syncOverlayMode === 'download' ? 'Cargando ejercicios personalizados' : 'Escaneando ejercicios personalizados'}
+                    </span>
                   </div>
                 </div>
-                {syncSteps.exercises === 'pending' && <div style={{ width: '12px', height: '12px', borderRadius: '50%', border: '2.5px solid var(--border-color)' }}></div>}
-                {syncSteps.exercises === 'syncing' && <div className="w-4 h-4 rounded-full border-2 border-primary border-t-transparent animate-spin"></div>}
-                {syncSteps.exercises === 'completed' && <span className="text-primary" style={{ fontSize: '16px', fontWeight: 'bold' }}>✓</span>}
-                {syncSteps.exercises === 'error' && <span className="text-error" style={{ fontSize: '16px', fontWeight: 'bold' }}>✗</span>}
+                {syncSteps.exercises === 'pending' && <div style={{ width: '12px', height: '12px', borderRadius: '50%', border: '2.5px solid var(--border-color)', flexShrink: 0 }}></div>}
+                {syncSteps.exercises === 'syncing' && <div style={{ width: '16px', height: '16px', borderRadius: '50%', border: '2px solid var(--accent-primary)', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite', flexShrink: 0 }}></div>}
+                {syncSteps.exercises === 'completed' && <span style={{ fontSize: '16px', fontWeight: 'bold', color: 'var(--accent-primary)', flexShrink: 0 }}>✓</span>}
+                {syncSteps.exercises === 'error' && <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#ef4444', flexShrink: 0 }}>✗</span>}
               </div>
 
               {/* 3. Routines */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: '10px', backgroundColor: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.04)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <BookOpen size={16} className={syncSteps.routines === 'syncing' ? 'text-primary' : 'text-text-secondary'} />
+                  <BookOpen size={16} style={{ color: syncSteps.routines === 'syncing' ? 'var(--accent-primary)' : 'var(--text-secondary)' }} />
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-primary)' }}>Dominios Forjados</span>
-                    <span style={{ fontSize: '10px', color: 'var(--text-tertiary)' }}>Sincronizando rutinas y combinaciones</span>
+                    <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-primary)' }}>
+                      {syncOverlayMode === 'download' ? 'Restaurando Dominios' : 'Dominios Forjados'}
+                    </span>
+                    <span style={{ fontSize: '10px', color: 'var(--text-tertiary)' }}>
+                      {syncOverlayMode === 'download' ? 'Descargando rutinas de entrenamiento' : 'Sincronizando rutinas y combinaciones'}
+                    </span>
                   </div>
                 </div>
-                {syncSteps.routines === 'pending' && <div style={{ width: '12px', height: '12px', borderRadius: '50%', border: '2.5px solid var(--border-color)' }}></div>}
-                {syncSteps.routines === 'syncing' && <div className="w-4 h-4 rounded-full border-2 border-primary border-t-transparent animate-spin"></div>}
-                {syncSteps.routines === 'completed' && <span className="text-primary" style={{ fontSize: '16px', fontWeight: 'bold' }}>✓</span>}
-                {syncSteps.routines === 'error' && <span className="text-error" style={{ fontSize: '16px', fontWeight: 'bold' }}>✗</span>}
+                {syncSteps.routines === 'pending' && <div style={{ width: '12px', height: '12px', borderRadius: '50%', border: '2.5px solid var(--border-color)', flexShrink: 0 }}></div>}
+                {syncSteps.routines === 'syncing' && <div style={{ width: '16px', height: '16px', borderRadius: '50%', border: '2px solid var(--accent-primary)', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite', flexShrink: 0 }}></div>}
+                {syncSteps.routines === 'completed' && <span style={{ fontSize: '16px', fontWeight: 'bold', color: 'var(--accent-primary)', flexShrink: 0 }}>✓</span>}
+                {syncSteps.routines === 'error' && <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#ef4444', flexShrink: 0 }}>✗</span>}
               </div>
 
               {/* 4. Workouts */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: '10px', backgroundColor: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.04)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <Award size={16} className={syncSteps.workouts === 'syncing' ? 'text-primary' : 'text-text-secondary'} />
+                  <Award size={16} style={{ color: syncSteps.workouts === 'syncing' ? 'var(--accent-primary)' : 'var(--text-secondary)' }} />
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-primary)' }}>Registros de Combate</span>
-                    <span style={{ fontSize: '10px', color: 'var(--text-tertiary)' }}>Subiendo entrenamientos y series</span>
+                    <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-primary)' }}>
+                      {syncOverlayMode === 'download' ? 'Recuperando Registros' : 'Registros de Combate'}
+                    </span>
+                    <span style={{ fontSize: '10px', color: 'var(--text-tertiary)' }}>
+                      {syncOverlayMode === 'download' ? 'Historial de combates y series' : 'Subiendo entrenamientos y series'}
+                    </span>
                   </div>
                 </div>
-                {syncSteps.workouts === 'pending' && <div style={{ width: '12px', height: '12px', borderRadius: '50%', border: '2.5px solid var(--border-color)' }}></div>}
-                {syncSteps.workouts === 'syncing' && <div className="w-4 h-4 rounded-full border-2 border-primary border-t-transparent animate-spin"></div>}
-                {syncSteps.workouts === 'completed' && <span className="text-primary" style={{ fontSize: '16px', fontWeight: 'bold' }}>✓</span>}
-                {syncSteps.workouts === 'error' && <span className="text-error" style={{ fontSize: '16px', fontWeight: 'bold' }}>✗</span>}
+                {syncSteps.workouts === 'pending' && <div style={{ width: '12px', height: '12px', borderRadius: '50%', border: '2.5px solid var(--border-color)', flexShrink: 0 }}></div>}
+                {syncSteps.workouts === 'syncing' && <div style={{ width: '16px', height: '16px', borderRadius: '50%', border: '2px solid var(--accent-primary)', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite', flexShrink: 0 }}></div>}
+                {syncSteps.workouts === 'completed' && <span style={{ fontSize: '16px', fontWeight: 'bold', color: 'var(--accent-primary)', flexShrink: 0 }}>✓</span>}
+                {syncSteps.workouts === 'error' && <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#ef4444', flexShrink: 0 }}>✗</span>}
               </div>
 
               {/* 5. Calendar */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: '10px', backgroundColor: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.04)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <Calendar size={16} className={syncSteps.calendar === 'syncing' ? 'text-primary' : 'text-text-secondary'} />
+                  <Calendar size={16} style={{ color: syncSteps.calendar === 'syncing' ? 'var(--accent-primary)' : 'var(--text-secondary)' }} />
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-primary)' }}>Calendario del Pacto</span>
-                    <span style={{ fontSize: '10px', color: 'var(--text-tertiary)' }}>Estableciendo racha y fechas</span>
+                    <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-primary)' }}>
+                      {syncOverlayMode === 'download' ? 'Restaurando el Pacto' : 'Calendario del Pacto'}
+                    </span>
+                    <span style={{ fontSize: '10px', color: 'var(--text-tertiary)' }}>
+                      {syncOverlayMode === 'download' ? 'Racha y calendario de batallas' : 'Estableciendo racha y fechas'}
+                    </span>
                   </div>
                 </div>
-                {syncSteps.calendar === 'pending' && <div style={{ width: '12px', height: '12px', borderRadius: '50%', border: '2.5px solid var(--border-color)' }}></div>}
-                {syncSteps.calendar === 'syncing' && <div className="w-4 h-4 rounded-full border-2 border-primary border-t-transparent animate-spin"></div>}
-                {syncSteps.calendar === 'completed' && <span className="text-primary" style={{ fontSize: '16px', fontWeight: 'bold' }}>✓</span>}
-                {syncSteps.calendar === 'error' && <span className="text-error" style={{ fontSize: '16px', fontWeight: 'bold' }}>✗</span>}
+                {syncSteps.calendar === 'pending' && <div style={{ width: '12px', height: '12px', borderRadius: '50%', border: '2.5px solid var(--border-color)', flexShrink: 0 }}></div>}
+                {syncSteps.calendar === 'syncing' && <div style={{ width: '16px', height: '16px', borderRadius: '50%', border: '2px solid var(--accent-primary)', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite', flexShrink: 0 }}></div>}
+                {syncSteps.calendar === 'completed' && <span style={{ fontSize: '16px', fontWeight: 'bold', color: 'var(--accent-primary)', flexShrink: 0 }}>✓</span>}
+                {syncSteps.calendar === 'error' && <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#ef4444', flexShrink: 0 }}>✗</span>}
               </div>
+
             </div>
 
-            {/* Pact Sealed Final Action Button */}
+            {/* Final action button — appears when done */}
             {syncSteps.calendar === 'completed' && (
               <button 
                 onClick={() => {
                   setShowSyncOverlay(false);
                   setActiveTab('hoy');
                 }}
-                className="btn-primary w-full shadow-md"
-                style={{ padding: '12px', fontSize: '13px', borderRadius: '12px', fontWeight: 'bold', marginTop: '10px' }}
+                style={{ 
+                  padding: '12px', 
+                  fontSize: '13px', 
+                  borderRadius: '12px', 
+                  fontWeight: 'bold', 
+                  marginTop: '10px',
+                  width: '100%',
+                  background: 'linear-gradient(135deg, var(--accent-primary), var(--accent-secondary, var(--accent-primary)))',
+                  color: '#000',
+                  border: 'none',
+                  cursor: 'pointer'
+                }}
               >
-                ⚡ Pacto Sellado ⚡
+                {syncOverlayMode === 'download' ? '⚡ Pacto Restaurado ⚡' : '⚡ Pacto Sellado ⚡'}
               </button>
             )}
           </div>
