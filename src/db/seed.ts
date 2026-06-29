@@ -6,13 +6,17 @@ import scrapedExercises from './scraped_exercises_es.json';
 export async function seedDatabase(): Promise<void> {
   try {
     const existing = await getAllRecords<Exercise>('exercises');
-    const hasJpg = existing.some(ex => ex.gif_url && (ex.gif_url.endsWith('.jpg') || ex.gif_url.endsWith('.jpeg')));
+    const seedVersion = localStorage.getItem('seed_exercises_version') || '0';
+    const CURRENT_SEED_VERSION = '2'; // Increment to force re-seeding
 
-    if (existing.length < 1000 || hasJpg) {
+    if (existing.length < 1000 || seedVersion !== CURRENT_SEED_VERSION) {
       console.log('Cleaning exercises store to ensure only GIFs and scraped exercises are present...');
       for (const ex of existing) {
-        await deleteRecord('exercises', ex.id);
+        if (!ex.is_custom) {
+          await deleteRecord('exercises', ex.id);
+        }
       }
+      localStorage.setItem('seed_exercises_version', CURRENT_SEED_VERSION);
 
       const scrapedKeys = scrapedExercises ? Object.keys(scrapedExercises) : [];
       if (scrapedKeys.length > 0) {

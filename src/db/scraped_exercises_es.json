@@ -491,9 +491,9 @@
     "alternates": []
   },
   "press_frances_con_barra": {
-    "name_es": "Press de banca",
-    "name_en": "Bench Press",
-    "category": "Pecho",
+    "name_es": "Press francés con barra (Skullcrusher / Lying Triceps Extension)",
+    "name_en": "EZ Bar Lying Triceps Extension (Skullcrusher)",
+    "category": "Brazos",
     "url": "https://fitnessprogramer.com/exercise/bench-press/",
     "gif_url": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Barbell-Bench-Press.gif",
     "overview_es": "El press de banca es un ejercicio de entrenamiento de fuerza compuesto que se dirige principalmente a los músculos del pecho (pectoral mayor y menor). Se puede realizar utilizando varios agarres y ángulos para apuntar a diferentes áreas del pecho, con variaciones como inclinación, descenso o banco plano. Este ejercicio es fundamental en el culturismo, el levantamiento de pesas y el entrenamiento físico general. En general, el press de banca se dirige eficazmente a múltiples grupos de músculos de la parte superior del cuerpo y es una valiosa adición a cualquier rutina de entrenamiento de fuerza.",
@@ -7829,8 +7829,8 @@
     "alternates": []
   },
   "flexion_de_triceps_con_un_brazo": {
-    "name_es": "Flexión de tríceps con un brazo",
-    "name_en": "One Arm Triceps Pushdown",
+    "name_es": "Extensión de tríceps en polea a una mano (One Arm Pushdown)",
+    "name_en": "One Arm Cable Triceps Pushdown",
     "category": "Brazos",
     "url": "https://fitnessprogramer.com/exercise/one-arm-triceps-pushdown/",
     "gif_url": "https://fitnessprogramer.com/wp-content/uploads/2022/11/One-arm-triceps-pushdown.gif",
@@ -11106,8 +11106,8 @@
     "alternates": []
   },
   "empujar_hacia_abajo": {
-    "name_es": "Empujar hacia abajo",
-    "name_en": "Push-down",
+    "name_es": "Extensión de tríceps en polea con barra (Pushdown)",
+    "name_en": "Cable Triceps Pushdown (Straight Bar)",
     "category": "Brazos",
     "url": "https://fitnessprogramer.com/exercise/push-down/",
     "gif_url": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Pushdown.gif",
@@ -11155,8 +11155,8 @@
     "alternates": []
   },
   "pushdown_inverso_con_un_brazo": {
-    "name_es": "Pushdown inverso con un brazo",
-    "name_en": "One-Arm Reverse Pushdown",
+    "name_es": "Extensión de tríceps en polea a una mano con agarre invertido (Reverse Grip Pushdown)",
+    "name_en": "One-Arm Reverse Cable Triceps Pushdown",
     "category": "Brazos",
     "url": "https://fitnessprogramer.com/exercise/one-arm-reverse-push-down/",
     "gif_url": "https://fitnessprogramer.com/wp-content/uploads/2021/02/One-Arm-Reverse-Push-Down.gif",
@@ -16685,8 +16685,8 @@
     "alternates": []
   },
   "trituradora_de_craneos_con_mancuernas": {
-    "name_es": "Trituradora de cráneos con mancuernas",
-    "name_en": "Dumbbell Skull Crusher",
+    "name_es": "Press francés con mancuernas (Dumbbell Skullcrusher)",
+    "name_en": "Dumbbell Skullcrusher / Lying Triceps Extension",
     "category": "Brazos",
     "url": "https://fitnessprogramer.com/exercise/dumbbell-skull-crusher/",
     "gif_url": "https://fitnessprogramer.com/wp-content/uploads/2021/06/Dumbbell-Skull-Crusher.gif",
@@ -17531,8 +17531,8 @@
     "alternates": []
   },
   "empuje_con_cuerda": {
-    "name_es": "Empuje con cuerda",
-    "name_en": "Rope Pushdown",
+    "name_es": "Extensión de tríceps en polea con cuerda (Rope Pushdown)",
+    "name_en": "Cable Rope Triceps Pushdown",
     "category": "Brazos",
     "url": "https://fitnessprogramer.com/exercise/rope-pushdown/",
     "gif_url": "https://fitnessprogramer.com/wp-content/uploads/2021/06/Rope-Pushdown.gif",
@@ -17635,8 +17635,8 @@
     "alternates": []
   },
   "empuje_con_agarre_inverso": {
-    "name_es": "Empuje con agarre inverso",
-    "name_en": "Reverse Grip Pushdown",
+    "name_es": "Extensión de tríceps en polea con agarre inverso (Reverse Grip Pushdown)",
+    "name_en": "Reverse Grip Cable Triceps Pushdown",
     "category": "Brazos",
     "url": "https://fitnessprogramer.com/exercise/reverse-grip-pushdown/",
     "gif_url": "https://fitnessprogramer.com/wp-content/uploads/2021/06/Reverse-Grip-Pushdown.gif",
@@ -25809,8 +25809,8 @@
     "alternates": []
   },
   "trituradora_de_calaveras_de_banda": {
-    "name_es": "Trituradora de calaveras de banda",
-    "name_en": "Band Skull Crusher",
+    "name_es": "Extensión de tríceps con banda elástica (Band Skullcrusher)",
+    "name_en": "Resistance Band Skullcrusher",
     "category": "Brazos",
     "url": "https://fitnessprogramer.com/exercise/band-skull-crusher/",
     "gif_url": "https://fitnessprogramer.com/wp-content/uploads/2022/02/Band-Skull-Crusher.gif",
@@ -27841,8 +27841,8 @@
     "alternates": []
   },
   "empuje_con_barra_en_v": {
-    "name_es": "Empuje con barra en V",
-    "name_en": "V-bar Pushdown",
+    "name_es": "Extensión de tríceps en polea con barra en V (V-bar Pushdown)",
+    "name_en": "V-bar Cable Triceps Pushdown",
     "category": "Brazos",
     "url": "https://fitnessprogramer.com/exercise/v-bar-pushdown/",
     "gif_url": "https://fitnessprogramer.com/wp-content/uploads/2022/02/V-bar-Pushdown.gif",
