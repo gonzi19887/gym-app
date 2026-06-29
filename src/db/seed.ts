@@ -7,7 +7,7 @@ export async function seedDatabase(): Promise<void> {
   try {
     const existing = await getAllRecords<Exercise>('exercises');
     const seedVersion = localStorage.getItem('seed_exercises_version') || '0';
-    const CURRENT_SEED_VERSION = '2'; // Increment to force re-seeding
+    const CURRENT_SEED_VERSION = '6'; // Increment to force re-seeding
 
     if (existing.length < 1000 || seedVersion !== CURRENT_SEED_VERSION) {
       console.log('Cleaning exercises store to ensure only GIFs and scraped exercises are present...');
