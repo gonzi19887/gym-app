@@ -44,7 +44,7 @@ import type {
 } from './db/localDb';
 import { seedDatabase } from './db/seed';
 import { supabase, isSupabaseConfigured } from './db/supabaseClient';
-import { syncLocalQueueToCloud, pullCloudDataToLocal, migrateGuestDataToUser } from './db/sync';
+import { syncLocalQueueToCloud, pullCloudDataToLocal, migrateGuestDataToUser, syncTableToCloud } from './db/sync';
 
 // Web Audio API beep for rest timer completion
 const playBeep = () => {
@@ -183,6 +183,14 @@ function App() {
   const [editingRoutineId, setEditingRoutineId] = useState<string | null>(null);
   const [isSealingPact, setIsSealingPact] = useState(false);
   const [pactStatus, setPactStatus] = useState<string | null>(null);
+  const [showSyncOverlay, setShowSyncOverlay] = useState(false);
+  const [syncSteps, setSyncSteps] = useState<{[key: string]: 'pending' | 'syncing' | 'completed' | 'error'}>({
+    profile: 'pending',
+    exercises: 'pending',
+    routines: 'pending',
+    workouts: 'pending',
+    calendar: 'pending'
+  });
 
   // Dynamic JJK Routine Name Generator
   const isNameManuallyEdited = useRef(false);
@@ -780,21 +788,73 @@ function App() {
       setIsCameraActive(false);
 
       if (isSupabaseConfigured && session && navigator.onLine) {
-        setPactStatus('Sincronizando datos en la nube...');
-        await syncLocalQueueToCloud();
-        
-        // Comprobar si queda algo en la cola
-        const remainingQueue = await getAllRecords<any>('sync_queue');
-        if (remainingQueue.length === 0) {
-          setPactStatus('¡Pacto sellado y sincronizado! ⚡');
-          alert('¡Pacto sellado y sincronizado en la nube! ⚡');
-        } else {
-          setPactStatus('Pacto sellado localmente (sincronización pendiente).');
-          alert('Perfil guardado localmente, pero quedan elementos pendientes en la cola de sincronización.');
+        setShowSyncOverlay(true);
+        const sleep = (ms: number) => new Promise(res => setTimeout(res, ms));
+
+        // Step 1: Chamán Profile
+        setSyncSteps(prev => ({ ...prev, profile: 'syncing' }));
+        await sleep(500);
+        try {
+          await syncTableToCloud('profiles');
+          setSyncSteps(prev => ({ ...prev, profile: 'completed' }));
+        } catch (err) {
+          console.error(err);
+          setSyncSteps(prev => ({ ...prev, profile: 'error' }));
         }
+
+        // Step 2: Exercises
+        setSyncSteps(prev => ({ ...prev, exercises: 'syncing' }));
+        await sleep(500);
+        try {
+          await syncTableToCloud('exercises');
+          setSyncSteps(prev => ({ ...prev, exercises: 'completed' }));
+        } catch (err) {
+          console.error(err);
+          setSyncSteps(prev => ({ ...prev, exercises: 'error' }));
+        }
+
+        // Step 3: Routines
+        setSyncSteps(prev => ({ ...prev, routines: 'syncing' }));
+        await sleep(500);
+        try {
+          await syncTableToCloud('routines');
+          await syncTableToCloud('routine_exercises');
+          setSyncSteps(prev => ({ ...prev, routines: 'completed' }));
+        } catch (err) {
+          console.error(err);
+          setSyncSteps(prev => ({ ...prev, routines: 'error' }));
+        }
+
+        // Step 4: Workouts / Combat Logs
+        setSyncSteps(prev => ({ ...prev, workouts: 'syncing' }));
+        await sleep(500);
+        try {
+          await syncTableToCloud('workouts');
+          await syncTableToCloud('workout_sets');
+          setSyncSteps(prev => ({ ...prev, workouts: 'completed' }));
+        } catch (err) {
+          console.error(err);
+          setSyncSteps(prev => ({ ...prev, workouts: 'error' }));
+        }
+
+        // Step 5: Calendar / Streak
+        setSyncSteps(prev => ({ ...prev, calendar: 'syncing' }));
+        await sleep(500);
+        try {
+          // Calendar is implicitly synced via profiles fields.
+          setSyncSteps(prev => ({ ...prev, calendar: 'completed' }));
+        } catch (err) {
+          console.error(err);
+          setSyncSteps(prev => ({ ...prev, calendar: 'error' }));
+        }
+
+        setPactStatus('¡Pacto sellado y sincronizado! ⚡');
+        setIsSealingPact(false);
       } else {
         setPactStatus('¡Pacto sellado localmente! ⚡');
         alert('¡Perfil de hechicero guardado localmente! ✅');
+        setIsSealingPact(false);
+        setActiveTab('hoy');
       }
 
       setActiveTab('hoy');
@@ -1297,6 +1357,10 @@ function App() {
 
   const currentActiveExercise = activeExercises[activeExerciseIndex];
   const currentExerciseSets = activeWorkoutSets.filter((s) => s.exercise_id === currentActiveExercise?.id);
+  const isCardioOrStretch = currentActiveExercise ? (
+    currentActiveExercise.category.toLowerCase() === 'cardio' || 
+    currentActiveExercise.category.toLowerCase() === 'estiramientos'
+  ) : false;
 
   const getLastSessionSets = () => {
     if (!currentActiveExercise) return [];
@@ -1822,10 +1886,16 @@ function App() {
 
               {/* Workout Sets Table */}
               <div className="set-table">
-                <div className="set-table-header">
+                <div className="set-table-header" style={isCardioOrStretch ? { gridTemplateColumns: '0.8fr 2.2fr 1fr' } : undefined}>
                   <span>Serie</span>
-                  <span>Peso (kg)</span>
-                  <span>Reps</span>
+                  {isCardioOrStretch ? (
+                    <span>Tiempo (min)</span>
+                  ) : (
+                    <>
+                      <span>Peso (kg)</span>
+                      <span>Reps</span>
+                    </>
+                  )}
                   <span>Estado</span>
                 </div>
 
@@ -1839,37 +1909,46 @@ function App() {
                       <div 
                         key={set.id}
                         className={`set-row ${isCompleted ? 'completed' : ''} ${isPending ? 'pending' : ''}`}
-                        style={isPending ? { opacity: 0.4, pointerEvents: 'none' } : undefined}
+                        style={isCardioOrStretch ? { 
+                          gridTemplateColumns: '0.8fr 2.2fr 1fr', 
+                          opacity: isPending ? 0.4 : 1, 
+                          pointerEvents: isPending ? 'none' : 'auto' 
+                        } : (isPending ? { 
+                          opacity: 0.4, 
+                          pointerEvents: 'none' 
+                        } : undefined)}
                       >
                         <span className="set-number">{sIdx + 1}</span>
                         
-                        <div className="stepper-container">
-                          <button
-                            type="button"
-                            disabled={isCompleted || isPending}
-                            onClick={() => handleSetChange(set.id, 'weight', Math.max(0, parseFloat(((set.weight || 0) - 2.5).toFixed(2))))}
-                            className="stepper-btn-minus"
-                          >
-                            -
-                          </button>
-                          <input 
-                            type="number"
-                            placeholder="0"
-                            value={set.weight || ''}
-                            disabled={isCompleted || isPending}
-                            onFocus={(e) => e.target.select()}
-                            onChange={(e) => handleSetChange(set.id, 'weight', parseFloat(e.target.value) || 0)}
-                            className="set-input-stepped"
-                          />
-                          <button
-                            type="button"
-                            disabled={isCompleted || isPending}
-                            onClick={() => handleSetChange(set.id, 'weight', parseFloat(((set.weight || 0) + 2.5).toFixed(2)))}
-                            className="stepper-btn-plus"
-                          >
-                            +
-                          </button>
-                        </div>
+                        {!isCardioOrStretch && (
+                          <div className="stepper-container">
+                            <button
+                              type="button"
+                              disabled={isCompleted || isPending}
+                              onClick={() => handleSetChange(set.id, 'weight', Math.max(0, parseFloat(((set.weight || 0) - 2.5).toFixed(2))))}
+                              className="stepper-btn-minus"
+                            >
+                              -
+                            </button>
+                            <input 
+                              type="number"
+                              placeholder="0"
+                              value={set.weight || ''}
+                              disabled={isCompleted || isPending}
+                              onFocus={(e) => e.target.select()}
+                              onChange={(e) => handleSetChange(set.id, 'weight', parseFloat(e.target.value) || 0)}
+                              className="set-input-stepped"
+                            />
+                            <button
+                              type="button"
+                              disabled={isCompleted || isPending}
+                              onClick={() => handleSetChange(set.id, 'weight', parseFloat(((set.weight || 0) + 2.5).toFixed(2)))}
+                              className="stepper-btn-plus"
+                            >
+                              +
+                            </button>
+                          </div>
+                        )}
                         
                         <div className="stepper-container">
                           <button
@@ -1888,6 +1967,7 @@ function App() {
                             onFocus={(e) => e.target.select()}
                             onChange={(e) => handleSetChange(set.id, 'reps', parseInt(e.target.value) || 0)}
                             className="set-input-stepped"
+                            style={isCardioOrStretch ? { width: '80px' } : undefined}
                           />
                           <button
                             type="button"
@@ -1897,6 +1977,7 @@ function App() {
                           >
                             +
                           </button>
+                          {isCardioOrStretch && <span style={{ fontSize: '11px', color: 'var(--text-secondary)', marginLeft: '6px' }}>min</span>}
                         </div>
 
                         <button
@@ -3930,6 +4011,153 @@ function App() {
             >
               🔴 Cerrar Dominio
             </button>
+      {/* Sellar Pacto - Sincronización Detallada */}
+      {showSyncOverlay && (
+        <div 
+          className="overlay-screen animate-fade-in"
+          style={{ 
+            backgroundColor: 'rgba(7, 7, 10, 0.95)', 
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            zIndex: 300,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px'
+          }}
+        >
+          <div 
+            style={{
+              width: '100%',
+              maxWidth: '440px',
+              backgroundColor: 'var(--bg-secondary)',
+              border: '1.5px solid var(--border-color)',
+              borderRadius: '20px',
+              padding: '24px',
+              boxShadow: '0 10px 40px rgba(0, 0, 0, 0.6)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '20px',
+              position: 'relative',
+              overflow: 'hidden'
+            }}
+          >
+            {/* Decorative Glow */}
+            <div className="absolute -top-20 -right-20 w-48 h-48 bg-primary/10 rounded-full blur-[60px] pointer-events-none" aria-hidden="true"></div>
+
+            <div style={{ textAlign: 'center' }}>
+              <div 
+                style={{ 
+                  width: '56px', 
+                  height: '56px', 
+                  borderRadius: '50%', 
+                  backgroundColor: 'rgba(184, 211, 0, 0.1)', 
+                  border: '1px solid rgba(184, 211, 0, 0.2)', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  margin: '0 auto 12px'
+                }}
+              >
+                <Zap className="text-primary animate-pulse" size={28} />
+              </div>
+              <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Estableciendo Pacto Celestial</h3>
+              <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px', margin: 0 }}>
+                Sincronizando tu alma maldita con la base de datos celestial...
+              </p>
+            </div>
+
+            {/* Checklist items */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', margin: '8px 0' }}>
+              {/* 1. Chamán Profile */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: '10px', backgroundColor: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.04)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <User size={16} className={syncSteps.profile === 'syncing' ? 'text-primary' : 'text-text-secondary'} />
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-primary)' }}>Identidad del Chamán</span>
+                    <span style={{ fontSize: '10px', color: 'var(--text-tertiary)' }}>Nombre, clan, nivel y foto</span>
+                  </div>
+                </div>
+                {syncSteps.profile === 'pending' && <div style={{ width: '12px', height: '12px', borderRadius: '50%', border: '2.5px solid var(--border-color)' }}></div>}
+                {syncSteps.profile === 'syncing' && <div className="w-4 h-4 rounded-full border-2 border-primary border-t-transparent animate-spin"></div>}
+                {syncSteps.profile === 'completed' && <span className="text-primary" style={{ fontSize: '16px', fontWeight: 'bold' }}>✓</span>}
+                {syncSteps.profile === 'error' && <span className="text-error" style={{ fontSize: '16px', fontWeight: 'bold' }}>✗</span>}
+              </div>
+
+              {/* 2. Exercises */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: '10px', backgroundColor: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.04)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <Zap size={16} className={syncSteps.exercises === 'syncing' ? 'text-primary' : 'text-text-secondary'} />
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-primary)' }}>Técnicas Guardadas</span>
+                    <span style={{ fontSize: '10px', color: 'var(--text-tertiary)' }}>Escaneando ejercicios personalizados</span>
+                  </div>
+                </div>
+                {syncSteps.exercises === 'pending' && <div style={{ width: '12px', height: '12px', borderRadius: '50%', border: '2.5px solid var(--border-color)' }}></div>}
+                {syncSteps.exercises === 'syncing' && <div className="w-4 h-4 rounded-full border-2 border-primary border-t-transparent animate-spin"></div>}
+                {syncSteps.exercises === 'completed' && <span className="text-primary" style={{ fontSize: '16px', fontWeight: 'bold' }}>✓</span>}
+                {syncSteps.exercises === 'error' && <span className="text-error" style={{ fontSize: '16px', fontWeight: 'bold' }}>✗</span>}
+              </div>
+
+              {/* 3. Routines */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: '10px', backgroundColor: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.04)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <BookOpen size={16} className={syncSteps.routines === 'syncing' ? 'text-primary' : 'text-text-secondary'} />
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-primary)' }}>Dominios Forjados</span>
+                    <span style={{ fontSize: '10px', color: 'var(--text-tertiary)' }}>Sincronizando rutinas y combinaciones</span>
+                  </div>
+                </div>
+                {syncSteps.routines === 'pending' && <div style={{ width: '12px', height: '12px', borderRadius: '50%', border: '2.5px solid var(--border-color)' }}></div>}
+                {syncSteps.routines === 'syncing' && <div className="w-4 h-4 rounded-full border-2 border-primary border-t-transparent animate-spin"></div>}
+                {syncSteps.routines === 'completed' && <span className="text-primary" style={{ fontSize: '16px', fontWeight: 'bold' }}>✓</span>}
+                {syncSteps.routines === 'error' && <span className="text-error" style={{ fontSize: '16px', fontWeight: 'bold' }}>✗</span>}
+              </div>
+
+              {/* 4. Workouts */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: '10px', backgroundColor: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.04)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <Award size={16} className={syncSteps.workouts === 'syncing' ? 'text-primary' : 'text-text-secondary'} />
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-primary)' }}>Registros de Combate</span>
+                    <span style={{ fontSize: '10px', color: 'var(--text-tertiary)' }}>Subiendo entrenamientos y series</span>
+                  </div>
+                </div>
+                {syncSteps.workouts === 'pending' && <div style={{ width: '12px', height: '12px', borderRadius: '50%', border: '2.5px solid var(--border-color)' }}></div>}
+                {syncSteps.workouts === 'syncing' && <div className="w-4 h-4 rounded-full border-2 border-primary border-t-transparent animate-spin"></div>}
+                {syncSteps.workouts === 'completed' && <span className="text-primary" style={{ fontSize: '16px', fontWeight: 'bold' }}>✓</span>}
+                {syncSteps.workouts === 'error' && <span className="text-error" style={{ fontSize: '16px', fontWeight: 'bold' }}>✗</span>}
+              </div>
+
+              {/* 5. Calendar */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: '10px', backgroundColor: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.04)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <Calendar size={16} className={syncSteps.calendar === 'syncing' ? 'text-primary' : 'text-text-secondary'} />
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-primary)' }}>Calendario del Pacto</span>
+                    <span style={{ fontSize: '10px', color: 'var(--text-tertiary)' }}>Estableciendo racha y fechas</span>
+                  </div>
+                </div>
+                {syncSteps.calendar === 'pending' && <div style={{ width: '12px', height: '12px', borderRadius: '50%', border: '2.5px solid var(--border-color)' }}></div>}
+                {syncSteps.calendar === 'syncing' && <div className="w-4 h-4 rounded-full border-2 border-primary border-t-transparent animate-spin"></div>}
+                {syncSteps.calendar === 'completed' && <span className="text-primary" style={{ fontSize: '16px', fontWeight: 'bold' }}>✓</span>}
+                {syncSteps.calendar === 'error' && <span className="text-error" style={{ fontSize: '16px', fontWeight: 'bold' }}>✗</span>}
+              </div>
+            </div>
+
+            {/* Pact Sealed Final Action Button */}
+            {syncSteps.calendar === 'completed' && (
+              <button 
+                onClick={() => {
+                  setShowSyncOverlay(false);
+                  setActiveTab('hoy');
+                }}
+                className="btn-primary w-full shadow-md"
+                style={{ padding: '12px', fontSize: '13px', borderRadius: '12px', fontWeight: 'bold', marginTop: '10px' }}
+              >
+                ⚡ Pacto Sellado ⚡
+              </button>
+            )}
           </div>
         </div>
       )}

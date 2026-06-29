@@ -2008,7 +2008,7 @@
     "alternates": []
   },
   "pullover_con_polea_alta": {
-    "name_es": "Sudadera con capucha Cable acostado",
+    "name_es": "Pullover en polea acostado",
     "name_en": "Lying Cable Pullover",
     "category": "Pecho",
     "url": "https://fitnessprogramer.com/exercise/cable-pullover/",
@@ -8601,7 +8601,7 @@
     "alternates": []
   },
   "cinta_de_correr_manual": {
-    "name_es": "Cinta de correr manual",
+    "name_es": "Caminadora / Cinta de correr manual",
     "name_en": "Manual Treadmill",
     "category": "Cardio",
     "url": "https://fitnessprogramer.com/exercise/assault-air-runner/",
@@ -8664,7 +8664,7 @@
     "alternates": []
   },
   "cinta_de_correr_inclinada": {
-    "name_es": "Cinta de correr inclinada",
+    "name_es": "Caminadora / Cinta de correr inclinada",
     "name_en": "Incline Treadmill",
     "category": "Cardio",
     "url": "https://fitnessprogramer.com/exercise/incline-treadmill/",
@@ -8751,7 +8751,7 @@
     "alternates": []
   },
   "rueda_de_andar": {
-    "name_es": "Rueda de andar",
+    "name_es": "Caminadora / Cinta de correr",
     "name_en": "Treadmill",
     "category": "Cardio",
     "url": "https://fitnessprogramer.com/exercise/treadmill/",
@@ -8856,7 +8856,7 @@
     "alternates": []
   },
   "maquina_escaladora_de_escaleras": {
-    "name_es": "Máquina escaladora de escaleras",
+    "name_es": "Escaladora / Máquina de escaleras",
     "name_en": "Stair Climber Machine",
     "category": "Cardio",
     "url": "https://fitnessprogramer.com/exercise/stair-climber-machine/",
@@ -10364,7 +10364,7 @@
     "alternates": []
   },
   "cable_desplegable_con_brazo_recto": {
-    "name_es": "Cable desplegable con brazo recto",
+    "name_es": "Pullover en polea alta con brazos rectos (Straight Arm Pulldown)",
     "name_en": "Cable Straight Arm Pulldown",
     "category": "Espalda",
     "url": "https://fitnessprogramer.com/exercise/cable-straight-arm-pulldown/",
@@ -11335,7 +11335,7 @@
     "alternates": []
   },
   "jersey_con_mancuernas": {
-    "name_es": "Jersey con mancuernas",
+    "name_es": "Pullover con mancuerna",
     "name_en": "Dumbbell Pullover",
     "category": "Pecho",
     "url": "https://fitnessprogramer.com/exercise/dumbbell-pullover/",
@@ -15131,7 +15131,7 @@
     "alternates": []
   },
   "jersey_con_barra": {
-    "name_es": "Jersey con barra",
+    "name_es": "Pullover con barra",
     "name_en": "Barbell Pullover",
     "category": "Pecho",
     "url": "https://fitnessprogramer.com/exercise/barbell-pullover/",
@@ -16063,7 +16063,7 @@
     "alternates": []
   },
   "pulldown_de_brazo_recto_con_cuerda": {
-    "name_es": "Pulldown de brazo recto con cuerda",
+    "name_es": "Pullover en polea alta con cuerda y brazos rectos (Rope Pulldown)",
     "name_en": "Rope Straight Arm Pulldown",
     "category": "Espalda",
     "url": "https://fitnessprogramer.com/exercise/rope-straight-arm-pulldown/",
@@ -18766,7 +18766,7 @@
     "alternates": []
   },
   "jersey_con_asiento_de_cable": {
-    "name_es": "Jersey con asiento de cable",
+    "name_es": "Pullover en polea sentado",
     "name_en": "Cable Seated Pullover",
     "category": "Espalda",
     "url": "https://fitnessprogramer.com/exercise/cable-seated-pullover/",
@@ -22364,7 +22364,7 @@
     "alternates": []
   },
   "jersey_de_palanca": {
-    "name_es": "Jersey de palanca",
+    "name_es": "Pullover en máquina",
     "name_en": "Lever Pullover",
     "category": "Espalda",
     "url": "https://fitnessprogramer.com/exercise/lever-pullover/",
@@ -22478,7 +22478,7 @@
     "alternates": []
   },
   "sudadera_con_capucha_y_brazo_doblado_con_barra_inclinada": {
-    "name_es": "Sudadera con capucha y brazo doblado con barra inclinada",
+    "name_es": "Pullover con barra declinado con brazos flexionados",
     "name_en": "Barbell Decline Bent Arm Pullover",
     "category": "Espalda",
     "url": "https://fitnessprogramer.com/exercise/barbell-decline-bent-arm-pullover/",
@@ -25079,7 +25079,7 @@
     "alternates": []
   },
   "jersey_con_brazo_doblado_ezbar": {
-    "name_es": "Jersey con brazo doblado EZ-Bar",
+    "name_es": "Pullover con barra EZ y brazos flexionados",
     "name_en": "EZ-Bar Bent Arm Pullover",
     "category": "Espalda",
     "url": "https://fitnessprogramer.com/exercise/ez-bar-bent-arm-pullover/",
@@ -28384,7 +28384,7 @@
     "alternates": []
   },
   "jersey_de_brazo_recto_con_mancuernas_rodillas_a_90_grados": {
-    "name_es": "Jersey de brazo recto con mancuernas (rodillas a 90 grados)",
+    "name_es": "Pullover con mancuerna con brazos rectos",
     "name_en": "Dumbbell Straight Arm Pullover (knees at 90 degrees)",
     "category": "Pecho",
     "url": "https://fitnessprogramer.com/exercise/dumbbell-straight-arm-pullover-knees-at-90-degrees/",
