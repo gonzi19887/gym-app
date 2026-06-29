@@ -44,7 +44,7 @@ import type {
 } from './db/localDb';
 import { seedDatabase } from './db/seed';
 import { supabase, isSupabaseConfigured } from './db/supabaseClient';
-import { syncLocalQueueToCloud, pullCloudDataToLocal, migrateGuestDataToUser, syncTableToCloud, pullTableFromCloud } from './db/sync';
+import { syncLocalQueueToCloud, migrateGuestDataToUser, syncTableToCloud, pullTableFromCloud } from './db/sync';
 
 // Web Audio API beep for rest timer completion
 const playBeep = () => {
