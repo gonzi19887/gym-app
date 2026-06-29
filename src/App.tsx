@@ -19,7 +19,9 @@ import {
   Zap,
   Home,
   Camera,
-  User
+  User,
+  Upload,
+  UserCheck
 } from 'lucide-react';
 import { 
   initDB, 
@@ -456,6 +458,7 @@ function App() {
   const handleLogout = async () => {
     if (!supabase) return;
     await supabase.auth.signOut();
+    await clearAllTables();
     setSession(null);
     localStorage.removeItem('guestMode');
     setGuestMode(false);
@@ -514,11 +517,27 @@ function App() {
     setProfile(currentProfile);
 
     // Load rest
-    const loadedExercises = await getAllRecords<Exercise>('exercises');
+    let loadedExercises = await getAllRecords<Exercise>('exercises');
     let loadedRoutines = await getAllRecords<Routine>('routines');
     let loadedRoutineExs = await getAllRecords<RoutineExercise>('routine_exercises');
+    let loadedWorkouts = await getAllRecords<Workout>('workouts');
+    let loadedSets = await getAllRecords<WorkoutSet>('workout_sets');
 
-    if (loadedRoutines.length === 0 && loadedExercises.length > 0) {
+    // Filter by current userId to ensure profile isolation
+    loadedRoutines = loadedRoutines.filter(r => r.user_id === userId);
+    loadedWorkouts = loadedWorkouts.filter(w => w.user_id === userId);
+    loadedExercises = loadedExercises.filter(e => !e.is_custom || e.user_id === userId);
+
+    const activeRoutineIds = new Set(loadedRoutines.map(r => r.id));
+    loadedRoutineExs = loadedRoutineExs.filter(re => activeRoutineIds.has(re.routine_id));
+
+    const activeWorkoutIds = new Set(loadedWorkouts.map(w => w.id));
+    loadedSets = loadedSets.filter(s => activeWorkoutIds.has(s.workout_id));
+
+    const wasSeeded = localStorage.getItem('routinesSeeded') === 'true';
+    const isGuest = !session;
+
+    if (loadedRoutines.length === 0 && loadedExercises.length > 0 && isGuest && !wasSeeded) {
       const pressBanca = loadedExercises.find(e => e.name.includes('Press de Banca'));
       const sentadilla = loadedExercises.find(e => e.name.includes('Sentadilla'));
       const remoBarra = loadedExercises.find(e => e.name.includes('Remo con Barra'));
@@ -593,11 +612,12 @@ function App() {
       }
 
       loadedRoutines = await getAllRecords<Routine>('routines');
+      loadedRoutines = loadedRoutines.filter(r => r.user_id === userId);
       loadedRoutineExs = await getAllRecords<RoutineExercise>('routine_exercises');
+      const updatedRoutineIds = new Set(loadedRoutines.map(r => r.id));
+      loadedRoutineExs = loadedRoutineExs.filter(re => updatedRoutineIds.has(re.routine_id));
+      localStorage.setItem('routinesSeeded', 'true');
     }
-
-    const loadedWorkouts = await getAllRecords<Workout>('workouts');
-    const loadedSets = await getAllRecords<WorkoutSet>('workout_sets');
 
     setExercises(formatExercises(loadedExercises));
     setRoutines(loadedRoutines);
@@ -683,12 +703,38 @@ function App() {
 
 
 
+  const compressAvatar = (dataUrl: string): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 120;
+        canvas.height = 120;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, 120, 120);
+          resolve(canvas.toDataURL('image/jpeg', 0.7));
+        } else {
+          resolve(dataUrl);
+        }
+      };
+      img.onerror = () => resolve(dataUrl);
+      img.src = dataUrl;
+    });
+  };
+
   const handleSaveProfile = async () => {
     if (!profile || !editUsername.trim()) return;
+    
+    let finalAvatarUrl = editAvatarUrl;
+    if (editAvatarUrl && editAvatarUrl.startsWith('data:')) {
+      finalAvatarUrl = await compressAvatar(editAvatarUrl);
+    }
+
     const updated = {
       ...profile,
       username: editUsername,
-      avatar_url: editAvatarUrl,
+      avatar_url: finalAvatarUrl,
       clan: editClan,
       cursed_technique: editCursedTechnique
     };
@@ -3050,10 +3096,126 @@ function App() {
         {activeTab === 'perfil' && profile && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', paddingBottom: '160px' }}>
             
+            {/* Header Section */}
+            <section style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <h2 style={{ fontSize: '28px', fontFamily: 'var(--font-headline)', color: 'var(--text-primary)', fontWeight: 'bold', margin: 0 }}>
+                Forja tu Identidad
+              </h2>
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                backgroundColor: 'rgba(184, 211, 0, 0.1)',
+                border: '1px solid rgba(184, 211, 0, 0.2)',
+                padding: '4px 12px',
+                borderRadius: '9999px',
+                width: 'fit-content',
+                marginTop: '4px'
+              }}>
+                <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1", fontSize: '14px', color: 'var(--accent-primary)' }}>military_tech</span>
+                <span style={{ color: 'var(--accent-primary)', fontWeight: 'bold', fontSize: '13px' }}>
+                  Nivel {profile.level || 1}
+                </span>
+              </div>
+              <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>
+                Configura tu avatar chamánico y afilia tu técnica maldita.
+              </p>
+            </section>
+
+            {/* Avatar Selection Card */}
+            <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center', padding: '24px' }}>
+              <h3 className="form-label" style={{ alignSelf: 'flex-start', margin: 0, textTransform: 'uppercase', fontSize: '12px', letterSpacing: '1px' }}>
+                Foto de Perfil
+              </h3>
+              
+              <div style={{
+                position: 'relative',
+                width: '128px',
+                height: '128px',
+                borderRadius: '50%',
+                overflow: 'hidden',
+                border: '2px solid var(--accent-primary)',
+                boxShadow: '0 0 25px rgba(184, 211, 0, 0.2)',
+                backgroundColor: 'var(--bg-secondary)',
+                marginTop: '12px'
+              }}>
+                <img 
+                  src={editAvatarUrl || 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=150&auto=format&fit=crop'} 
+                  alt="Profile Photo" 
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              </div>
+
+              {isCameraActive ? (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', width: '100%', marginTop: '12px' }}>
+                  <video 
+                    ref={videoRef} 
+                    autoPlay 
+                    playsInline 
+                    style={{ width: '100%', maxWidth: '240px', height: '240px', objectFit: 'cover', borderRadius: '12px', border: '2px solid var(--accent-primary)', transform: 'scaleX(-1)' }}
+                  />
+                  <div style={{ display: 'flex', gap: '12px', width: '100%', maxWidth: '240px' }}>
+                    <button
+                      type="button"
+                      onClick={capturePhoto}
+                      className="btn-primary"
+                      style={{ flex: 1, padding: '10px 14px', fontSize: '12px' }}
+                    >
+                      Capturar 📸
+                    </button>
+                    <button
+                      type="button"
+                      onClick={stopCamera}
+                      className="btn-secondary"
+                      style={{ flex: 1, padding: '10px 14px', fontSize: '12px', borderColor: '#ef4444', color: '#ef4444' }}
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', gap: '12px', width: '100%', marginTop: '16px' }}>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="btn-secondary"
+                    style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', fontSize: '13px', borderRadius: '12px' }}
+                  >
+                    <Upload size={14} color="var(--accent-primary)" />
+                    <span>Subir Foto</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={startCamera}
+                    className="btn-secondary"
+                    style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', fontSize: '13px', borderRadius: '12px' }}
+                  >
+                    <Camera size={14} color="var(--accent-primary)" />
+                    <span>Tomar Foto</span>
+                  </button>
+                  <input 
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                  />
+                  <input 
+                    type="file"
+                    ref={cameraFallbackInputRef}
+                    onChange={handleFileChange}
+                    accept="image/*"
+                    capture="user"
+                    style={{ display: 'none' }}
+                  />
+                </div>
+              )}
+            </section>
+
             {/* Horizontal Sliding Carousel of JJK Avatars */}
             <section className="card" style={{ overflow: 'hidden' }}>
               <label className="form-label" style={{ marginBottom: '12px', display: 'block', fontSize: '13px', fontWeight: 'bold' }}>
-                Avatar de Hechicero (Desliza para elegir)
+                Avatares Preestablecidos (Desliza para elegir)
               </label>
               <div style={{ 
                 display: 'flex', 
@@ -3155,35 +3317,30 @@ function App() {
               </div>
 
               <div className="form-group">
-                <label className="form-label" style={{ fontSize: '13px', fontWeight: 'bold' }}>Clan Hechicero</label>
-                <input 
-                  type="text"
-                  placeholder="Ej: Gojo, Zen'in, Itadori..."
+                <label className="form-label" style={{ fontSize: '13px', fontWeight: 'bold' }}>Linaje / Clan</label>
+                <select 
                   value={editClan}
                   onChange={(e) => setEditClan(e.target.value)}
                   className="form-input"
-                  style={{ fontSize: '13px' }}
-                />
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '8px' }}>
-                  {['Gojo', 'Zen\'in', 'Itadori', 'Fushiguro', 'Inumaki', 'Kamo'].map(c => (
-                    <button
-                      key={c}
-                      type="button"
-                      onClick={() => setEditClan(c)}
-                      style={{
-                        padding: '6px 12px',
-                        fontSize: '12px',
-                        backgroundColor: editClan === c ? 'rgba(184, 211, 0, 0.15)' : 'rgba(255,255,255,0.03)',
-                        border: `1px solid ${editClan === c ? 'var(--accent-primary)' : 'var(--border-color)'}`,
-                        borderRadius: '16px',
-                        color: editClan === c ? 'var(--accent-primary)' : 'var(--text-secondary)',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      Clan {c}
-                    </button>
-                  ))}
-                </div>
+                  style={{ 
+                    fontSize: '13px', 
+                    width: '100%', 
+                    backgroundColor: 'var(--bg-primary)', 
+                    color: 'var(--text-primary)', 
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '8px',
+                    padding: '10px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <option value="none">Sin Afiliación (Hechicero de 1ra Generación)</option>
+                  <option value="Gojo">Clan Gojo (Los Seis Ojos)</option>
+                  <option value="Zen'in">Clan Zenin (Restricción Celestial)</option>
+                  <option value="Kamo">Clan Kamo (Manipulación de Sangre)</option>
+                  <option value="Itadori">Clan Itadori</option>
+                  <option value="Fushiguro">Clan Fushiguro</option>
+                  <option value="Inumaki">Clan Inumaki</option>
+                </select>
               </div>
 
               <div className="form-group">
@@ -3216,86 +3373,6 @@ function App() {
                     </button>
                   ))}
                 </div>
-              </div>
-
-              {/* Foto de Perfil (Cámara o Galería) */}
-              <div className="form-group">
-                <label className="form-label" style={{ fontSize: '13px', fontWeight: 'bold' }}>Foto de Perfil (Opcional)</label>
-                
-                {isCameraActive ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', backgroundColor: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
-                    <video 
-                      ref={videoRef} 
-                      autoPlay 
-                      playsInline 
-                      style={{ width: '100%', maxWidth: '240px', height: '240px', objectFit: 'cover', borderRadius: '12px', border: '2px solid var(--accent-primary)', transform: 'scaleX(-1)' }}
-                    />
-                    <div style={{ display: 'flex', gap: '8px', width: '100%', maxWidth: '240px' }}>
-                      <button
-                        type="button"
-                        onClick={capturePhoto}
-                        className="btn-primary"
-                        style={{ flex: 1, padding: '10px 14px', fontSize: '12px' }}
-                      >
-                        Capturar 📸
-                      </button>
-                      <button
-                        type="button"
-                        onClick={stopCamera}
-                        className="btn-secondary"
-                        style={{ flex: 1, padding: '10px 14px', fontSize: '12px', borderColor: '#ef4444', color: '#ef4444' }}
-                      >
-                        Cancelar
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', gap: '10px' }}>
-                    <button
-                      type="button"
-                      onClick={startCamera}
-                      className="btn-secondary"
-                      style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px', fontSize: '12px' }}
-                    >
-                      <Camera size={14} />
-                      <span>Tomar Foto</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="btn-secondary"
-                      style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px', fontSize: '12px' }}
-                    >
-                      <span>Subir Galería</span>
-                    </button>
-                    <input 
-                      type="file"
-                      ref={fileInputRef}
-                      onChange={handleFileChange}
-                      accept="image/*"
-                      style={{ display: 'none' }}
-                    />
-                    <input 
-                      type="file"
-                      ref={cameraFallbackInputRef}
-                      onChange={handleFileChange}
-                      accept="image/*"
-                      capture="user"
-                      style={{ display: 'none' }}
-                    />
-                  </div>
-                )}
-                
-                {editAvatarUrl && editAvatarUrl.startsWith('data:') && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px' }}>
-                    <img 
-                      src={editAvatarUrl} 
-                      alt="Vista previa foto" 
-                      style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--accent-primary)' }}
-                    />
-                    <span style={{ fontSize: '12px', color: 'var(--accent-tertiary)' }}>¡Foto cargada con éxito! ✅</span>
-                  </div>
-                )}
               </div>
             </section>
 
@@ -3437,10 +3514,15 @@ function App() {
                   boxShadow: '0 0 20px rgba(184, 211, 0, 0.4)',
                   border: 'none',
                   backgroundColor: 'var(--accent-primary)',
-                  color: '#000'
+                  color: '#000',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px'
                 }}
               >
-                Guardar Cambios
+                <span>Sellar Pacto</span>
+                <UserCheck size={16} strokeWidth={3} />
               </button>
             </div>
 
