@@ -22,7 +22,8 @@ import {
   User,
   Upload,
   UserCheck,
-  Dumbbell
+  Dumbbell,
+  Lock
 } from 'lucide-react';
 import { 
   initDB, 
@@ -1300,7 +1301,7 @@ function App() {
   const filteredExercises = exercises.filter(e => 
     e.name.toLowerCase().includes(exerciseSearch.toLowerCase()) || 
     e.category.toLowerCase().includes(exerciseSearch.toLowerCase())
-  );
+  ).slice(0, 30);
 
   const currentActiveExercise = activeExercises[activeExerciseIndex];
   const currentExerciseSets = activeWorkoutSets.filter((s) => s.exercise_id === currentActiveExercise?.id);
@@ -1746,13 +1747,18 @@ function App() {
               
               {/* Exercise Selector Dots */}
               <div className="progress-dots">
-                {activeExercises.map((ex, idx) => (
-                  <button
-                    key={ex.id}
-                    onClick={() => setActiveExerciseIndex(idx)}
-                    className={`dot ${idx === activeExerciseIndex ? 'active' : ''}`}
-                  />
-                ))}
+                {activeExercises.map((ex, idx) => {
+                  const sets = activeWorkoutSets.filter(s => s.exercise_id === ex.id);
+                  const isCompleted = sets.length > 0 && sets.every(s => s.is_completed);
+                  return (
+                    <button
+                      key={ex.id}
+                      onClick={() => setActiveExerciseIndex(idx)}
+                      className={`dot ${idx === activeExerciseIndex ? 'active' : ''} ${isCompleted ? 'completed-white' : ''}`}
+                      style={isCompleted ? { backgroundColor: 'var(--text-primary)', boxShadow: '0 0 10px rgba(255, 255, 255, 0.4)' } : undefined}
+                    />
+                  );
+                })}
               </div>
 
               {/* Exercise Header */}
@@ -1832,77 +1838,90 @@ function App() {
                 </div>
 
                 <div className="set-rows-list">
-                  {currentExerciseSets.map((set, sIdx) => (
-                    <div 
-                      key={set.id}
-                      className={`set-row ${set.is_completed ? 'completed' : ''}`}
-                    >
-                      <span className="set-number">{sIdx + 1}</span>
-                      
-                      <div className="stepper-container">
-                        <button
-                          type="button"
-                          disabled={set.is_completed}
-                          onClick={() => handleSetChange(set.id, 'weight', Math.max(0, parseFloat(((set.weight || 0) - 2.5).toFixed(2))))}
-                          className="stepper-btn-minus"
-                        >
-                          -
-                        </button>
-                        <input 
-                          type="number"
-                          placeholder="0"
-                          value={set.weight || ''}
-                          disabled={set.is_completed}
-                          onFocus={(e) => e.target.select()}
-                          onChange={(e) => handleSetChange(set.id, 'weight', parseFloat(e.target.value) || 0)}
-                          className="set-input-stepped"
-                        />
-                        <button
-                          type="button"
-                          disabled={set.is_completed}
-                          onClick={() => handleSetChange(set.id, 'weight', parseFloat(((set.weight || 0) + 2.5).toFixed(2)))}
-                          className="stepper-btn-plus"
-                        >
-                          +
-                        </button>
-                      </div>
-                      
-                      <div className="stepper-container">
-                        <button
-                          type="button"
-                          disabled={set.is_completed}
-                          onClick={() => handleSetChange(set.id, 'reps', Math.max(1, (set.reps || 0) - 1))}
-                          className="stepper-btn-minus"
-                        >
-                          -
-                        </button>
-                        <input 
-                          type="number"
-                          placeholder="0"
-                          value={set.reps || ''}
-                          disabled={set.is_completed}
-                          onFocus={(e) => e.target.select()}
-                          onChange={(e) => handleSetChange(set.id, 'reps', parseInt(e.target.value) || 0)}
-                          className="set-input-stepped"
-                        />
-                        <button
-                          type="button"
-                          disabled={set.is_completed}
-                          onClick={() => handleSetChange(set.id, 'reps', (set.reps || 0) + 1)}
-                          className="stepper-btn-plus"
-                        >
-                          +
-                        </button>
-                      </div>
+                  {currentExerciseSets.map((set, sIdx) => {
+                    const firstUncompletedIdx = currentExerciseSets.findIndex(s => !s.is_completed);
+                    const isCompleted = set.is_completed;
+                    const isPending = firstUncompletedIdx !== -1 && sIdx > firstUncompletedIdx;
 
-                      <button
-                        onClick={() => handleToggleSet(set.id, !set.is_completed)}
-                        className={`check-btn ${set.is_completed ? 'completed' : ''}`}
+                    return (
+                      <div 
+                        key={set.id}
+                        className={`set-row ${isCompleted ? 'completed' : ''} ${isPending ? 'pending' : ''}`}
+                        style={isPending ? { opacity: 0.4, pointerEvents: 'none' } : undefined}
                       >
-                        <Check size={14} />
-                      </button>
-                    </div>
-                  ))}
+                        <span className="set-number">{sIdx + 1}</span>
+                        
+                        <div className="stepper-container">
+                          <button
+                            type="button"
+                            disabled={isCompleted || isPending}
+                            onClick={() => handleSetChange(set.id, 'weight', Math.max(0, parseFloat(((set.weight || 0) - 2.5).toFixed(2))))}
+                            className="stepper-btn-minus"
+                          >
+                            -
+                          </button>
+                          <input 
+                            type="number"
+                            placeholder="0"
+                            value={set.weight || ''}
+                            disabled={isCompleted || isPending}
+                            onFocus={(e) => e.target.select()}
+                            onChange={(e) => handleSetChange(set.id, 'weight', parseFloat(e.target.value) || 0)}
+                            className="set-input-stepped"
+                          />
+                          <button
+                            type="button"
+                            disabled={isCompleted || isPending}
+                            onClick={() => handleSetChange(set.id, 'weight', parseFloat(((set.weight || 0) + 2.5).toFixed(2)))}
+                            className="stepper-btn-plus"
+                          >
+                            +
+                          </button>
+                        </div>
+                        
+                        <div className="stepper-container">
+                          <button
+                            type="button"
+                            disabled={isCompleted || isPending}
+                            onClick={() => handleSetChange(set.id, 'reps', Math.max(1, (set.reps || 0) - 1))}
+                            className="stepper-btn-minus"
+                          >
+                            -
+                          </button>
+                          <input 
+                            type="number"
+                            placeholder="0"
+                            value={set.reps || ''}
+                            disabled={isCompleted || isPending}
+                            onFocus={(e) => e.target.select()}
+                            onChange={(e) => handleSetChange(set.id, 'reps', parseInt(e.target.value) || 0)}
+                            className="set-input-stepped"
+                          />
+                          <button
+                            type="button"
+                            disabled={isCompleted || isPending}
+                            onClick={() => handleSetChange(set.id, 'reps', (set.reps || 0) + 1)}
+                            className="stepper-btn-plus"
+                          >
+                            +
+                          </button>
+                        </div>
+
+                        <button
+                          disabled={isPending}
+                          onClick={() => handleToggleSet(set.id, !set.is_completed)}
+                          className={`check-btn ${isCompleted ? 'completed' : ''}`}
+                          style={isPending ? { borderColor: 'transparent', cursor: 'not-allowed', backgroundColor: 'transparent' } : undefined}
+                        >
+                          {isCompleted ? (
+                            <Check size={14} />
+                          ) : isPending ? (
+                            <Lock size={14} style={{ color: 'var(--text-secondary)', opacity: 0.8 }} />
+                          ) : null}
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -2976,7 +2995,7 @@ function App() {
                         // Only display available exercises (not already in newRoutineSelectedExercises)
                         const availableMatching = matchingExercises.filter(ex => 
                           !newRoutineSelectedExercises.some(item => item.id === ex.id)
-                        );
+                        ).slice(0, 20);
 
                         if (routineExerciseSearch.trim() === '') {
                           return (
