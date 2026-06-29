@@ -4011,9 +4011,13 @@ function App() {
             >
               🔴 Cerrar Dominio
             </button>
+          </div>
+        </div>
+      )}
+
       {/* Sellar Pacto - Sincronización Detallada */}
       {showSyncOverlay && (
-        <div 
+        <div
           className="overlay-screen animate-fade-in"
           style={{ 
             backgroundColor: 'rgba(7, 7, 10, 0.95)', 
