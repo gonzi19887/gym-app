@@ -2,281 +2,313 @@ import json
 import re
 
 json_path = r"C:\Users\Gonzi\Documents\Proyectos\gym-app\src\db\scraped_exercises_es.json"
-out_path = r"C:\Users\Gonzi\.gemini\antigravity\brain\1931095c-6edd-45aa-85d5-baec766db84e\scraped_exercises_es_modified.json"
-
-# Mapeo consolidado absoluto de todos los ejercicios sospechosos y adaptaciones de internet (Gimnasio)
-mapeo_consolidado = {
-    # CARDIO
-    "treadmill running": "Cinta de correr",
-    "treadmill walking": "Caminadora / Caminata en cinta",
-    "stair climber": "Escaladora (Stair Climber)",
-    "elliptical trainer": "Elíptica",
-    "stationary bicycle": "Bicicleta estática",
-    "jump rope": "Salto de cuerda",
-    "rowing machine": "Máquina de remo",
-    "run in place": "Trotar en el sitio",
-    "burpee": "Burpee",
-    "burpees": "Burpees",
-    "jumping jacks": "Saltos de tijera (Jumping Jacks)",
-    "mountain climber": "Escaladores (Mountain Climbers)",
-    "high knees": "Elevación de rodillas (High Knees)",
-    "squat jump": "Sentadilla con salto",
-    "box jump": "Salto al cajón",
-    "farmers walk": "Paseo del granjero (Farmers Walk)",
-    "battle rope": "Entrenamiento con cuerdas de batalla (Battle Ropes)",
-    "astride jumps": "Saltos laterales astride",
-    "stationary bike run": "Pedaleo en bicicleta estática",
-    "hands bike": "Pedaleo de manos (Bicicleta de brazos)",
-    "assault airbike": "Bicicleta de aire (Assault Airbike)",
-    "recumbent exercise bike": "Bicicleta estática reclinada",
-    "ski step": "Paso de esquí (Ski Steps)",
-    "skier gymstick": "Simulador de esquí con Gymstick",
-    "the box jump": "Salto al cajón (Box Jump)",
-    "box jump 1 to 2": "Salto de caja de 1 a 2 pies",
-    "box jump 2 to 1": "Salto de caja de 2 a 1 pies",
-    "single leg box jump": "Salto al cajón a una pierna",
-    
-    # BÍCEPS
-    "barbell curl": "Curl de bíceps con barra",
-    "dumbbell curl": "Curl de bíceps con mancuernas",
-    "ez bar curl": "Curl de bíceps con barra EZ",
-    "hammer curl": "Curl martillo",
-    "preacher curl": "Curl predicador",
-    "concentration curl": "Curl concentrado",
-    "spider curl": "Curl araña",
-    "waiter curl": "Curl de camarero",
-    "cable curl": "Curl de bíceps en polea",
-    "lying cable curl": "Curl de bíceps tumbado con polea",
-    "seated hammer curl": "Curl martillo sentado",
-    "seated alternating dumbbell curl": "Curl alterno con mancuernas sentado",
-    "elbow flexion": "Flexión de codo (Glosario)",
-    
-    # TRÍCEPS
-    "cable tricep kickback": "Patada de tríceps en polea",
-    "dumbbell triceps extension": "Extensión de tríceps con mancuerna",
-    "overhead triceps extension": "Extensión de tríceps tras nuca",
-    "triceps pushdown": "Extensión de tríceps en polea",
-    "ez bar lying triceps extension (skullcrusher)": "Press francés con barra EZ (Skullcrusher)",
-    "parallel bar dips": "Fondos en paralelas",
-    "dips between chairs": "Fondos entre bancos / sillas",
-    "chair dips": "Fondos en silla",
-    "assisted triceps dips": "Fondos asistidos en máquina",
-    "triceps extension machine": "Extensión de tríceps en máquina",
-    "bodyweight skull crushers": "Extensión de tríceps con peso corporal (Skullcrushers)",
-    "reverse dips": "Fondos invertidos en banco",
-    "ring dips": "Fondos en anillas",
-    "korean dips": "Fondos coreanos (Korean Dips)",
-    "straight bar dip": "Fondos en barra recta",
-    "scapula dips": "Fondos escapulares",
-    "impossible dips": "Fondos imposibles (Impossible Dips)",
-    
-    # ESPALDA
-    "straight arm pulldown": "Pullover en polea alta",
-    "straight-arm pulldown": "Pullover en polea alta",
-    "lat pulldown": "Jalón al pecho",
-    "behind the neck pulldown": "Jalón tras nuca",
-    "seated cable row": "Remo en polea baja",
-    "bent over row": "Remo inclinado con barra",
-    "dumbbell row": "Remo con mancuerna",
-    "one arm dumbbell row": "Remo unilateral con mancuerna",
-    "t-bar row": "Remo con barra en T",
-    "pull-up": "Dominadas prónas",
-    "pullup": "Dominadas prónas",
-    "chin-up": "Dominada supina",
-    "chinup": "Dominada supina",
-    "back extension": "Hiperextensiones lumbares",
-    "hyperextension": "Hiperextensiones lumbares",
-    "jumping pull-up": "Dominadas con salto",
-    "ring inverted row": "Remo invertido en anillas",
-    "shotgun row": "Remo unilateral en polea (Shotgun Row)",
-    "inverted row": "Remo invertido (Dominadas australianas)",
-    "weighted pull-up": "Dominadas con lastre",
-    "front lever pull-up": "Dominadas en Front Lever",
-    "neutral grip pull-up": "Dominadas con agarre neutro",
-    "front lever": "Front Lever (Calistenia)",
-    "back lever": "Back Lever (Calistenia)",
-    "l-sit pull-up": "Dominadas en L-Sit",
-    "scapula pull-up": "Dominadas escapulares",
-    "behind the neck pull-up": "Dominadas tras nuca",
-    "commando pull-up": "Dominadas de comando (Commando Pull-ups)",
-    "isometric pull-up": "Dominada isométrica",
-    "chin up around the bar": "Dominadas supinas alrededor de la barra",
-    "bodyweight row in doorway": "Remo con peso corporal en marco de puerta",
-    "lever high row": "Remo alto en máquina de palanca",
-    "landmine t-bar row": "Remo con barra T en Landmine",
-    "rack pull": "Peso muerto parcial (Rack Pulls)",
-    "lever pullover": "Pullover en máquina de palanca",
-    "lever reverse t-bar row": "Remo en barra T invertido en máquina",
-    
-    # PECHO
-    "bench press": "Press de banca con barra",
-    "dumbbell bench press": "Press de banca con mancuernas",
-    "incline bench press": "Press de banca inclinado con barra",
-    "incline dumbbell press": "Press inclinado con mancuernas",
-    "decline bench press": "Press de banca declinado con barra",
-    "decline dumbbell press": "Press declinado con mancuernas",
-    "chest fly": "Aperturas de pecho con mancuernas",
-    "push-up": "Flexión de pecho / lagartija",
-    "pushup": "Flexión de pecho",
-    "diamond push-up": "Flexión diamante",
-    "cable crossover": "Cruce de poleas para pecho",
-    "push-up to renegade row": "Flexiones con remo renegado",
-    
-    # HOMBROS
-    "shoulder press": "Press de hombros con mancuernas",
-    "military press": "Press militar con barra",
-    "arnold press": "Press Arnold",
-    "lateral raise": "Elevaciones laterales para hombros",
-    "front raise": "Elevaciones frontales para hombros",
-    "shrug": "Encogimiento de hombros",
-    "face pull": "Face Pull en polea alta",
-    "rear delt fly": "Pájaro / Vuelos posteriores en máquina",
-    "bent over lateral raise": "Pájaro / Vuelos posteriores con mancuernas",
-    "wall slides": "Deslizamientos en pared para hombros",
-    "scapular protraction and retraction": "Protracción y retracción escapular",
-    "shoulder pendulum": "Péndulo de hombro (Codman)",
-    "shoulder external rotation": "Rotación externa de hombro",
-    "shoulder internal rotation": "Rotación interna de hombro",
-    "alternating shoulder flexion": "Flexión de hombro alterna con mancuerna",
-    "wall supported arm raises": "Elevación de brazos apoyado en pared",
-    "dead hang": "Colgado pasivo en barra (Dead Hang)",
-    "backhand raise": "Elevación de dorso de la mano",
-    "serratus wall slide with foam roller": "Deslizamientos en pared para serrato con rodillo",
-    
-    # PIERNAS
-    "back squat": "Sentadilla trasera con barra",
-    "front squat": "Sentadilla frontal con barra",
-    "goblet squat": "Sentadilla Goblet",
-    "bulgarian split squat": "Sentadilla búlgara con mancuernas",
-    "leg press": "Prensa de piernas a 45 grados",
-    "hack squat": "Sentadilla Hack en máquina",
-    "seated leg curl": "Curl de piernas sentado",
-    "lying leg curl": "Curl de piernas acostado / tumbado",
-    "leg extension": "Extensión de piernas",
-    "romanian deadlift": "Peso muerto rumano",
-    "sumo deadlift": "Peso muerto sumo",
-    "conventional deadlift": "Peso muerto convencional",
-    "hip thrust": "Hip thrust con barra",
-    "glute bridge": "Puente de glúteos",
-    "glute bridge on bench": "Puente de glúteos apoyado en banco",
-    "glute bridge one leg on bench": "Puente de glúteos a una pierna apoyado en banco",
-    "unilateral bridge": "Puente de glúteos unilateral (a una pierna)",
-    "side bridge hip abduction": "Plancha lateral con abducción de cadera",
-    "frog pump": "Frog Pumps para glúteos",
-    "fire hydrant": "Patada lateral de glúteo (Boca de incendio / Fire Hydrant)",
-    "step up with knee raises": "Subidas al cajón con elevación de rodilla",
-    "donkey kicks": "Patada de glúteo en cuadrupedia (Donkey Kicks)",
-    "single leg hip thrust jump": "Salto con hip thrust a una pierna",
-    "lateral leg swings": "Columpios laterales de piernas (Calentamiento)",
-    "smith machine hip thrust": "Hip thrust en máquina Smith",
-    "side hip abduction": "Abducción lateral de cadera",
-    
-    # PANTORRILLAS
-    "calf raise": "Elevación de talones / pantorrillas",
-    "standing calf raise": "Elevación de talones de pie",
-    "seated calf raise": "Elevación de talones sentado",
-    
-    # ABDOMEN
-    "plank": "Plancha abdominal",
-    "side plank": "Plancha lateral",
-    "crunch": "Crunch abdominal",
-    "bicycle crunch": "Crunch bicicleta",
-    "russian twist": "Giros rusos",
-    "ab wheel rollout": "Rueda abdominal (Ab Wheel)",
-    "hanging leg raise": "Elevación de piernas colgado",
-    "lying leg raise": "Elevación de piernas acostado",
-    "dead bug": "Bicho muerto (Dead Bug)",
-    "4 point tummy vacuum exercise": "Vacío abdominal en 4 puntos (cuadrupedia)",
-    "stomach vacuum": "Vacío abdominal de pie",
-    "tummy vacuum": "Vacío abdominal",
-    "abdominal bracing": "Activación isométrica abdominal (Bracing)",
-    "abdominal hollow": "Vacío abdominal (Hollowing)",
-    "bear crawl": "Caminata de oso (Bear Crawl)",
-    "leg pull-in knee-ups": "Elevaciones de rodillas en banco sentado",
-    "hanging knee raises": "Elevaciones de rodillas colgado",
-    "dragon flag": "Dragon Flag (Abdominales de Dragón)",
-    "high plank": "Plancha alta sobre manos",
-    "ball russian twist throw with partner": "Lanzamiento de giros rusos con balón medicinal y compañero",
-    "swing gymstick": "Giros con Gymstick",
-    "down to up twist gymstick": "Giros de abajo a arriba con Gymstick",
-    "bicycle crunch gymstick": "Abdominales bicicleta con Gymstick",
-    "pelvic tilt": "Basculación / Inclinación pélvica",
-    "reverse plank kicks": "Plancha invertida con patadas",
-    "plank knee to elbow": "Plancha abdominal con rodilla al codo (Spiderman Plank)",
-    "half wipers": "Medios limpiaparabrisas (Half Wipers)",
-    "plank leg lift": "Plancha abdominal con elevación de pierna",
-    "skater": "Saltos de patinador (Skaters)",
-    "long arm crunch": "Crunch abdominal con brazos estirados",
-    "jackknife sit-ups (v-up)": "Abdominales navaja (V-ups)",
-    "flutter kick": "Aleteo de piernas (Flutter Kicks)",
-    "hip abduction machine": "Abducciones de cadera en máquina",
-    "side plank knee to elbow": "Plancha lateral con rodilla al codo",
-    "suspended ab fall-out": "Despliegue de abdomen en suspensión (TRX)",
-    "trx mountain climber": "Escaladores en suspensión con TRX",
-    "half cross crunch": "Medio crunch cruzado (Abdominales)",
-    "hip circles": "Círculos de cadera (Movilidad)",
-    "side plank rotation": "Plancha lateral con rotación de tronco",
-    "kicks leg bent": "Patadas con pierna flexionada",
-    "hell slide": "Deslizamientos de talón en el suelo",
-    "prone abdominal hollowing": "Vacío abdominal en prono (acostado boca abajo)",
-    "rolling like a ball": "Rodar como una pelota (Pilates)",
-    "hands in air dead bug": "Bicho muerto con manos arriba (Dead Bug)",
-    "side plank oblique crunch": "Plancha lateral con crunch para oblicuos",
-    "leg scissors": "Tijeras de piernas (Abdominales)",
-    "side bent": "Flexión lateral de tronco de pie",
-    "handstand": "Pino de pie (Handstand)",
-    "handstand walk": "Caminata sobre manos (Handstand Walk)",
-    "climbing monkey bars": "Pasamanos (Climbing Monkey Bars)",
-    "supine spinal twist": "Giro espinal en supino (Estiramiento)",
-    "plank jacks / extended leg": "Plancha con saltos de pies (Plank Jacks)",
-    
-    # OTROS / MASAJES / MOVILIDAD
-    "foam roller posterior shoulder": "Masaje de hombro posterior con rodillo de espuma (Foam Roller)",
-    "foam roller rhomboids": "Masaje de romboides con rodillo de espuma (Foam Roller)",
-    "foam roller glutes": "Masaje de glúteos con rodillo de espuma (Foam Roller)",
-    "foam roller quads": "Masaje de cuádriceps con rodillo de espuma (Foam Roller)",
-    "foam roller upper back": "Masaje de espalda alta con rodillo de espuma (Foam Roller)",
-    "foam roller plantar fasciitis": "Masaje de planta del pie con rodillo de espuma / pelota",
-    "foam roller hamstrings": "Masaje de isquiotibiales con rodillo de espuma (Foam Roller)",
-    "foam roller front shoulder and chest": "Masaje de hombro frontal y pectoral con rodillo",
-    "foam roller calves": "Masaje de pantorrillas con rodillo de espuma (Foam Roller)",
-    "reaction ball throw": "Lanzamiento con pelota de reacción",
-    "vibration plate": "Ejercicio en plataforma vibratoria",
-    "duck walk": "Caminata de pato (Duck Walk)",
-    "swing 360": "Giro 360 con pesa rusa / barra",
-    "1-2 stick drill": "Paso lateral 1-2 (Coordinación)",
-    "knee circles": "Círculos de rodillas (Movilidad)",
-    "hip circles": "Círculos de cadera (Movilidad)",
-    "foot and ankle rotation": "Rotación de pie y tobillo (Movilidad)",
-    "chaturanga dandasana": "Postura de plancha baja (Chaturanga Dandasana)",
-    "double leg stretch": "Estiramiento de doble pierna (Pilates)",
-    "single knee to chest": "Estiramiento de rodilla al pecho",
-    "snap jumps": "Saltos snap (Snap Jumps / Medio Burpee)",
-    "depth jump to hurdle hop": "Salto de profundidad a salto de valla (Pliometría)",
-}
+out_path = r"C:\Users\Gonzi\Documents\Proyectos\gym-app\src\db\scraped_exercises_es.json"
 
 with open(json_path, "r", encoding="utf-8") as f:
     data = json.load(f)
 
-updated = 0
-for key, val in data.items():
-    # Normalizar
-    name_en = val.get("name_en", "").strip().lower()
-    name_en = name_en.replace("-", " ").replace("|", " ")
-    name_en = re.sub(r'\s+', ' ', name_en).strip()
-    
-    # Evaluar contra el mapeo consolidado
-    if name_en in mapeo_consolidado:
-        old_val = val.get("name_es", "")
-        new_val = mapeo_consolidado[name_en]
-        if old_val != new_val:
-            val["name_es"] = new_val
-            updated += 1
-            print(f"Modificado: '{name_en}' -> '{new_val}'")
+# Diccionario de adaptaciones exactas para términos que Google Translate traduce de manera literal/incorrecta
+correcciones_especificas = {
+    "chin-up": "Dominada supina",
+    "chinup": "Dominada supina",
+    "plank": "Plancha abdominal",
+    "muscle-up": "Muscle-up (Fuerza en barra)",
+    "muscle up": "Muscle-up (Fuerza en barra)",
+    "push press": "Push Press (Press con impulso)",
+    "run in place": "Trotar en el sitio",
+    "box pistol squat": "Sentadilla pistola sobre cajón (Pistol Squat)",
+    "pistol squat": "Sentadilla pistola (Pistol Squat)",
+    "abdominal bracing": "Activación isométrica abdominal (Bracing)",
+    "abdominal hollow": "Vacío abdominal (Hollowing)",
+    "stomach vacuum": "Vacío abdominal",
+    "tummy vacuum": "Vacío abdominal",
+    "dead bug": "Bicho muerto (Dead Bug)",
+    "bird dog": "Bird Dog (Pájaro Perro)",
+    "superman": "Supermán (lumbares)",
+    "good morning": "Buenos días (Good Morning)",
+    "farmers walk": "Paseo del granjero",
+    "farmer's walk": "Paseo del granjero",
+    "face pull": "Face Pull en polea alta",
+    "facepull": "Face Pull en polea alta",
+    "skullcrusher": "Press francés (Skullcrusher)",
+    "skullcrushers": "Press francés (Skullcrusher)",
+    "thruster": "Thrusters (Sentadilla con press)",
+    "thrusters": "Thrusters (Sentadilla con press)",
+    "bear crawl": "Caminata de oso (Bear Crawl)",
+    "bear crawls": "Caminata de oso (Bear Crawl)",
+    "chaturanga dandasana": "Plancha baja de yoga (Chaturanga Dandasana)",
+    "chaturanga": "Plancha baja de yoga (Chaturanga)",
+    "boxer shuffle cardio": "Paso de boxeador (Boxer Shuffle)",
+    "boxer shuffle": "Paso de boxeador (Boxer Shuffle)",
+    "cable rear pulldown": "Jalón tras nuca en polea",
+    "front to side plank": "Plancha de frontal a lateral",
+    "standing toe touch": "Estiramiento de toque de puntas de pie",
+    "weighted muscle-up": "Muscle-up con lastre",
+    "weighted muscle up": "Muscle-up con lastre",
+}
 
-if updated > 0:
-    with open(out_path, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
-    print(f"Éxito. Se modificaron y guardaron {updated} ejercicios en {out_path}.")
-else:
-    print("No se encontraron diferencias para modificar.")
+# Patrones de expresiones regulares y sus reemplazos de jerga de gimnasio en español
+reemplazos_patrones = [
+    # 1. Correcciones de palabras que se traducen literal
+    (r"\bposavasos ab\b", "Ab Coaster"),
+    (r"\bposavasos\b", "Ab Coaster"),
+    (r"\bpalo de gimnasia\b", "Gymstick"),
+    (r"\bpalo de gimnasio\b", "Gymstick"),
+    (r"\bmina terrestre\b", "Landmine"),
+    (r"\bcontragolpe\b", "patada de glúteos"),
+    (r"\bcontragolpes\b", "patadas de glúteos"),
+    (r"\bmusculoso\b", "Muscle-up"),
+    (r"\bejecutar en el lugar\b", "Trotar en el sitio"),
+    (r"\bejercicio de plancha\b", "Plancha"),
+    (r"\bplancha corporal\b", "plancha tipo sierra"),
+    (r"\bsierra corporal\b", "plancha tipo sierra (Body Saw)"),
+    (r"\bsierra de carrocería\b", "plancha tipo sierra (Body Saw)"),
+    (r"\bejercicio de dominada\b", "Dominada"),
+    (r"\bde la mquina de Smith\b", "en máquina Smith"),
+    (r"\bde la mquina Smith\b", "en máquina Smith"),
+    (r"\bmquina de smith\b", "en máquina Smith"),
+    (r"\bmquina smith\b", "en máquina Smith"),
+    (r"\bmáquina de smith\b", "en máquina Smith"),
+    (r"\bmáquina smith\b", "en máquina Smith"),
+    (r"\bde la mquina de palanca\b", "en máquina de palanca"),
+    (r"\bmquina de palanca\b", "en máquina de palanca"),
+    (r"\bmáquina de palanca\b", "en máquina de palanca"),
+    (r"\bde la mquina de cable\b", "en polea"),
+    (r"\bde cable\b", "en polea"),
+    (r"\bde la mquina de cables\b", "en polea"),
+    (r"\bde la mquina con cables\b", "en polea"),
+    (r"\bcuerda de salto\b", "salto de cuerda"),
+    (r"\bcuerda para saltar\b", "salto de cuerda"),
+    (r"\bmosca del pecho\b", "aperturas de pecho"),
+    (r"\bmosca de pecho\b", "aperturas de pecho"),
+    (r"\bmoscas de pecho\b", "aperturas de pecho"),
+    (r"\bmosca inversa\b", "pájaro / vuelos posteriores"),
+    (r"\bmoscas inversas\b", "pájaro / vuelos posteriores"),
+    (r"\blevantamiento de piernas\b", "elevación de piernas"),
+    (r"\blevantamientos de piernas\b", "elevación de piernas"),
+    (r"\blevantamiento de pierna\b", "elevación de pierna"),
+    (r"\blevantamientos de pierna\b", "elevación de pierna"),
+    (r"\blevantamiento de rodilla\b", "elevación de rodilla"),
+    (r"\blevantamientos de rodilla\b", "elevación de rodilla"),
+    (r"\blevantamiento de rodillas\b", "elevación de rodillas"),
+    (r"\blevantamientos de rodillas\b", "elevación de rodillas"),
+    (r"\bencogimiento de hombros\b", "encogimiento de hombros"),
+    (r"\bencogimientos de hombros\b", "encogimiento de hombros"),
+    (r"\bde oso\b", "de caminata de oso"),
+    (r"\bde arrastre de oso\b", "de caminata de oso"),
+    (r"\barrastre del oso\b", "caminata de oso"),
+    (r"\bde arrastre del oso\b", "de caminata de oso"),
+    (r"\bbarra con mancuernas\b", "mancuerna"),
+    (r"\bcon mancuernas de mancuerna\b", "con mancuerna"),
+    (r"\bde vaco de barriga\b", "de vacío abdominal"),
+    (r"\bde vaco de abdomen\b", "de vacío abdominal"),
+    (r"\bvaco de abdomen\b", "vacío abdominal"),
+    (r"\bvaco de barriga\b", "vacío abdominal"),
+    (r"\bvacío de abdomen\b", "vacío abdominal"),
+    (r"\bvacío de barriga\b", "vacío abdominal"),
+    (r"\bde vacio de barriga\b", "de vacío abdominal"),
+    (r"\bde vacio de abdomen\b", "de vacío abdominal"),
+    (r"\bdespliegue de barra\b", "despliegue con barra"),
+    (r"\bdespliegue de la rueda abdominal\b", "rueda abdominal (Ab Wheel Rollout)"),
+    (r"\bdespliegue de rueda abdominal\b", "rueda abdominal (Ab Wheel Rollout)"),
+    (r"\bempujar prensa\b", "Push Press (Press con impulso)"),
+    (r"\bprensa de empuje\b", "Push Press (Press con impulso)"),
+    (r"\bde la caja de la pistola\b", "pistola sobre cajón (Pistol Squat)"),
+    (r"\bde la caja de pistola\b", "pistola sobre cajón (Pistol Squat)"),
+    (r"\bsentadilla con pistola\b", "sentadilla pistola"),
+    (r"\bsentadillas con pistola\b", "sentadillas pistola"),
+    (r"\bcangrejo de twist\b", "giro de cangrejo"),
+    (r"\bcangrejo giro\b", "giro de cangrejo"),
+    (r"\bgiro de cangrejo\b", "giro de cangrejo (Crab Twist)"),
+    (r"\barrastre de oso de escalada\b", "escaladores en posición de oso"),
+    (r"\btringulo\b", "triángulo (Push-up)"),
+    (r"\btriangulo\b", "triángulo (Push-up)"),
+    (r"\bde inclinacin plvica\b", "de basculación pélvica"),
+    (r"\binclinacin plvica\b", "basculación pélvica"),
+    (r"\binclinación pélvica\b", "basculación pélvica"),
+    
+    # 2. Reemplazos de verbos o palabras sueltas de traducción literal
+    (r"\bprensa de pecho\b", "press de pecho"),
+    (r"\bprensas de pecho\b", "press de pecho"),
+    (r"\bprensa de hombro\b", "press de hombros"),
+    (r"\bprensas de hombro\b", "press de hombros"),
+    (r"\bprensa militar\b", "press militar"),
+    (r"\bprensa de piernas\b", "prensa de piernas"),
+    (r"\bprensas de piernas\b", "prensa de piernas"),
+    (r"\bextensin de tríceps de mancuerna\b", "extensión de tríceps con mancuerna"),
+    (r"\btrceps pushdown\b", "extensión de tríceps en polea"),
+    (r"\btriceps pushdown\b", "extensión de tríceps en polea"),
+    (r"\bextensin de trceps en polea alta\b", "extensión de tríceps en polea"),
+    (r"\bcurl de barra ez\b", "curl con barra EZ"),
+    (r"\bcurl de barra EZ\b", "curl con barra EZ"),
+    (r"\bcurl de bíceps de barra ez\b", "curl de bíceps con barra EZ"),
+    (r"\bcurl de bceps de barra ez\b", "curl de bíceps con barra EZ"),
+    (r"\bejercicio de curl\b", "curl"),
+    (r"\bejercicio de remo\b", "remo"),
+    (r"\bejercicio de flexin\b", "flexión"),
+    (r"\bejercicio de flexión\b", "flexión"),
+    (r"\bejercicio de sentadilla\b", "sentadilla"),
+    (r"\bejercicio de estiramiento\b", "estiramiento"),
+    
+    # 3. Limpieza de conectores o redundancias
+    (r"^(ejercicio de|ejercicios de|ejercicio para|ejercicios para)\s+", ""),
+    
+    # 4. Traducciones erróneas sistemáticas de gimnasio
+    (r"\binmersión\b", "fondo"),
+    (r"\binmersiones\b", "fondos"),
+    (r"\bcrujido\b", "crunch"),
+    (r"\bcrujidos\b", "crunch"),
+    (r"\baérea\b", "sobre la cabeza"),
+    (r"\baéreo\b", "sobre la cabeza"),
+    (r"\bcon un solo brazo\b", "unilateral"),
+    (r"\ba un solo brazo\b", "unilateral"),
+    (r"\bun solo brazo\b", "unilateral"),
+    (r"\bcon un brazo\b", "unilateral"),
+    (r"\bcon cable\b", "en polea"),
+    (r"\bde cable\b", "en polea"),
+    (r"\bcon polea\b", "en polea"),
+    (r"\bcuclillas\b", "sentadilla"),
+    (r"\bcuclilla\b", "sentadilla"),
+    (r"\bdividido búlgaro\b", "búlgaro (Split)"),
+    (r"\bdividida búlgara\b", "búlgara (Split)"),
+    (r"\blimpiadores de piso\b", "limpiaparabrisas (Floor Wipers)"),
+    (r"\blimpiador de piso\b", "limpiaparabrisas (Floor Wipers)"),
+    (r"\blimpiadores de suelo\b", "limpiaparabrisas (Floor Wipers)"),
+    (r"\btorsión de arriba a abajo\b", "giro de alto a bajo"),
+    (r"\btorsión de abajo a arriba\b", "giro de bajo a alto"),
+    (r"\bde torsión\b", "de giro"),
+    (r"\btorsión\b", "giro"),
+    (r"\brejilla frontal\b", "soporte frontal (Front Rack)"),
+    (r"\brejilla\b", "soporte (Rack)"),
+    (r"\bestirable\b", "estiramiento"),
+    (r"\bde unilateral\b", "unilateral"),
+    (r"\bcruce de polea unilateral\b", "cruce de poleas unilateral"),
+    (r"\bcontragolpe inverso\b", "patada de glúteos inversa"),
+    (r"\bjersey\b", "pullover"),
+    (r"\bjerseys\b", "pullover"),
+    (r"\bponderado\b", "con lastre"),
+    (r"\bponderada\b", "con lastre"),
+    (r"\bponderados\b", "con lastre"),
+    (r"\bestocada\b", "zancada"),
+    (r"\bestocadas\b", "zancadas"),
+    (r"\bpaseo por la pared\b", "caminata por la pared (Wall Walk)"),
+    (r"\bcaminata de pared\b", "caminata por la pared (Wall Walk)"),
+    (r"\blevantamientos corporales\b", "flexiones de tríceps en plancha (Body Ups)"),
+    (r"\bflexión de tríceps en polea\b", "extensión de tríceps en polea"),
+    (r"\bflexión de tríceps\b", "extensión de tríceps"),
+    (r"\bflexión de triceps\b", "extensión de tríceps"),
+    (r"\bprensa arnold\b", "Press Arnold"),
+    (r"\bprensa Arnold\b", "Press Arnold"),
+    (r"\belevación de troncos\b", "elevación de tronco (Log Lift)"),
+    (r"\bcon una pierna\b", "a una pierna"),
+    (r"\bmolino de viento\b", "Molino (Windmill)"),
+    (r"\bflexión de caída\b", "flexión pliométrica con caída (Drop Push-Up)"),
+    (r"\bsentadilla hasta la rodilla\b", "sentadilla con elevación de rodilla"),
+    (r"\bpatada de aleteo\b", "aleteo de piernas (Flutter Kicks)"),
+    (r"\bpatadas de aleteo\b", "aleteo de piernas (Flutter Kicks)"),
+    (r"\bmosca de la máquina\b", "aperturas en máquina"),
+    (r"\bmosca de la mquina\b", "aperturas en máquina"),
+    (r"\bmosca\b", "aperturas"),
+    (r"\bmoscas\b", "aperturas"),
+    (r"\bplaca cargada\b", "con discos (Plate Loaded)"),
+    (r"\bplacas cargadas\b", "con discos (Plate Loaded)"),
+    (r"\bcon placa cargada\b", "con discos (Plate Loaded)"),
+    (r"\bcon placas cargadas\b", "con discos (Plate Loaded)"),
+    (r"\btirón facial\b", "Face Pull"),
+    (r"\btirón de cara\b", "Face Pull"),
+    (r"\bmedio arrodillado\b", "en media rodilla"),
+    (r"\bmedio arrodillada\b", "en media rodilla"),
+    (r"\bescalador de escaleras\b", "escaladora"),
+    (r"\bminas terrestres\b", "Landmine"),
+    (r"\bcrujiente de pliegue\b", "crunch agrupado (Tuck Crunch)"),
+    (r"\bcrujiente\b", "crunch"),
+    (r"\bpilates de adelanto\b", "Teaser (Pilates)"),
+    (r"\bteaser pilates\b", "Teaser (Pilates)"),
+    (r"\brodilla con balón de estabilidad\b", "encogimiento de rodillas sobre fitball (Knee Tuck)"),
+    (r"\brodilla con pelota de estabilidad\b", "encogimiento de rodillas sobre fitball (Knee Tuck)"),
+    (r"\brodilla con fitball\b", "encogimiento de rodillas sobre fitball (Knee Tuck)"),
+    (r"\bempuje con banda\b", "extensión de tríceps con banda"),
+    (r"\bretroceso de glúteos\b", "patada de glúteos"),
+    (r"\bretroceso de glúteo\b", "patada de glúteos"),
+    (r"\bretroceso\b", "patada"),
+    (r"\bdividido\b", "Split"),
+    (r"\bdividida\b", "Split"),
+    (r"\brechazar\b", "declinado"),
+    (r"\bponderada\b", "con lastre"),
+    (r"\bponderadas\b", "con lastre"),
+    (r"\bcon una sola pierna\b", "a una pierna"),
+    (r"\ba una sola pierna\b", "a una pierna"),
+    (r"\bdivididos\b", "Split"),
+    (r"\bdivididas\b", "Split"),
+    (r"\bjalón lateral\b", "jalón al pecho"),
+    (r"\bjalón de lat\b", "jalón al pecho"),
+    (r"\bjalones de lat\b", "jalones al pecho"),
+    (r"\btoque de hombros\b", "con toque de hombros"),
+    (r"\btoque de hombro\b", "con toque de hombros"),
+    (r"\blimpiar y presionar\b", "cargada y press (Clean and Press)"),
+    (r"\bcargada y presionar\b", "cargada y press (Clean and Press)"),
+    (r"\bpasar el cable\b", "tirón entre piernas en polea (Pull Through)"),
+    (r"\btirar del cable\b", "tirón entre piernas en polea (Pull Through)"),
+    (r"\btirones de cable\b", "tirón entre piernas en polea (Pull Through)"),
+    (r"\bcurva lateral\b", "flexión lateral de tronco"),
+    (r"\bde dos brazos\b", "a dos brazos"),
+    (r"\bcolumpio 360\b", "giro 360"),
+    (r"\bcorrer en cinta\b", "correr en cinta (cinta de correr)"),
+    (r"\bpatada de glúteos de tríceps\b", "patada de tríceps"),
+    (r"\bpatada de glúteo de tríceps\b", "patada de tríceps"),
+    (r"\bdesplegable trasero\b", "jalón tras nuca"),
+    (r"\bdesplegable\b", "jalón"),
+    (r"\bmusculación\b", "Muscle-up"),
+]
+
+count = 0
+for key, val in data.items():
+    name_en = val.get("name_en", "").strip()
+    name_es = val.get("name_es", "").strip()
+    
+    if not name_en:
+        continue
+    
+    name_en_lower = name_en.lower()
+    
+    # 1. Verificar si tiene excepción exacta
+    if name_en_lower in correcciones_especificas:
+        val["name_es"] = correcciones_especificas[name_en_lower]
+        count += 1
+        continue
+    
+    # 2. Aplicar patrones
+    new_name = name_es
+    for pattern, rep in reemplazos_patrones:
+        new_name = re.sub(pattern, rep, new_name, flags=re.IGNORECASE)
+        
+    # Condicionar flexión de hombros para Shoulder Tap Push-ups
+    if "push-up" in name_en_lower or "pushup" in name_en_lower:
+        if "flexión de hombros" in new_name.lower():
+            new_name = re.sub(r"flexión de hombros", "flexión de pecho con toque de hombros (Shoulder Tap)", new_name, flags=re.IGNORECASE)
+    else:
+        # Revertir cualquier cambio incorrecto en estiramientos de flexión de hombros
+        if "flexión de pecho con con toque de hombros" in new_name.lower() or "flexión de pecho con toque de hombros" in new_name.lower():
+            new_name = "Estiramiento de flexión de hombro"
+    
+    # 3. Eliminar redundancias de inicio
+    new_name = re.sub(r'^(ejercicio de|ejercicios de|ejercicio para|ejercicios para)\s+', '', new_name, flags=re.IGNORECASE)
+    if len(new_name.split()) > 2:
+        if new_name.lower().startswith("ejercicio con "):
+            new_name = new_name[14:]
+        elif new_name.lower().startswith("ejercicio en "):
+            new_name = new_name[13:]
+            
+    # Capitalizar la primera letra del resultado final
+    if new_name:
+        new_name = new_name[0].upper() + new_name[1:]
+        
+    if new_name != name_es:
+        val["name_es"] = new_name
+        count += 1
+
+# Guardar cambios
+with open(out_path, "w", encoding="utf-8") as f:
+    json.dump(data, f, ensure_ascii=False, indent=2)
+
+print(f"Saneamiento de jerga de gimnasio completado. Se corrigieron y guardaron {count} ejercicios en {out_path}.")
