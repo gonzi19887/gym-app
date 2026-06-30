@@ -165,7 +165,7 @@
     "variantes": []
   },
   "soporte_en_paralelas": {
-    "name_es": "Fondos",
+    "name_es": "Fondos en paralelas",
     "name_en": "Parallel Bar Dips",
     "category": "Tríceps",
     "url": "https://fitnessprogramer.com/exercise/parallel-bar-dips/",
@@ -589,7 +589,7 @@
     "variantes": []
   },
   "fondos_en_paralelas": {
-    "name_es": "Fondos",
+    "name_es": "Fondos en paralelas",
     "name_en": "Parallel Bar Dips",
     "category": "Pecho",
     "url": "https://fitnessprogramer.com/exercise/parallel-bar-dips/",
@@ -971,7 +971,7 @@
     "variantes": []
   },
   "flexiones_diamante": {
-    "name_es": "Flexiones de pecho",
+    "name_es": "Flexión diamante",
     "name_en": "Diamond Push-up",
     "category": "Pecho",
     "url": "https://fitnessprogramer.com/exercise/diamond-push-up/",
@@ -1149,7 +1149,7 @@
     "variantes": []
   },
   "fondos_entre_bancos": {
-    "name_es": "Fondos",
+    "name_es": "Fondos entre bancos / sillas",
     "name_en": "Dips Between Chairs",
     "category": "Pecho",
     "url": "https://fitnessprogramer.com/exercise/dips-between-chairs/",
@@ -1228,7 +1228,7 @@
     "variantes": []
   },
   "fondos_en_maquina": {
-    "name_es": "Ejercicio",
+    "name_es": "Trotar en el sitio",
     "name_en": "Run in Place",
     "category": "Cardio",
     "url": "https://fitnessprogramer.com/exercise/run-in-place/",
@@ -1262,7 +1262,7 @@
     "variantes": []
   },
   "fondos_en_silla": {
-    "name_es": "Fondos",
+    "name_es": "Fondos en silla",
     "name_en": "Chair Dips",
     "category": "Otros",
     "url": "https://fitnessprogramer.com/exercise/chair-dips/",
@@ -1456,7 +1456,7 @@
     "variantes": []
   },
   "curl_martillo_alterno": {
-    "name_es": "Curl de bíceps sentado con mancuernas",
+    "name_es": "Curl alterno con mancuernas sentado",
     "name_en": "Seated Alternating Dumbbell Curl",
     "category": "Otros",
     "url": "https://fitnessprogramer.com/exercise/seated-alternating-dumbbell-curl/",
@@ -1692,7 +1692,7 @@
     "variantes": []
   },
   "mejores_ejercicios_de_biceps": {
-    "name_es": "Fondos",
+    "name_es": "Fondos asistidos en máquina",
     "name_en": "Assisted Triceps Dips",
     "category": "Tríceps",
     "url": "https://fitnessprogramer.com/exercise/asisted-triceps-dips/",
@@ -1867,7 +1867,7 @@
     "variantes": []
   },
   "curl_arana": {
-    "name_es": "Curl de bíceps",
+    "name_es": "Curl de camarero",
     "name_en": "Waiter Curl",
     "category": "Otros",
     "url": "https://fitnessprogramer.com/exercise/waiter-curl/",
@@ -4306,7 +4306,7 @@
     "variantes": []
   },
   "remo_sentado_en_polea": {
-    "name_es": "Remo en polea sentado",
+    "name_es": "Remo en polea baja",
     "name_en": "Seated Cable Row",
     "category": "Espalda",
     "url": "https://fitnessprogramer.com/exercise/seated-cable-row/",
@@ -4409,7 +4409,7 @@
     "variantes": []
   },
   "remo_en_maquina": {
-    "name_es": "Remo en máquina",
+    "name_es": "Máquina de remo",
     "name_en": "Rowing Machine",
     "category": "Espalda",
     "url": "https://fitnessprogramer.com/exercise/rowing-machine/",
@@ -4891,7 +4891,7 @@
     "variantes": []
   },
   "curl_de_piernas_acostado": {
-    "name_es": "Curl de bíceps acostado en polea",
+    "name_es": "Curl de bíceps tumbado con polea",
     "name_en": "Lying Cable Curl",
     "category": "Otros",
     "url": "https://fitnessprogramer.com/exercise/lying-cable-curl/",
@@ -6011,7 +6011,7 @@
     "variantes": []
   },
   "flexiones": {
-    "name_es": "Flexión de pecho",
+    "name_es": "Flexión de pecho / lagartija",
     "name_en": "Push-Up",
     "category": "Pecho",
     "url": "https://fitnessprogramer.com/exercise/push-up/",
@@ -8284,7 +8284,7 @@
     "variantes": []
   },
   "dead_bug": {
-    "name_es": "Ejercicio",
+    "name_es": "Bicho muerto (Dead Bug)",
     "name_en": "Dead Bug",
     "category": "Abdomen",
     "url": "https://fitnessprogramer.com/exercise/dead-bug/",
@@ -8763,7 +8763,7 @@
     "variantes": []
   },
   "plancha_lateral": {
-    "name_es": "Plancha",
+    "name_es": "Plancha lateral",
     "name_en": "Side Plank",
     "category": "Abdomen",
     "url": "https://fitnessprogramer.com/exercise/side-plank/",
@@ -15473,7 +15473,7 @@
     "variantes": []
   },
   "prensa_arnold": {
-    "name_es": "Press de pecho",
+    "name_es": "Press Arnold",
     "name_en": "Arnold Press",
     "category": "Hombros",
     "url": "https://fitnessprogramer.com/exercise/arnold-press/",
@@ -15512,7 +15512,7 @@
     "variantes": []
   },
   "elevacion_lateral_inclinada": {
-    "name_es": "Elevaciones laterales inclinado",
+    "name_es": "Pájaro / Vuelos posteriores con mancuernas",
     "name_en": "Bent Over Lateral Raise",
     "category": "Espalda",
     "url": "https://fitnessprogramer.com/exercise/bent-over-lateral-raise/",
@@ -17447,7 +17447,7 @@
     "variantes": []
   },
   "jalon_lateral": {
-    "name_es": "Jalón al pecho en polea alta",
+    "name_es": "Jalón al pecho",
     "name_en": "Lat Pulldown",
     "category": "Espalda",
     "url": "https://fitnessprogramer.com/exercise/lat-pulldown/",
@@ -17832,7 +17832,7 @@
     "variantes": []
   },
   "escalador_de_montana": {
-    "name_es": "Ejercicio",
+    "name_es": "Escaladores (Mountain Climbers)",
     "name_en": "Mountain Climber",
     "category": "Abdomen",
     "url": "https://fitnessprogramer.com/exercise/mountain-climber/",
@@ -18254,7 +18254,7 @@
     "variantes": []
   },
   "crujido_de_bicicleta": {
-    "name_es": "Ejercicio",
+    "name_es": "Crunch bicicleta",
     "name_en": "Bicycle Crunch",
     "category": "Cardio",
     "url": "https://fitnessprogramer.com/exercise/bicycle-crunch/",
@@ -18854,7 +18854,7 @@
     "variantes": []
   },
   "inmersiones_en_banco": {
-    "name_es": "Fondos entre bancos",
+    "name_es": "Fondos",
     "name_en": "Bench Dips",
     "category": "Otros",
     "url": "https://fitnessprogramer.com/exercise/bench-dips/",
@@ -19167,7 +19167,7 @@
     "variantes": []
   },
   "cruce_de_cables": {
-    "name_es": "Ejercicio en polea",
+    "name_es": "Cruce de poleas",
     "name_en": "Cable Crossover",
     "category": "Pecho",
     "url": "https://fitnessprogramer.com/exercise/cable-crossover/",
@@ -23407,7 +23407,7 @@
     "variantes": []
   },
   "hiperextension": {
-    "name_es": "Extensión de tríceps",
+    "name_es": "Hiperextensiones lumbares",
     "name_en": "Hyperextension",
     "category": "Espalda",
     "url": "https://fitnessprogramer.com/exercise/hyperextension/",
@@ -35200,7 +35200,7 @@
     "variantes": []
   },
   "burpees": {
-    "name_es": "Ejercicio",
+    "name_es": "Burpees",
     "name_en": "Burpees",
     "category": "Cardio",
     "url": "https://fitnessprogramer.com/exercise/burpees/",
@@ -35461,7 +35461,7 @@
     "variantes": []
   },
   "despliegue_de_la_rueda_abdominal": {
-    "name_es": "Ab rollout con rueda",
+    "name_es": "Rueda abdominal (Ab Wheel)",
     "name_en": "Ab Wheel Rollout",
     "category": "Abdomen",
     "url": "https://fitnessprogramer.com/exercise/ab-wheel-rollout/",
@@ -44939,7 +44939,7 @@
     "variantes": []
   },
   "giro_ruso": {
-    "name_es": "Giro ruso",
+    "name_es": "Giros rusos",
     "name_en": "Russian Twist",
     "category": "Abdomen",
     "url": "https://fitnessprogramer.com/exercise/russian-twist/",
