@@ -811,7 +811,7 @@
     "variantes": []
   },
   "press_frances_con_barra": {
-    "name_es": "Extensión de tríceps acostado con barra EZ",
+    "name_es": "Press francés con barra EZ (Skullcrusher)",
     "name_en": "EZ Bar Lying Triceps Extension (Skullcrusher)",
     "category": "Tríceps",
     "url": "https://fitnessprogramer.com/exercise/bench-press/",
@@ -3567,7 +3567,7 @@
     "variantes": []
   },
   "jalon_al_pecho": {
-    "name_es": "Face pull en polea",
+    "name_es": "Face Pull en polea alta",
     "name_en": "Face Pull",
     "category": "Hombros",
     "url": "https://fitnessprogramer.com/exercise/face-pull/",
@@ -4446,7 +4446,7 @@
     "variantes": []
   },
   "retraccion_escapular": {
-    "name_es": "Ejercicio",
+    "name_es": "Protracción y retracción escapular",
     "name_en": "Scapular Protraction and Retraction",
     "category": "Hombros",
     "url": "https://fitnessprogramer.com/exercise/scapular-protraction-and-retraction/",
@@ -5291,7 +5291,7 @@
     "variantes": []
   },
   "prensa_de_piernas": {
-    "name_es": "Prensa de piernas",
+    "name_es": "Prensa de piernas a 45 grados",
     "name_en": "Leg Press",
     "category": "Piernas",
     "url": "https://fitnessprogramer.com/exercise/leg-press/",
@@ -8729,7 +8729,7 @@
     "variantes": []
   },
   "plancha_abdominal": {
-    "name_es": "Ejercicio",
+    "name_es": "Activación isométrica abdominal (Bracing)",
     "name_en": "Abdominal Bracing",
     "category": "Abdomen",
     "url": "https://fitnessprogramer.com/exercise/abdominal-bracing/",
@@ -9941,7 +9941,7 @@
     "variantes": []
   },
   "arrastre_del_oso": {
-    "name_es": "Ejercicio",
+    "name_es": "Caminata de oso (Bear Crawl)",
     "name_en": "Bear Crawl",
     "category": "Abdomen",
     "url": "https://fitnessprogramer.com/exercise/bear-crawls/",
@@ -19167,7 +19167,7 @@
     "variantes": []
   },
   "cruce_de_cables": {
-    "name_es": "Cruce de poleas",
+    "name_es": "Cruce de poleas para pecho",
     "name_en": "Cable Crossover",
     "category": "Pecho",
     "url": "https://fitnessprogramer.com/exercise/cable-crossover/",
@@ -31643,7 +31643,7 @@
     "variantes": []
   },
   "anillo_fila_invertida": {
-    "name_es": "Remo",
+    "name_es": "Remo invertido en anillas",
     "name_en": "Ring Inverted Row",
     "category": "Espalda",
     "url": "https://fitnessprogramer.com/exercise/ring-inverted-row/",
@@ -32151,7 +32151,7 @@
     "variantes": []
   },
   "fila_de_escopeta": {
-    "name_es": "Remo",
+    "name_es": "Remo unilateral en polea (Shotgun Row)",
     "name_en": "Shotgun Row",
     "category": "Espalda",
     "url": "https://fitnessprogramer.com/exercise/shotgun-row/",
@@ -32556,7 +32556,7 @@
     "variantes": []
   },
   "salsas_coreanas": {
-    "name_es": "Fondos",
+    "name_es": "Fondos coreanos (Korean Dips)",
     "name_en": "Korean Dips",
     "category": "Pecho",
     "url": "https://fitnessprogramer.com/exercise/korean-dips/",
@@ -32750,7 +32750,7 @@
     "variantes": []
   },
   "inmersion_en_barra_recta": {
-    "name_es": "Fondos",
+    "name_es": "Fondos en barra recta",
     "name_en": "Straight Bar Dip",
     "category": "Pecho",
     "url": "https://fitnessprogramer.com/exercise/straight-bar-dip/",
@@ -34062,7 +34062,7 @@
     "variantes": []
   },
   "paso_de_esqui": {
-    "name_es": "Ejercicio",
+    "name_es": "Paso de esquí (Ski Steps)",
     "name_en": "Ski Step",
     "category": "Cardio",
     "url": "https://fitnessprogramer.com/exercise/ski-step/",
@@ -34822,7 +34822,7 @@
     "variantes": []
   },
   "inmersiones_de_escapula": {
-    "name_es": "Fondos",
+    "name_es": "Fondos escapulares",
     "name_en": "Scapula Dips",
     "category": "Hombros",
     "url": "https://fitnessprogramer.com/exercise/scapula-dips/",
@@ -35030,7 +35030,7 @@
     "variantes": []
   },
   "columpio_360": {
-    "name_es": "Ejercicio",
+    "name_es": "Giro 360 con pesa rusa / barra",
     "name_en": "Swing 360",
     "category": "Espalda",
     "url": "https://fitnessprogramer.com/exercise/swing-360/",
@@ -35098,7 +35098,7 @@
     "variantes": []
   },
   "paseo_del_pato": {
-    "name_es": "Ejercicio",
+    "name_es": "Caminata de pato (Duck Walk)",
     "name_en": "Duck Walk",
     "category": "Cardio",
     "url": "https://fitnessprogramer.com/exercise/duck-walk/",
@@ -36295,7 +36295,7 @@
     "variantes": []
   },
   "pendulo_de_hombro": {
-    "name_es": "Ejercicio",
+    "name_es": "Péndulo de hombro (Codman)",
     "name_en": "Shoulder Pendulum",
     "category": "Hombros",
     "url": "https://fitnessprogramer.com/exercise/shoulder-pendulum/",
@@ -36598,7 +36598,7 @@
     "variantes": []
   },
   "salto_con_empuje_de_cadera_con_una_sola_pierna": {
-    "name_es": "Ejercicio",
+    "name_es": "Salto con hip thrust a una pierna",
     "name_en": "Single Leg Hip Thrust Jump",
     "category": "Cardio",
     "url": "https://fitnessprogramer.com/exercise/single-leg-hip-thrust-jump/",
@@ -36700,7 +36700,7 @@
     "variantes": []
   },
   "rodillo_de_espuma_romboides": {
-    "name_es": "Ejercicio",
+    "name_es": "Masaje de romboides con rodillo de espuma (Foam Roller)",
     "name_en": "Foam Roller Rhomboids",
     "category": "Hombros",
     "url": "https://fitnessprogramer.com/exercise/foam-roller-rhomboids/",
@@ -36734,7 +36734,7 @@
     "variantes": []
   },
   "gluteos_con_rodillo_de_espuma": {
-    "name_es": "Ejercicio",
+    "name_es": "Masaje de glúteos con rodillo de espuma (Foam Roller)",
     "name_en": "Foam Roller Glutes",
     "category": "Piernas",
     "url": "https://fitnessprogramer.com/exercise/foam-roller-glutes/",
@@ -36842,7 +36842,7 @@
     "variantes": []
   },
   "quads_con_rodillos_de_espuma": {
-    "name_es": "Ejercicio",
+    "name_es": "Masaje de cuádriceps con rodillo de espuma (Foam Roller)",
     "name_en": "Foam Roller Quads",
     "category": "Piernas",
     "url": "https://fitnessprogramer.com/exercise/foam-roller-quads/",
@@ -36930,7 +36930,7 @@
     "variantes": []
   },
   "rodillo_de_espuma_en_la_parte_superior_de_la_espalda": {
-    "name_es": "Ejercicio",
+    "name_es": "Masaje de espalda alta con rodillo de espuma (Foam Roller)",
     "name_en": "Foam Roller Upper Back",
     "category": "Espalda",
     "url": "https://fitnessprogramer.com/exercise/foam-roller-upper-back/",
@@ -37147,7 +37147,7 @@
     "variantes": []
   },
   "fascitis_plantar_con_rodillo_de_espuma": {
-    "name_es": "Ejercicio",
+    "name_es": "Masaje de planta del pie con rodillo de espuma / pelota",
     "name_en": "Foam Roller Plantar Fasciitis",
     "category": "Piernas",
     "url": "https://fitnessprogramer.com/exercise/foam-roller-plantar-fasciitis/",
@@ -37181,7 +37181,7 @@
     "variantes": []
   },
   "isquiotibiales_con_rodillo_de_espuma": {
-    "name_es": "Ejercicio",
+    "name_es": "Masaje de isquiotibiales con rodillo de espuma (Foam Roller)",
     "name_en": "Foam Roller Hamstrings",
     "category": "Piernas",
     "url": "https://fitnessprogramer.com/exercise/foam-roller-hamstrings/",
@@ -37215,7 +37215,7 @@
     "variantes": []
   },
   "rodillo_de_espuma_en_la_parte_delantera_del_hombro_y_el_pecho": {
-    "name_es": "Ejercicio",
+    "name_es": "Masaje de hombro frontal y pectoral con rodillo",
     "name_en": "Foam Roller Front Shoulder and Chest",
     "category": "Pecho",
     "url": "https://fitnessprogramer.com/exercise/foam-roller-front-shoulder-and-chest/",
@@ -41231,7 +41231,7 @@
     "variantes": []
   },
   "carrera_en_bicicleta_estacionaria": {
-    "name_es": "Ejercicio",
+    "name_es": "Pedaleo en bicicleta estática",
     "name_en": "Stationary Bike Run",
     "category": "Cardio",
     "url": "https://fitnessprogramer.com/exercise/stationary-bike-run/",
@@ -50573,7 +50573,7 @@
     "variantes": []
   },
   "columpio__palo_de_gimnasia": {
-    "name_es": "Ejercicio",
+    "name_es": "Giros con Gymstick",
     "name_en": "Swing | Gymstick",
     "category": "Hombros",
     "url": "https://fitnessprogramer.com/exercise/swing-gymstick/",
@@ -51039,7 +51039,7 @@
     "variantes": []
   },
   "esquiador__palo_de_gimnasia": {
-    "name_es": "Ejercicio",
+    "name_es": "Simulador de esquí con Gymstick",
     "name_en": "Skier | Gymstick",
     "category": "Hombros",
     "url": "https://fitnessprogramer.com/exercise/skier-gymstick/",
@@ -51515,7 +51515,7 @@
     "variantes": []
   },
   "giro_de_abajo_a_arriba__gymstick": {
-    "name_es": "Giro ruso",
+    "name_es": "Giros de abajo a arriba con Gymstick",
     "name_en": "Down to Up Twist |Gymstick",
     "category": "Abdomen",
     "url": "https://fitnessprogramer.com/exercise/down-to-up-twist-gymstick/",
@@ -51617,7 +51617,7 @@
     "variantes": []
   },
   "crujido_de_bicicletas__palo_de_gimnasia": {
-    "name_es": "Ejercicio",
+    "name_es": "Abdominales bicicleta con Gymstick",
     "name_en": "Bicycle Crunch | Gymstick",
     "category": "Cardio",
     "url": "https://fitnessprogramer.com/exercise/bicycle-crunch-gymstick/",
@@ -51685,7 +51685,7 @@
     "variantes": []
   },
   "planchas_jacks__pierna_extendida": {
-    "name_es": "Plancha",
+    "name_es": "Plancha con saltos de pies (Plank Jacks)",
     "name_en": "Plank Jacks / Extended Leg",
     "category": "Abdomen",
     "url": "https://fitnessprogramer.com/exercise/plank-jacks-extended-leg/",
@@ -51753,7 +51753,7 @@
     "variantes": []
   },
   "caminadora_de_gimnasio": {
-    "name_es": "Cinta de correr / Caminadora",
+    "name_es": "Cinta de correr",
     "name_en": "Treadmill Running",
     "category": "Cardio",
     "url": "https://fitnessprogramer.com/exercise/treadmill-running/",
@@ -51780,7 +51780,7 @@
     ]
   },
   "escaladora_de_gimnasio": {
-    "name_es": "Máquina escaladora / Escaladora",
+    "name_es": "Escaladora (Stair Climber)",
     "name_en": "Stair Climber",
     "category": "Cardio",
     "url": "https://fitnessprogramer.com/exercise/stair-climber/",
@@ -51807,7 +51807,7 @@
     ]
   },
   "eliptica": {
-    "name_es": "Bici elíptica",
+    "name_es": "Elíptica",
     "name_en": "Elliptical Trainer",
     "category": "Cardio",
     "url": "https://fitnessprogramer.com/exercise/elliptical-trainer/",
