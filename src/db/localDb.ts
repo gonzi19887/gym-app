@@ -14,6 +14,7 @@ export interface Profile {
 export interface Exercise {
   id: string;
   name: string;
+  name_en?: string;
   category: string;
   gif_url: string;
   tips: string[];

@@ -144,6 +144,10 @@ function App() {
   const [timerRemaining, setTimerRemaining] = useState(0);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
 
+  // Exercise Execution Timer (Ponytail)
+  const [exerciseTimeElapsed, setExerciseTimeElapsed] = useState(0);
+  const [isExerciseTimerRunning, setIsExerciseTimerRunning] = useState(false);
+
   // Gamification & Level Up Overlay State
   const [levelUpInfo, setLevelUpInfo] = useState<{ oldLevel: number; newLevel: number; xpEarned: number } | null>(null);
   const [showBlackFlash, setShowBlackFlash] = useState(false); // Jujutsu personal record burst
@@ -1041,6 +1045,36 @@ function App() {
     };
   }, [isTimerRunning, timerRemaining]);
 
+  // Ponytail: Temporizador de tiempo transcurrido en el ejercicio actual
+  useEffect(() => {
+    let interval: any = null;
+    if (isExerciseTimerRunning) {
+      interval = setInterval(() => {
+        setExerciseTimeElapsed((prev) => prev + 1);
+      }, 1000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isExerciseTimerRunning]);
+
+  // Ponytail: Reiniciar y configurar el cronómetro al cambiar de ejercicio
+  useEffect(() => {
+    setExerciseTimeElapsed(0);
+    const activeEx = activeExercises[activeExerciseIndex];
+    if (activeEx && activeEx.category.toLowerCase() === 'cardio') {
+      setIsExerciseTimerRunning(true);
+    } else {
+      setIsExerciseTimerRunning(false);
+    }
+  }, [activeExerciseIndex, activeExercises]);
+
+  const formatExerciseTime = (totalSeconds: number) => {
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
   // Level calculator
   const getLevelInfo = (xp: number) => {
     const level = Math.floor(Math.sqrt(xp / 100)) + 1;
@@ -1310,6 +1344,18 @@ function App() {
                 setTimeout(() => setShowBlackFlash(false), 2500); // clear banner after 2.5s
               }
             }
+
+            // Ponytail: Detener el cronómetro del ejercicio si se completan todas las series
+            setTimeout(() => {
+              setActiveWorkoutSets(currentSets => {
+                const exerciseSets = currentSets.filter(s => s.exercise_id === set.exercise_id);
+                const allDone = exerciseSets.every(s => s.is_completed);
+                if (allDone) {
+                  setIsExerciseTimerRunning(false);
+                }
+                return currentSets;
+              });
+            }, 50);
           }
           return updated;
         }
@@ -1434,6 +1480,7 @@ function App() {
   const levelInfo = profile ? getLevelInfo(profile.experience_points) : null;
   const filteredExercises = exercises.filter(e => 
     e.name.toLowerCase().includes(exerciseSearch.toLowerCase()) || 
+    (e.name_en && e.name_en.toLowerCase().includes(exerciseSearch.toLowerCase())) ||
     e.category.toLowerCase().includes(exerciseSearch.toLowerCase())
   ).slice(0, 30);
 
@@ -2295,6 +2342,81 @@ function App() {
               )
             )}
 
+            {/* Exercise Execution Timer Floating Bar (Ponytail) */}
+            <div 
+              style={{
+                position: 'fixed',
+                bottom: '76px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                width: 'calc(100% - 32px)',
+                maxWidth: '480px',
+                backgroundColor: 'rgba(10, 10, 15, 0.95)',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+                border: '1.5px solid var(--accent-secondary)',
+                borderRadius: '14px',
+                padding: '10px 16px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                zIndex: 90,
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '18px', fontWeight: 900, color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums', letterSpacing: '0.5px' }}>
+                  {formatExerciseTime(exerciseTimeElapsed)}
+                </span>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ fontSize: '9px', color: 'var(--accent-primary)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px' }}>
+                    Cronómetro
+                  </span>
+                  <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>
+                    {isCardioOrStretch ? 'Cardio activo ⚡' : 'Misión en curso'}
+                  </span>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  onClick={() => setIsExerciseTimerRunning(!isExerciseTimerRunning)}
+                  style={{
+                    backgroundColor: isExerciseTimerRunning ? 'rgba(239, 68, 68, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid var(--border-color)',
+                    color: isExerciseTimerRunning ? '#ef4444' : 'var(--text-primary)',
+                    borderRadius: '8px',
+                    padding: '6px 12px',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  {isExerciseTimerRunning ? <Pause size={12} /> : <Play size={12} />}
+                  {isExerciseTimerRunning ? 'Pausar' : 'Iniciar'}
+                </button>
+                <button
+                  onClick={() => setExerciseTimeElapsed(0)}
+                  style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid var(--border-color)',
+                    color: 'var(--text-secondary)',
+                    borderRadius: '8px',
+                    padding: '6px 10px',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Reiniciar
+                </button>
+              </div>
+            </div>
+
             {/* Exercise Navigation Footer */}
             <footer className="overlay-footer">
               <button
@@ -3144,6 +3266,7 @@ function App() {
                       {(() => {
                         const matchingExercises = exercises.filter(ex => 
                           ex.name.toLowerCase().includes(routineExerciseSearch.toLowerCase()) ||
+                          (ex.name_en && ex.name_en.toLowerCase().includes(routineExerciseSearch.toLowerCase())) ||
                           ex.category.toLowerCase().includes(routineExerciseSearch.toLowerCase())
                         );
 
