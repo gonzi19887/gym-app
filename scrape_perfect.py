@@ -3,8 +3,10 @@ import os
 import re
 
 def clean_and_structure_exercises():
-    input_path = '/home/gonzidesing/Projects/gym-app/src/db/scraped_exercises_es.json'
-    output_path = '/home/gonzidesing/Projects/gym-app/src/db/scraped_exercises_es.json'
+    # Use relative path based on the script location
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    input_path = os.path.join(script_dir, 'src', 'db', 'scraped_exercises_es.json')
+    output_path = input_path
 
     if not os.path.exists(input_path):
         print(f"Error: {input_path} does not exist.")
