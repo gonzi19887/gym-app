@@ -1930,7 +1930,7 @@
     "variantes": []
   },
   "dominadas_supinas": {
-    "name_es": "Dominadas",
+    "name_es": "Dominadas con salto",
     "name_en": "Jumping Pull-up",
     "category": "Espalda",
     "url": "https://fitnessprogramer.com/exercise/jumping-pull-up/",
@@ -2948,7 +2948,7 @@
     "variantes": []
   },
   "infraespinoso": {
-    "name_es": "Ejercicio",
+    "name_es": "Ejercicio en plataforma vibratoria",
     "name_en": "Vibration Plate",
     "category": "Espalda",
     "url": "https://fitnessprogramer.com/exercise/vibration-plate/",
@@ -3057,7 +3057,7 @@
     "variantes": []
   },
   "deltoides_posterior": {
-    "name_es": "Ejercicio",
+    "name_es": "Masaje de hombro posterior con rodillo de espuma (Foam Roller)",
     "name_en": "Foam Roller Posterior Shoulder",
     "category": "Hombros",
     "url": "https://fitnessprogramer.com/exercise/foam-roller-posterior-shoulder/",
@@ -3091,7 +3091,7 @@
     "variantes": []
   },
   "face_pull_de_rodillas": {
-    "name_es": "Ejercicio",
+    "name_es": "Elevaciones de rodillas en banco sentado",
     "name_en": "Leg Pull-in Knee-ups",
     "category": "Abdomen",
     "url": "https://fitnessprogramer.com/exercise/leg-pull-in-knee-ups/",
@@ -3249,7 +3249,7 @@
     "variantes": []
   },
   "dominadas_arquero": {
-    "name_es": "Dominadas",
+    "name_es": "Dominadas de arquero (Archer Pull-ups)",
     "name_en": "Archer Pull-up",
     "category": "Espalda",
     "url": "https://fitnessprogramer.com/exercise/archer-pull-up/",
@@ -3322,7 +3322,7 @@
     "variantes": []
   },
   "remo_alto_con_poleas_cruzadas": {
-    "name_es": "Ejercicio",
+    "name_es": "Golpe de derecha (Directo / Cross)",
     "name_en": "Right Cross",
     "category": "Cardio",
     "url": "https://fitnessprogramer.com/exercise/right-cross/",
@@ -3643,7 +3643,7 @@
     "variantes": []
   },
   "dominadas_asistidas": {
-    "name_es": "Dominadas",
+    "name_es": "Dominadas asistidas en máquina",
     "name_en": "Assisted Pull-up",
     "category": "Espalda",
     "url": "https://fitnessprogramer.com/exercise/assisted-pull-up/",
@@ -3677,7 +3677,7 @@
     "variantes": []
   },
   "ejercicios_de_espalda": {
-    "name_es": "Ejercicio",
+    "name_es": "Back Lever (Calistenia)",
     "name_en": "Back Lever",
     "category": "Espalda",
     "url": "https://fitnessprogramer.com/exercise/back-lever/",
@@ -3803,7 +3803,7 @@
     "variantes": []
   },
   "dominadas": {
-    "name_es": "Dominada",
+    "name_es": "Dominadas prónas",
     "name_en": "Pull-Up",
     "category": "Espalda",
     "url": "https://fitnessprogramer.com/exercise/pull-up/",
@@ -3941,7 +3941,7 @@
     "variantes": []
   },
   "remo_invertido": {
-    "name_es": "Remo",
+    "name_es": "Remo invertido (Dominadas australianas)",
     "name_en": "Inverted Row",
     "category": "Espalda",
     "url": "https://fitnessprogramer.com/exercise/inverted-row/",
@@ -4020,7 +4020,7 @@
     "variantes": []
   },
   "dominadas_con_toalla": {
-    "name_es": "Dominadas",
+    "name_es": "Dominadas asistidas en máquina",
     "name_en": "Assisted Pull-up",
     "category": "Espalda",
     "url": "https://fitnessprogramer.com/exercise/assisted-pull-up/",
@@ -4231,7 +4231,7 @@
     "variantes": []
   },
   "deslizamiento_en_pared": {
-    "name_es": "Ejercicio",
+    "name_es": "Deslizamientos en pared para hombros",
     "name_en": "Wall Slides",
     "category": "Espalda",
     "url": "https://fitnessprogramer.com/exercise/wall-slides/",
@@ -4272,7 +4272,7 @@
     "variantes": []
   },
   "dominadas_con_lastre": {
-    "name_es": "Dominadas",
+    "name_es": "Dominadas con lastre",
     "name_en": "Weighted Pull-up",
     "category": "Espalda",
     "url": "https://fitnessprogramer.com/exercise/weighted-pull-up/",
@@ -4480,7 +4480,7 @@
     "variantes": []
   },
   "superman": {
-    "name_es": "Ejercicio",
+    "name_es": "Ejercicio Supermán para lumbares",
     "name_en": "Superman",
     "category": "Hombros",
     "url": "https://fitnessprogramer.com/exercise/superman/",
@@ -4596,7 +4596,7 @@
     "variantes": []
   },
   "flexion_de_cadera_en_maquina": {
-    "name_es": "Ejercicio en máquina",
+    "name_es": "Aducciones de cadera en máquina",
     "name_en": "Hip Adduction Machine",
     "category": "Piernas",
     "url": "https://fitnessprogramer.com/exercise/hip-adduction-machine/",
@@ -4633,7 +4633,7 @@
     "variantes": []
   },
   "foto_de_perfil": {
-    "name_es": "Fondos",
+    "name_es": "Fondos imposibles (Impossible Dips)",
     "name_en": "Impossible Dips",
     "category": "Otros",
     "url": "https://fitnessprogramer.com/exercise/impossible-dips/",
@@ -4826,7 +4826,7 @@
     "variantes": []
   },
   "elevacion_de_talones_de_pie": {
-    "name_es": "Elevación",
+    "name_es": "Elevaciones de rodillas colgado",
     "name_en": "Hanging Knee Raises",
     "category": "Piernas",
     "url": "https://fitnessprogramer.com/exercise/hanging-knee-raises/",
@@ -4968,7 +4968,7 @@
     "variantes": []
   },
   "zancadas": {
-    "name_es": "Ejercicio",
+    "name_es": "Saltos laterales astride",
     "name_en": "Astride Jumps",
     "category": "Cardio",
     "url": "https://fitnessprogramer.com/exercise/astride-jumps/",
@@ -5507,7 +5507,7 @@
     "variantes": []
   },
   "dragon_flag": {
-    "name_es": "Ejercicio",
+    "name_es": "Dragon Flag (Abdominales de Dragón)",
     "name_en": "Dragon Flag",
     "category": "Abdomen",
     "url": "https://fitnessprogramer.com/exercise/dragon-flag/",
@@ -5582,7 +5582,7 @@
     "variantes": []
   },
   "salto_al_cajon": {
-    "name_es": "Ejercicio",
+    "name_es": "Salto de profundidad a salto de valla (Pliometría)",
     "name_en": "Depth Jump to Hurdle Hop",
     "category": "Piernas",
     "url": "https://fitnessprogramer.com/exercise/depth-jump-to-hurdle-hop/",
@@ -5664,7 +5664,7 @@
     "variantes": []
   },
   "dominadas_en_front_lever": {
-    "name_es": "Dominadas",
+    "name_es": "Dominadas en Front Lever",
     "name_en": "Front Lever Pull-up",
     "category": "Espalda",
     "url": "https://fitnessprogramer.com/exercise/front-lever-pull-up/",
@@ -5698,7 +5698,7 @@
     "variantes": []
   },
   "plancha_alta": {
-    "name_es": "Plancha",
+    "name_es": "Plancha alta sobre manos",
     "name_en": "High Plank",
     "category": "Abdomen",
     "url": "https://fitnessprogramer.com/exercise/high-plank/",
@@ -5759,7 +5759,7 @@
     "variantes": []
   },
   "elevacion_de_talones_donkey_con_companero": {
-    "name_es": "Remo",
+    "name_es": "Lanzamiento de giros rusos con balón medicinal y compañero",
     "name_en": "Ball Russian Twist throw with partner",
     "category": "Espalda",
     "url": "https://fitnessprogramer.com/exercise/ball-russian-twist-throw-with-partner/",
@@ -6233,7 +6233,7 @@
     "variantes": []
   },
   "dominadas_agarre_neutro": {
-    "name_es": "Dominadas",
+    "name_es": "Dominadas con agarre neutro",
     "name_en": "Neutral Grip Pull-up",
     "category": "Espalda",
     "url": "https://fitnessprogramer.com/exercise/neutral-grip-pull-up/",
@@ -6728,7 +6728,7 @@
     "variantes": []
   },
   "colgado_en_barra": {
-    "name_es": "Elevación",
+    "name_es": "Elevaciones de rodillas colgado",
     "name_en": "Hanging Knee Raises",
     "category": "Abdomen",
     "url": "https://fitnessprogramer.com/exercise/hanging-knee-raises/",
@@ -8350,7 +8350,7 @@
     "variantes": []
   },
   "deslizamientos_en_pared": {
-    "name_es": "Ejercicio",
+    "name_es": "Deslizamientos en pared para hombros",
     "name_en": "Wall Slides",
     "category": "Hombros",
     "url": "https://fitnessprogramer.com/exercise/wall-slides/",
@@ -18227,7 +18227,7 @@
     "variantes": []
   },
   "rechazar_abdominales": {
-    "name_es": "Ejercicio declinado",
+    "name_es": "Abdominales en banco declinado (Sit-ups)",
     "name_en": "Decline Sit-up",
     "category": "Abdomen",
     "url": "https://fitnessprogramer.com/exercise/decline-sit-up/",
@@ -22951,7 +22951,7 @@
     "variantes": []
   },
   "estiramiento_de_piernas_dobles": {
-    "name_es": "Estiramiento",
+    "name_es": "Estiramiento de doble pierna (Pilates)",
     "name_en": "Double Leg Stretch",
     "category": "Abdomen",
     "url": "https://fitnessprogramer.com/exercise/double-leg-stretch/",
@@ -23019,7 +23019,7 @@
     "variantes": []
   },
   "curva_lateral_con_mancuernas": {
-    "name_es": "Ejercicio con mancuernas",
+    "name_es": "Flexión lateral de tronco con mancuerna",
     "name_en": "Dumbbell Side Bend",
     "category": "Abdomen",
     "url": "https://fitnessprogramer.com/exercise/dumbbell-side-bend/",
@@ -27301,7 +27301,7 @@
     "variantes": []
   },
   "curva_lateral_del_cable": {
-    "name_es": "Ejercicio en polea",
+    "name_es": "Flexión lateral de tronco en polea",
     "name_en": "Cable Side Bend",
     "category": "Abdomen",
     "url": "https://fitnessprogramer.com/exercise/cable-side-bend/",
@@ -28105,7 +28105,7 @@
     "variantes": []
   },
   "curva_lateral_con_barra": {
-    "name_es": "Ejercicio con barra",
+    "name_es": "Flexión lateral de tronco con barra",
     "name_en": "Barbell Side Bend",
     "category": "Abdomen",
     "url": "https://fitnessprogramer.com/exercise/barbell-side-bend/",
@@ -28459,7 +28459,7 @@
     "variantes": []
   },
   "vup_con_mancuernas": {
-    "name_es": "Ejercicio con mancuernas",
+    "name_es": "Abdominales en V con mancuerna (V-ups)",
     "name_en": "Dumbbell V-up",
     "category": "Abdomen",
     "url": "https://fitnessprogramer.com/exercise/dumbbell-v-up/",
@@ -35247,7 +35247,7 @@
     "variantes": []
   },
   "despliegue_de_barra": {
-    "name_es": "Ejercicio con barra",
+    "name_es": "Rueda abdominal con barra (Barbell Rollout)",
     "name_en": "Barbell Rollout",
     "category": "Abdomen",
     "url": "https://fitnessprogramer.com/exercise/barbell-rollout/",
@@ -37419,7 +37419,7 @@
     "variantes": []
   },
   "jersey_de_palanca": {
-    "name_es": "Ejercicio",
+    "name_es": "Pullover en máquina de palanca",
     "name_en": "Lever Pullover",
     "category": "Espalda",
     "url": "https://fitnessprogramer.com/exercise/lever-pullover/",
@@ -37453,7 +37453,7 @@
     "variantes": []
   },
   "dominadas_comando": {
-    "name_es": "Dominadas",
+    "name_es": "Dominadas de comando (Commando Pull-ups)",
     "name_en": "Commando Pull-up",
     "category": "Espalda",
     "url": "https://fitnessprogramer.com/exercise/commander-pull-up/",
@@ -37487,7 +37487,7 @@
     "variantes": []
   },
   "levantamiento_de_escapula": {
-    "name_es": "Dominadas",
+    "name_es": "Dominadas escapulares",
     "name_en": "Scapula Pull-up",
     "category": "Espalda",
     "url": "https://fitnessprogramer.com/exercise/scapula-pull-up/",
@@ -37521,7 +37521,7 @@
     "variantes": []
   },
   "pullup_detras_del_cuello": {
-    "name_es": "Dominadas",
+    "name_es": "Dominadas tras nuca",
     "name_en": "Behind The Neck Pull-up",
     "category": "Espalda",
     "url": "https://fitnessprogramer.com/exercise/behind-the-neck-pull-up/",
@@ -37589,7 +37589,7 @@
     "variantes": []
   },
   "crunch_de_torsion_de_bicicleta": {
-    "name_es": "Giro ruso",
+    "name_es": "Crunch con giro de bicicleta",
     "name_en": "Bicycle Twisting Crunch",
     "category": "Cardio",
     "url": "https://fitnessprogramer.com/exercise/bicycle-twisting-crunch/",
@@ -37657,7 +37657,7 @@
     "variantes": []
   },
   "pantorrillas_con_rodillo_de_espuma": {
-    "name_es": "Ejercicio",
+    "name_es": "Masaje de pantorrillas con rodillo de espuma (Foam Roller)",
     "name_en": "Foam Roller Calves",
     "category": "Pantorrillas",
     "url": "https://fitnessprogramer.com/exercise/foam-roller-calves/",
@@ -37830,7 +37830,7 @@
     "variantes": []
   },
   "tobogan_de_pared_serratus_con_rodillo_de_espuma": {
-    "name_es": "Ejercicio",
+    "name_es": "Deslizamientos en pared para serrato con rodillo",
     "name_en": "Serratus Wall Slide With Foam Roller",
     "category": "Hombros",
     "url": "https://fitnessprogramer.com/exercise/serratus-wall-slide-with-foam-roller/",
@@ -37973,7 +37973,7 @@
     "variantes": []
   },
   "manos_en_el_aire_insecto_muerto": {
-    "name_es": "Ejercicio",
+    "name_es": "Bicho muerto con manos arriba (Dead Bug)",
     "name_en": "Hands In Air Dead Bug",
     "category": "Abdomen",
     "url": "https://fitnessprogramer.com/exercise/hands-in-air-dead-bug/",
@@ -38007,7 +38007,7 @@
     "variantes": []
   },
   "elevaciones_de_brazos_apoyados_en_la_pared": {
-    "name_es": "Elevación",
+    "name_es": "Elevación de brazos apoyado en pared",
     "name_en": "Wall Supported Arm Raises",
     "category": "Hombros",
     "url": "https://fitnessprogramer.com/exercise/wall-supported-arm-raises/",
@@ -38041,7 +38041,7 @@
     "variantes": []
   },
   "colgar_muerto": {
-    "name_es": "Ejercicio",
+    "name_es": "Colgado pasivo en barra (Dead Hang)",
     "name_en": "Dead Hang",
     "category": "Espalda",
     "url": "https://fitnessprogramer.com/exercise/dead-hang/",
@@ -38078,7 +38078,7 @@
     "variantes": []
   },
   "elevacion_de_reves": {
-    "name_es": "Elevación",
+    "name_es": "Elevación de dorso de la mano",
     "name_en": "Backhand Raise",
     "category": "Espalda",
     "url": "https://fitnessprogramer.com/exercise/backhand-raise/",
@@ -38350,7 +38350,7 @@
     "variantes": []
   },
   "dominadas_isometricas": {
-    "name_es": "Dominadas",
+    "name_es": "Dominada isométrica",
     "name_en": "Isometric Pull-Up",
     "category": "Espalda",
     "url": "https://fitnessprogramer.com/exercise/isometric-pull-up/",
@@ -38676,7 +38676,7 @@
     "variantes": []
   },
   "ejercicio_de_vacio_de_barriga_de_4_puntos": {
-    "name_es": "Ejercicio",
+    "name_es": "Vacío abdominal en 4 puntos (cuadrupedia)",
     "name_en": "4 Point Tummy Vacuum Exercise",
     "category": "Abdomen",
     "url": "https://fitnessprogramer.com/exercise/4-point-tummy-vacuum-exercise/",
@@ -38905,7 +38905,7 @@
     "variantes": []
   },
   "salto_de_caja_1_a_2": {
-    "name_es": "Ejercicio",
+    "name_es": "Salto de caja de 1 a 2 pies",
     "name_en": "Box Jump 1 to 2",
     "category": "Piernas",
     "url": "https://fitnessprogramer.com/exercise/box-jump-1-to-2/",
@@ -38973,7 +38973,7 @@
     "variantes": []
   },
   "salto_de_caja_2_a_1": {
-    "name_es": "Ejercicio",
+    "name_es": "Salto de caja de 2 a 1 pies",
     "name_en": "Box Jump 2 to 1",
     "category": "Piernas",
     "url": "https://fitnessprogramer.com/exercise/box-jump-2-to-1/",
@@ -39104,7 +39104,7 @@
     "variantes": []
   },
   "salto_en_caja_con_una_sola_pierna": {
-    "name_es": "Ejercicio",
+    "name_es": "Salto al cajón a una pierna",
     "name_en": "Single Leg Box Jump",
     "category": "Piernas",
     "url": "https://fitnessprogramer.com/exercise/single-leg-box-jump/",
@@ -39311,7 +39311,7 @@
     "variantes": []
   },
   "crunch_oblicuo_en_plancha_lateral": {
-    "name_es": "Plancha",
+    "name_es": "Plancha lateral con crunch para oblicuos",
     "name_en": "Side Plank Oblique Crunch",
     "category": "Cardio",
     "url": "https://fitnessprogramer.com/exercise/side-plank-oblique-crunch/",
@@ -39771,7 +39771,7 @@
     "variantes": []
   },
   "rotacion_de_pie_y_tobillo": {
-    "name_es": "Ejercicio",
+    "name_es": "Rotación de pie y tobillo (Movilidad)",
     "name_en": "Foot and Ankle Rotation",
     "category": "Piernas",
     "url": "https://fitnessprogramer.com/exercise/feet-and-ankle-rotation/",
@@ -40167,7 +40167,7 @@
     "variantes": []
   },
   "tijeras_para_piernas": {
-    "name_es": "Ejercicio",
+    "name_es": "Tijeras de piernas (Abdominales)",
     "name_en": "Leg Scissors",
     "category": "Abdomen",
     "url": "https://fitnessprogramer.com/exercise/leg-scissors/",
@@ -40201,7 +40201,7 @@
     "variantes": []
   },
   "lado_doblado": {
-    "name_es": "Ejercicio",
+    "name_es": "Flexión lateral de tronco de pie",
     "name_en": "Side Bent",
     "category": "Abdomen",
     "url": "https://fitnessprogramer.com/exercise/side-bent/",
@@ -40439,7 +40439,7 @@
     "variantes": []
   },
   "parada_de_manos": {
-    "name_es": "Ejercicio",
+    "name_es": "Pino de pie (Handstand)",
     "name_en": "Handstand",
     "category": "Otros",
     "url": "https://fitnessprogramer.com/exercise/handstand/",
@@ -40514,7 +40514,7 @@
     "variantes": []
   },
   "caminata_parada_de_manos": {
-    "name_es": "Ejercicio",
+    "name_es": "Caminata sobre manos (Handstand Walk)",
     "name_en": "Handstand Walk",
     "category": "Cardio",
     "url": "https://fitnessprogramer.com/exercise/handstand-walk/",
@@ -40670,7 +40670,7 @@
     "variantes": []
   },
   "escalada_en_barras_de_mono": {
-    "name_es": "Ejercicio",
+    "name_es": "Pasamanos (Climbing Monkey Bars)",
     "name_en": "Climbing Monkey Bars",
     "category": "Espalda",
     "url": "https://fitnessprogramer.com/exercise/climbing-monkey-bars/",
@@ -40704,7 +40704,7 @@
     "variantes": []
   },
   "giro_espinal_en_decubito_supino": {
-    "name_es": "Giro ruso",
+    "name_es": "Giro espinal en supino (Estiramiento)",
     "name_en": "Supine Spinal Twist",
     "category": "Abdomen",
     "url": "https://fitnessprogramer.com/exercise/supine-spinal-twist/",
@@ -40879,7 +40879,7 @@
     "variantes": []
   },
   "lanzamiento_de_pelota_de_reaccion": {
-    "name_es": "Remo",
+    "name_es": "Lanzamiento con pelota de reacción",
     "name_en": "Reaction Ball Throw",
     "category": "Espalda",
     "url": "https://fitnessprogramer.com/exercise/reaction-ball-throw/",
@@ -40959,7 +40959,7 @@
     "variantes": []
   },
   "limpiadores_de_piso_con_mancuernas": {
-    "name_es": "Ejercicio con mancuernas",
+    "name_es": "Limpiaparabrisas con mancuernas en el suelo (Floor Wipers)",
     "name_en": "Dumbbell Floor Wipers",
     "category": "Abdomen",
     "url": "https://fitnessprogramer.com/exercise/dumbbell-floor-wipers/",
@@ -40993,7 +40993,7 @@
     "variantes": []
   },
   "palanca_de_remo_alto": {
-    "name_es": "Remo",
+    "name_es": "Remo alto en máquina de palanca",
     "name_en": "Lever High Row",
     "category": "Espalda",
     "url": "https://fitnessprogramer.com/exercise/lever-high-row/",
@@ -41061,7 +41061,7 @@
     "variantes": []
   },
   "remo_con_peso_corporal_en_la_entrada": {
-    "name_es": "Remo",
+    "name_es": "Remo con peso corporal en marco de puerta",
     "name_en": "Bodyweight Row in Doorway",
     "category": "Espalda",
     "url": "https://fitnessprogramer.com/exercise/bodyweight-row-in-doorway/",
@@ -41163,7 +41163,7 @@
     "variantes": []
   },
   "puente_de_gluteos_en_banco": {
-    "name_es": "Ejercicio",
+    "name_es": "Puente de glúteos apoyado en banco",
     "name_en": "Glute Bridge on Bench",
     "category": "Piernas",
     "url": "https://fitnessprogramer.com/exercise/glute-bridge-on-bench/",
@@ -41530,7 +41530,7 @@
     "variantes": []
   },
   "inclinacion_pelvica": {
-    "name_es": "Ejercicio",
+    "name_es": "Basculación / Inclinación pélvica",
     "name_en": "Pelvic Tilt",
     "category": "Piernas",
     "url": "https://fitnessprogramer.com/exercise/pelvic-tilt/",
@@ -41564,7 +41564,7 @@
     "variantes": []
   },
   "puente_de_gluteos_con_una_pierna_en_banco": {
-    "name_es": "Ejercicio",
+    "name_es": "Puente de glúteos a una pierna apoyado en banco",
     "name_en": "Glute Bridge One Leg on Bench",
     "category": "Piernas",
     "url": "https://fitnessprogramer.com/exercise/glute-bridge-one-leg-on-bench/",
@@ -41598,7 +41598,7 @@
     "variantes": []
   },
   "abduccion_de_cadera_con_puente_lateral": {
-    "name_es": "Ejercicio",
+    "name_es": "Plancha lateral con abducción de cadera",
     "name_en": "Side Bridge Hip Abduction",
     "category": "Abdomen",
     "url": "https://fitnessprogramer.com/exercise/side-bridge-hip-abduction/",
@@ -41632,7 +41632,7 @@
     "variantes": []
   },
   "puente_unilateral": {
-    "name_es": "Ejercicio",
+    "name_es": "Puente de glúteos unilateral (a una pierna)",
     "name_en": "Unilateral Bridge",
     "category": "Espalda",
     "url": "https://fitnessprogramer.com/exercise/unilateral-bridge/",
@@ -41768,7 +41768,7 @@
     "variantes": []
   },
   "manos_bicicleta": {
-    "name_es": "Ejercicio",
+    "name_es": "Pedaleo de manos (Bicicleta de brazos)",
     "name_en": "Hands Bike",
     "category": "Cardio",
     "url": "https://fitnessprogramer.com/exercise/hands-bike/",
@@ -41870,7 +41870,7 @@
     "variantes": []
   },
   "dominando_la_barra": {
-    "name_es": "Ejercicio",
+    "name_es": "Dominadas supinas alrededor de la barra",
     "name_en": "Chin Up Around the Bar",
     "category": "Espalda",
     "url": "https://fitnessprogramer.com/exercise/chin-up-around-the-bar/",
@@ -42040,7 +42040,7 @@
     "variantes": []
   },
   "rotacion_externa_del_hombro": {
-    "name_es": "Ejercicio",
+    "name_es": "Rotación externa de hombro",
     "name_en": "Shoulder External Rotation",
     "category": "Hombros",
     "url": "https://fitnessprogramer.com/exercise/shoulder-external-rotation/",
@@ -42131,7 +42131,7 @@
     "variantes": []
   },
   "flexion_del_codo": {
-    "name_es": "Ejercicio",
+    "name_es": "Flexión de codo (Glosario)",
     "name_en": "Elbow Flexion",
     "category": "Otros",
     "url": "https://fitnessprogramer.com/exercise/elbow-flexion/",
@@ -42208,7 +42208,7 @@
     "variantes": []
   },
   "rotacion_interna_del_hombro": {
-    "name_es": "Ejercicio",
+    "name_es": "Rotación interna de hombro",
     "name_en": "Shoulder Internal Rotation",
     "category": "Hombros",
     "url": "https://fitnessprogramer.com/exercise/shoulder-internal-rotation/",
@@ -42242,7 +42242,7 @@
     "variantes": []
   },
   "flexion_alterna_de_hombros": {
-    "name_es": "Ejercicio",
+    "name_es": "Flexión de hombro alterna con mancuerna",
     "name_en": "Alternating Shoulder Flexion",
     "category": "Hombros",
     "url": "https://fitnessprogramer.com/exercise/back-to-wall-alternating-shoulder-flexion/",
@@ -42310,7 +42310,7 @@
     "variantes": []
   },
   "balanceos_laterales_de_piernas": {
-    "name_es": "Ejercicio",
+    "name_es": "Columpios laterales de piernas (Calentamiento)",
     "name_en": "Lateral Leg Swings",
     "category": "Espalda",
     "url": "https://fitnessprogramer.com/exercise/lateral-leg-swings/",
@@ -42960,7 +42960,7 @@
     "variantes": []
   },
   "una_sola_rodilla_al_pecho": {
-    "name_es": "Ejercicio",
+    "name_es": "Estiramiento de rodilla al pecho",
     "name_en": "Single Knee To Chest",
     "category": "Pecho",
     "url": "https://fitnessprogramer.com/exercise/single-knee-to-chest/",
@@ -42994,7 +42994,7 @@
     "variantes": []
   },
   "bomba_de_rana": {
-    "name_es": "Ejercicio",
+    "name_es": "Frog Pumps para glúteos",
     "name_en": "Frog Pump",
     "category": "Piernas",
     "url": "https://fitnessprogramer.com/exercise/frog-pump/",
@@ -43062,7 +43062,7 @@
     "variantes": []
   },
   "fila_de_barras_en_t_para_minas_terrestres": {
-    "name_es": "Remo",
+    "name_es": "Remo con barra T en Landmine",
     "name_en": "Landmine T-Bar Row",
     "category": "Espalda",
     "url": "https://fitnessprogramer.com/exercise/landmine-t-bar-row/",
@@ -43096,7 +43096,7 @@
     "variantes": []
   },
   "taladro_de_12_varillas": {
-    "name_es": "Ejercicio",
+    "name_es": "Paso lateral 1-2 (Coordinación)",
     "name_en": "1-2 Stick Drill",
     "category": "Cardio",
     "url": "https://fitnessprogramer.com/exercise/1-2-stick-drill/",
@@ -43743,7 +43743,7 @@
     "variantes": []
   },
   "tirador_del_estante": {
-    "name_es": "Ejercicio",
+    "name_es": "Peso muerto parcial (Rack Pulls)",
     "name_en": "Rack Pull",
     "category": "Piernas",
     "url": "https://fitnessprogramer.com/exercise/rack-pull/",
@@ -43811,7 +43811,7 @@
     "variantes": []
   },
   "boca_de_incendio": {
-    "name_es": "Ejercicio",
+    "name_es": "Patada lateral de glúteo (Boca de incendio / Fire Hydrant)",
     "name_en": "Fire Hydrant",
     "category": "Piernas",
     "url": "https://fitnessprogramer.com/exercise/fire-hydrant/",
@@ -43944,7 +43944,7 @@
     "variantes": []
   },
   "intensifica_con_elevaciones_de_rodilla": {
-    "name_es": "Elevación",
+    "name_es": "Subidas al cajón con elevación de rodilla",
     "name_en": "Step Up with Knee Raises",
     "category": "Piernas",
     "url": "https://fitnessprogramer.com/exercise/step-up-with-knee-raises/",
@@ -44090,7 +44090,7 @@
     "variantes": []
   },
   "saltos_rapidos": {
-    "name_es": "Ejercicio",
+    "name_es": "Saltos snap (Snap Jumps / Medio Burpee)",
     "name_en": "Snap Jumps",
     "category": "Abdomen",
     "url": "https://fitnessprogramer.com/exercise/snap-jumps/",
@@ -44371,7 +44371,7 @@
     "variantes": []
   },
   "patadas_de_burro": {
-    "name_es": "Ejercicio",
+    "name_es": "Patada de glúteo en cuadrupedia (Donkey Kicks)",
     "name_en": "Donkey Kicks",
     "category": "Piernas",
     "url": "https://fitnessprogramer.com/exercise/donkey-kicks/",
@@ -44398,7 +44398,7 @@
     "variantes": []
   },
   "carrera_de_rodilla_alta": {
-    "name_es": "Ejercicio",
+    "name_es": "Carrera con rodillas altas (Skipping)",
     "name_en": "High Knee Run",
     "category": "Cardio",
     "url": "https://fitnessprogramer.com/exercise/high-knee-run/",
@@ -44608,7 +44608,7 @@
     "variantes": []
   },
   "patadas_de_plancha_inversa": {
-    "name_es": "Plancha",
+    "name_es": "Plancha invertida con patadas",
     "name_en": "Reverse Plank Kicks",
     "category": "Abdomen",
     "url": "https://fitnessprogramer.com/exercise/reverse-plank-kicks/",
@@ -44675,7 +44675,7 @@
     "variantes": []
   },
   "saltos_de_rodilla_alta": {
-    "name_es": "Ejercicio",
+    "name_es": "Saltos con rodillas altas",
     "name_en": "High Knee Skips",
     "category": "Abdomen",
     "url": "https://fitnessprogramer.com/exercise/high-knee-skips/",
@@ -44743,7 +44743,7 @@
     "variantes": []
   },
   "plancha_de_rodilla_a_codo": {
-    "name_es": "Plancha",
+    "name_es": "Plancha abdominal con rodilla al codo (Spiderman Plank)",
     "name_en": "Plank Knee to Elbow",
     "category": "Abdomen",
     "url": "https://fitnessprogramer.com/exercise/plank-knee-to-elbow/",
@@ -44773,7 +44773,7 @@
     "variantes": []
   },
   "medios_limpiaparabrisas": {
-    "name_es": "Ejercicio",
+    "name_es": "Medios limpiaparabrisas (Half Wipers)",
     "name_en": "Half Wipers",
     "category": "Abdomen",
     "url": "https://fitnessprogramer.com/exercise/half-wipers/",
@@ -44807,7 +44807,7 @@
     "variantes": []
   },
   "elevacion_de_piernas_en_plancha": {
-    "name_es": "Plancha",
+    "name_es": "Plancha abdominal con elevación de pierna",
     "name_en": "Plank Leg Lift",
     "category": "Abdomen",
     "url": "https://fitnessprogramer.com/exercise/plank-leg-lift/",
@@ -44837,7 +44837,7 @@
     "variantes": []
   },
   "patinador": {
-    "name_es": "Ejercicio",
+    "name_es": "Saltos de patinador (Skaters)",
     "name_en": "Skater",
     "category": "Piernas",
     "url": "https://fitnessprogramer.com/exercise/skater/",
@@ -44868,7 +44868,7 @@
     "variantes": []
   },
   "crujido_de_brazo_largo": {
-    "name_es": "Ejercicio",
+    "name_es": "Crunch abdominal con brazos estirados",
     "name_en": "Long Arm Crunch",
     "category": "Cardio",
     "url": "https://fitnessprogramer.com/exercise/long-arm-crunch/",
@@ -45008,7 +45008,7 @@
     "variantes": []
   },
   "patada_agitada": {
-    "name_es": "Ejercicio",
+    "name_es": "Aleteo de piernas (Flutter Kicks)",
     "name_en": "Flutter Kick",
     "category": "Abdomen",
     "url": "https://fitnessprogramer.com/exercise/flutter-kick/",
@@ -45309,7 +45309,7 @@
     "variantes": []
   },
   "maquina_de_abduccion_de_cadera": {
-    "name_es": "Ejercicio en máquina",
+    "name_es": "Abducciones de cadera en máquina",
     "name_en": "Hip Abduction Machine",
     "category": "Piernas",
     "url": "https://fitnessprogramer.com/exercise/hip-abduction-machine/",
@@ -45581,7 +45581,7 @@
     "variantes": []
   },
   "plancha_lateral_de_rodilla_a_codo": {
-    "name_es": "Plancha",
+    "name_es": "Plancha lateral con rodilla al codo",
     "name_en": "Side Plank Knee to Elbow",
     "category": "Abdomen",
     "url": "https://fitnessprogramer.com/exercise/side-plank-knee-to-elbow/",
@@ -45652,7 +45652,7 @@
     "variantes": []
   },
   "caida_de_abdominales_suspendidos": {
-    "name_es": "Ejercicio",
+    "name_es": "Despliegue de abdomen en suspensión (TRX)",
     "name_en": "Suspended Ab Fall-out",
     "category": "Abdomen",
     "url": "https://fitnessprogramer.com/exercise/suspended-ab-fall-out/",
@@ -45720,7 +45720,7 @@
     "variantes": []
   },
   "escalador_de_montana_trx": {
-    "name_es": "Ejercicio",
+    "name_es": "Escaladores en suspensión con TRX",
     "name_en": "TRX Mountain Climber",
     "category": "Abdomen",
     "url": "https://fitnessprogramer.com/exercise/trx-mountain-climber/",
@@ -46345,7 +46345,7 @@
     "variantes": []
   },
   "trituradoras_de_craneos_de_peso_corporal": {
-    "name_es": "Ejercicio",
+    "name_es": "Extensión de tríceps con peso corporal (Skullcrushers)",
     "name_en": "Bodyweight Skull Crushers",
     "category": "Otros",
     "url": "https://fitnessprogramer.com/exercise/bodyweight-skull-crushers/",
@@ -46714,7 +46714,7 @@
     "variantes": []
   },
   "levantamiento_de_jamon_de_gluteos": {
-    "name_es": "Elevación",
+    "name_es": "Glute Ham Raise (Femorales)",
     "name_en": "Glute Ham Raise",
     "category": "Piernas",
     "url": "https://fitnessprogramer.com/exercise/glute-ham-raise/",
@@ -47034,7 +47034,7 @@
     "variantes": []
   },
   "circulos_de_rodilla": {
-    "name_es": "Ejercicio",
+    "name_es": "Círculos de rodillas (Movilidad)",
     "name_en": "Knee Circles",
     "category": "Piernas",
     "url": "https://fitnessprogramer.com/exercise/knee-circles/",
@@ -47136,7 +47136,7 @@
     "variantes": []
   },
   "crujido_medio_cruzado": {
-    "name_es": "Ejercicio",
+    "name_es": "Medio crunch cruzado (Abdominales)",
     "name_en": "Half Cross Crunch",
     "category": "Cardio",
     "url": "https://fitnessprogramer.com/exercise/half-cross-crunch/",
@@ -47329,7 +47329,7 @@
     "variantes": []
   },
   "circulos_de_cadera": {
-    "name_es": "Ejercicio",
+    "name_es": "Círculos de cadera (Movilidad)",
     "name_en": "Hip Circles",
     "category": "Piernas",
     "url": "https://fitnessprogramer.com/exercise/hip-circles/",
@@ -47397,7 +47397,7 @@
     "variantes": []
   },
   "rotacion_de_plancha_lateral": {
-    "name_es": "Plancha",
+    "name_es": "Plancha lateral con rotación de tronco",
     "name_en": "Side Plank Rotation",
     "category": "Abdomen",
     "url": "https://fitnessprogramer.com/exercise/side-plank-rotation/",
@@ -47533,7 +47533,7 @@
     "variantes": []
   },
   "inmersiones_inversas": {
-    "name_es": "Fondos",
+    "name_es": "Fondos invertidos en banco",
     "name_en": "Reverse Dips",
     "category": "Pecho",
     "url": "https://fitnessprogramer.com/exercise/reverse-dips/",
@@ -47737,7 +47737,7 @@
     "variantes": []
   },
   "bola_de_pared": {
-    "name_es": "Ejercicio",
+    "name_es": "Lanzamiento de balón a la pared (Wall Ball)",
     "name_en": "Wall Ball",
     "category": "Hombros",
     "url": "https://fitnessprogramer.com/exercise/wall-ball/",
@@ -47805,7 +47805,7 @@
     "variantes": []
   },
   "patadas_con_la_pierna_doblada": {
-    "name_es": "Ejercicio",
+    "name_es": "Patadas con pierna flexionada",
     "name_en": "Kicks Leg Bent",
     "category": "Piernas",
     "url": "https://fitnessprogramer.com/exercise/kicks-leg-bent/",
@@ -47873,7 +47873,7 @@
     "variantes": []
   },
   "diapositiva_del_infierno": {
-    "name_es": "Ejercicio",
+    "name_es": "Deslizamientos de talón en el suelo",
     "name_en": "Hell Slide",
     "category": "Abdomen",
     "url": "https://fitnessprogramer.com/exercise/hell-slide/",
@@ -47900,7 +47900,7 @@
     "variantes": []
   },
   "ahuecamiento_abdominal_en_decubito_prono": {
-    "name_es": "Ejercicio",
+    "name_es": "Vacío abdominal en prono (acostado boca abajo)",
     "name_en": "Prone Abdominal Hollowing",
     "category": "Abdomen",
     "url": "https://fitnessprogramer.com/exercise/prone-abdominal-hollowing/",
@@ -48113,7 +48113,7 @@
     "variantes": []
   },
   "flexiones_para_remar_renegado": {
-    "name_es": "Remo",
+    "name_es": "Flexiones con remo renegado",
     "name_en": "Push-Up to Renegade Row",
     "category": "Pecho",
     "url": "https://fitnessprogramer.com/exercise/push-up-to-renegade-row/",
@@ -48353,7 +48353,7 @@
     "variantes": []
   },
   "empuje_de_cadera_con_maquina_smith": {
-    "name_es": "Ejercicio en máquina",
+    "name_es": "Hip thrust en máquina Smith",
     "name_en": "Smith Machine Hip Thrust",
     "category": "Piernas",
     "url": "https://fitnessprogramer.com/exercise/smith-machine-hip-thrust/",
@@ -49271,7 +49271,7 @@
     "variantes": []
   },
   "rodando_como_una_pelota": {
-    "name_es": "Ejercicio",
+    "name_es": "Rodar como una pelota (Pilates)",
     "name_en": "Rolling Like a Ball",
     "category": "Espalda",
     "url": "https://fitnessprogramer.com/exercise/rolling-like-a-ball/",
@@ -49509,7 +49509,7 @@
     "variantes": []
   },
   "bicicleta_aerea_de_asalto": {
-    "name_es": "Ejercicio",
+    "name_es": "Bicicleta de aire (Assault Airbike)",
     "name_en": "Assault AirBike",
     "category": "Cardio",
     "url": "https://fitnessprogramer.com/exercise/assault-airbike/",
@@ -49645,7 +49645,7 @@
     "variantes": []
   },
   "bicicleta_estatica_reclinada": {
-    "name_es": "Ejercicio",
+    "name_es": "Bicicleta estática reclinada",
     "name_en": "Recumbent Exercise Bike",
     "category": "Cardio",
     "url": "https://fitnessprogramer.com/exercise/recumbent-exercise-bike/",
@@ -49679,7 +49679,7 @@
     "variantes": []
   },
   "inmersiones_de_anillo": {
-    "name_es": "Fondos",
+    "name_es": "Fondos en anillas",
     "name_en": "Ring Dips",
     "category": "Pecho",
     "url": "https://fitnessprogramer.com/exercise/ring-dips/",
@@ -50131,7 +50131,7 @@
     "variantes": []
   },
   "abduccion_lateral_de_cadera": {
-    "name_es": "Ejercicio",
+    "name_es": "Abducción lateral de cadera",
     "name_en": "Side Hip Abduction",
     "category": "Piernas",
     "url": "https://fitnessprogramer.com/exercise/side-hip-abduction/",
@@ -51311,7 +51311,7 @@
     "variantes": []
   },
   "abdominales_con_cuchillo_jack_con_banda": {
-    "name_es": "Ejercicio con banda de resistencia",
+    "name_es": "Abdominales navaja con banda de resistencia",
     "name_en": "Banded Jack knife sit-up",
     "category": "Abdomen",
     "url": "https://fitnessprogramer.com/exercise/banded-jack-knife-sit-up/",
@@ -51651,7 +51651,7 @@
     "variantes": []
   },
   "el_salto_de_caja": {
-    "name_es": "Ejercicio",
+    "name_es": "Salto al cajón (Box Jump)",
     "name_en": "The Box Jump",
     "category": "Cardio",
     "url": "https://fitnessprogramer.com/exercise/the-box-jump/",
@@ -51719,7 +51719,7 @@
     "variantes": []
   },
   "cuerda_de_batalla": {
-    "name_es": "Ejercicio",
+    "name_es": "Entrenamiento con cuerdas de batalla (Battle Ropes)",
     "name_en": "Battle Rope",
     "category": "Hombros",
     "url": "https://fitnessprogramer.com/exercise/battle-rope/",
