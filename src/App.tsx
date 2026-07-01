@@ -331,13 +331,18 @@ function App() {
     }
 
     if (isSupabaseConfigured && session) {
-      await queueSyncItem({
-        action,
-        tableName,
-        payload: record
-      });
-      if (navigator.onLine) {
-        await syncLocalQueueToCloud();
+      try {
+        await queueSyncItem({
+          action,
+          tableName,
+          payload: record
+        });
+        if (navigator.onLine) {
+          await syncLocalQueueToCloud();
+        }
+      } catch (err: any) {
+        console.error('Offline sync queue failure (circuit breaker):', err);
+        alert(err.message || 'La cola de sincronización está llena.');
       }
     }
   };

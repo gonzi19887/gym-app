@@ -189,7 +189,13 @@ export function generateUUID(): string {
 }
 
 // Offline Sync Queue helpers
-export function queueSyncItem(item: Omit<SyncQueueItem, 'id' | 'timestamp'>): Promise<void> {
+export async function queueSyncItem(item: Omit<SyncQueueItem, 'id' | 'timestamp'>): Promise<void> {
+  const queue = await getAllRecords<SyncQueueItem>('sync_queue');
+  if (queue.length >= 100) {
+    console.warn('Sync queue limit reached (Circuit Breaker active). Prevented enqueuing to protect database from overflow.');
+    throw new Error('La cola de sincronización sin conexión ha alcanzado su límite de seguridad de 100 elementos. Por favor, conéctate a internet para sincronizar tus avances antes de registrar más datos.');
+  }
+
   const syncItem: SyncQueueItem = {
     ...item,
     id: generateUUID(),
