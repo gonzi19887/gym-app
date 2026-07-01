@@ -47,4 +47,4 @@ Aunque **AppGimnasio** no opera con transacciones financieras de criptomonedas o
 - [x] Secretos administrativos (`service_role`) excluidos del bundle JS público de Vercel.
 - [x] Validación y escape de caracteres especiales en el cargador SQL de ejercicios.
 - [x] IndexedDB configurado con IDs deterministas de tipo UUIDv4.
-- [ ] Implementar límite de desbordamiento (circuit breaker) en la cola `sync_queue` offline.
+- [x] Implementar límite de desbordamiento (circuit breaker) en la cola `sync_queue` offline (Limitado a 100 elementos con rechazo preventivo y alerta al usuario).
