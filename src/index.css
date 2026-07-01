@@ -116,6 +116,17 @@ input[type="password"]::placeholder {
   }
 }
 
+@keyframes slideDown {
+  0% {
+    transform: translate(-50%, -20px);
+    opacity: 0;
+  }
+  100% {
+    transform: translate(-50%, 0);
+    opacity: 1;
+  }
+}
+
 .animate-pop {
   animation: popIn 0.4s var(--transition-bounce) forwards;
 }
@@ -727,17 +738,25 @@ input[type="password"]::placeholder {
 
 /* Workout Rest Timer Banner */
 .workout-rest-timer-banner {
-  background: linear-gradient(90deg, rgba(168, 85, 247, 0.1) 0%, rgba(236, 72, 153, 0.1) 100%);
-  border-top: 2px solid var(--accent-primary);
-  border-bottom: 2px solid var(--accent-primary);
+  position: fixed;
+  top: 68px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 32px);
+  max-width: 480px;
+  background: rgba(20, 20, 25, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1.5px solid var(--accent-primary);
+  border-radius: 12px;
   padding: 12px 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  animation: slideUp 0.3s ease;
-  box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.3);
-  z-index: 50;
+  animation: slideDown 0.3s ease;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  z-index: 100;
   box-sizing: border-box;
 }
 

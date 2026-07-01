@@ -148,6 +148,10 @@ function App() {
   const [exerciseTimeElapsed, setExerciseTimeElapsed] = useState(0);
   const [isExerciseTimerRunning, setIsExerciseTimerRunning] = useState(false);
 
+  // Background-resilient timer refs
+  const timerTargetTimeRef = useRef<number | null>(null);
+  const exerciseTimerStartTimeRef = useRef<number | null>(null);
+
   // Gamification & Level Up Overlay State
   const [levelUpInfo, setLevelUpInfo] = useState<{ oldLevel: number; newLevel: number; xpEarned: number } | null>(null);
   const [showBlackFlash, setShowBlackFlash] = useState(false); // Jujutsu personal record burst
@@ -159,6 +163,11 @@ function App() {
   const [editClan, setEditClan] = useState('');
   const [editCursedTechnique, setEditCursedTechnique] = useState('');
   const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number | null>(null);
+
+  // Health Metrics Local State (Persisted in localStorage)
+  const [userWeight, setUserWeight] = useState<number>(() => parseFloat(localStorage.getItem('user_weight') || '78'));
+  const [userFatPct, setUserFatPct] = useState<number>(() => parseFloat(localStorage.getItem('user_fat_pct') || '14'));
+  const [userHeight, setUserHeight] = useState<number>(() => parseFloat(localStorage.getItem('user_height') || '180'));
 
   // Camera & Custom Photo State
   const [isCameraActive, setIsCameraActive] = useState(false);
@@ -1024,39 +1033,75 @@ function App() {
     loadData();
   }, [session]);
 
-  // Timer interval handling
+  // Keep rest timer ref in sync when timerRemaining is set from outside (like completing a set or adding 30s)
+  useEffect(() => {
+    if (isTimerRunning && timerRemaining > 0) {
+      const currentTarget = timerTargetTimeRef.current;
+      if (currentTarget === null) {
+        timerTargetTimeRef.current = Date.now() + timerRemaining * 1000;
+      } else {
+        const expectedRemaining = Math.max(0, Math.ceil((currentTarget - Date.now()) / 1000));
+        if (Math.abs(expectedRemaining - timerRemaining) > 1) {
+          timerTargetTimeRef.current = Date.now() + timerRemaining * 1000;
+        }
+      }
+    } else if (!isTimerRunning || timerRemaining <= 0) {
+      timerTargetTimeRef.current = null;
+    }
+  }, [timerRemaining, isTimerRunning]);
+
+  // Keep exercise stopwatch ref in sync when exerciseTimeElapsed changes from outside
+  useEffect(() => {
+    if (isExerciseTimerRunning) {
+      const start = exerciseTimerStartTimeRef.current;
+      if (start === null) {
+        exerciseTimerStartTimeRef.current = Date.now() - exerciseTimeElapsed * 1000;
+      } else {
+        const expectedElapsed = Math.floor((Date.now() - start) / 1000);
+        if (Math.abs(expectedElapsed - exerciseTimeElapsed) > 1) {
+          exerciseTimerStartTimeRef.current = Date.now() - exerciseTimeElapsed * 1000;
+        }
+      }
+    } else {
+      exerciseTimerStartTimeRef.current = null;
+    }
+  }, [exerciseTimeElapsed, isExerciseTimerRunning]);
+
+  // Timer interval handling using absolute target timestamps
   useEffect(() => {
     let interval: any = null;
     if (isTimerRunning && timerRemaining > 0) {
       interval = setInterval(() => {
-        setTimerRemaining((prev) => {
-          const next = prev - 1;
-          if (next <= 0) {
+        const target = timerTargetTimeRef.current;
+        if (target !== null) {
+          const remaining = Math.max(0, Math.ceil((target - Date.now()) / 1000));
+          setTimerRemaining(remaining);
+          if (remaining <= 0) {
+            timerTargetTimeRef.current = null;
+            setIsTimerRunning(false);
             clearInterval(interval);
-            setTimeout(() => {
-              setIsTimerRunning(false);
-              playBeep();
-              triggerVibration([100, 50, 100]);
-            }, 0);
-            return 0;
+            playBeep();
+            triggerVibration([100, 50, 100]);
           }
-          return next;
-        });
-      }, 1000);
+        }
+      }, 250);
     }
 
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isTimerRunning, timerRemaining]);
+  }, [isTimerRunning]);
 
   // Ponytail: Temporizador de tiempo transcurrido en el ejercicio actual
   useEffect(() => {
     let interval: any = null;
     if (isExerciseTimerRunning) {
       interval = setInterval(() => {
-        setExerciseTimeElapsed((prev) => prev + 1);
-      }, 1000);
+        const start = exerciseTimerStartTimeRef.current;
+        if (start !== null) {
+          setExerciseTimeElapsed(Math.floor((Date.now() - start) / 1000));
+        }
+      }, 500);
     }
     return () => {
       if (interval) clearInterval(interval);
@@ -1073,6 +1118,32 @@ function App() {
       setIsExerciseTimerRunning(false);
     }
   }, [activeExerciseIndex, activeExercises]);
+
+  // Page visibility change listener to force refresh timers immediately on app wake
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        if (isTimerRunning && timerTargetTimeRef.current !== null) {
+          const remaining = Math.max(0, Math.ceil((timerTargetTimeRef.current - Date.now()) / 1000));
+          setTimerRemaining(remaining);
+          if (remaining <= 0) {
+            timerTargetTimeRef.current = null;
+            setIsTimerRunning(false);
+            playBeep();
+            triggerVibration([100, 50, 100]);
+          }
+        }
+        if (isExerciseTimerRunning && exerciseTimerStartTimeRef.current !== null) {
+          setExerciseTimeElapsed(Math.floor((Date.now() - exerciseTimerStartTimeRef.current) / 1000));
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [isTimerRunning, isExerciseTimerRunning]);
 
   const formatExerciseTime = (totalSeconds: number) => {
     const mins = Math.floor(totalSeconds / 60);
@@ -2446,118 +2517,226 @@ function App() {
         )}
 
         {/* TAB: HOY */}
-        {activeTab === 'hoy' && profile && levelInfo && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            
-            {/* Level XP Card */}
-            <section className="card">
-              <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full bg-purple-500/10 blur-3xl pointer-events-none" />
-              <div className="level-xp-info">
-                <span style={{ fontWeight: '700', color: 'var(--text-secondary)' }}>Energía Maldita (XP)</span>
-                <span style={{ color: 'var(--accent-primary)', fontWeight: '700' }}>
-                  {levelInfo.progressXP} / {levelInfo.totalRequiredXP} EM
-                </span>
-              </div>
-              
-              <div className="progress-track">
-                <div 
-                  className="progress-fill" 
-                  style={{ width: `${levelInfo.percentage}%` }}
-                />
-              </div>
-              
-              <div className="level-range">
-                <span>{getJJKGrade(levelInfo.level).split(' ')[1]} Grado</span>
-                <span>{getJJKGrade(levelInfo.level + 1).split(' ')[1]} Grado</span>
-              </div>
-            </section>
+        {activeTab === 'hoy' && profile && levelInfo && (() => {
+          const totalTonnage = workoutSets.filter(s => s.is_completed).reduce((sum, s) => sum + ((s.weight || 0) * (s.reps || 0)), 0) / 1000;
+          const totalSets = workoutSets.filter(s => s.is_completed).length;
+          const totalWorkouts = workouts.length;
 
-            {/* Weekly Calendar Card */}
-            <section className="card">
-              <h3 className="card-title">
-                <Calendar size={15} className="text-purple-400" />
-                <span>Misiones Semanales</span>
-              </h3>
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               
-              <div className="calendar-grid">
-                {calendarDays.map((day, idx) => (
-                  <div key={idx} className="calendar-day">
-                    <span className="calendar-day-name">{day.name}</span>
-                    <div 
-                      className={`calendar-day-box ${day.hasTrained ? 'completed' : ''} ${day.isToday ? 'today' : ''}`}
-                    >
-                      {day.hasTrained ? <Check size={14} strokeWidth={3.5} /> : day.dayNum}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            {/* Today's Workout Selector Card */}
-            <section className="card">
-              <h3 className="card-title">
-                <Dumbbell size={15} className="text-purple-400" />
-                <span>Misiones del Día</span>
-              </h3>
-              
-              {routines.length === 0 ? (
-                <div className="no-routines-container">
-                  <p className="no-routines-text">Aún no tienes misiones o rutinas asignadas.</p>
-                  <button 
-                    onClick={() => setActiveTab('rutinas')}
-                    className="btn-primary"
-                  >
-                    Crear primera rutina
-                  </button>
+              {/* Level XP Card */}
+              <section className="card">
+                <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full bg-purple-500/10 blur-3xl pointer-events-none" />
+                <div className="level-xp-info">
+                  <span style={{ fontWeight: '700', color: 'var(--text-secondary)' }}>Energía Maldita (XP)</span>
+                  <span style={{ color: 'var(--accent-primary)', fontWeight: '700' }}>
+                    {levelInfo.progressXP} / {levelInfo.totalRequiredXP} EM
+                  </span>
                 </div>
-              ) : (
-                <div className="routine-list">
-                  <p className="no-routines-text" style={{ marginBottom: '8px' }}>Selecciona tu objetivo hoy:</p>
-                  {routines.map((routine) => {
-                    const todayDayIndex = new Date().getDay(); // Sun is 0, Mon is 1, etc.
-                    const isScheduledForToday = routine.day_of_week && routine.day_of_week.includes(todayDayIndex);
-                    
-                    return (
-                      <button
-                        key={routine.id}
-                        onClick={() => startWorkout(routine)}
-                        className="routine-item-btn"
-                        style={isScheduledForToday ? { borderColor: 'var(--accent-primary)', boxShadow: '0 0 10px rgba(168, 85, 247, 0.1)' } : {}}
+                
+                <div className="progress-track">
+                  <div 
+                    className="progress-fill" 
+                    style={{ width: `${levelInfo.percentage}%` }}
+                  />
+                </div>
+                
+                <div className="level-range">
+                  <span>{getJJKGrade(levelInfo.level).split(' ')[1]} Grado</span>
+                  <span>{getJJKGrade(levelInfo.level + 1).split(' ')[1]} Grado</span>
+                </div>
+              </section>
+
+              {/* Battle Statistics Grid (New) */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+                <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '12px', position: 'relative', overflow: 'hidden' }}>
+                  <span style={{ fontSize: '18px', color: 'var(--accent-primary)', marginBottom: '4px' }}>🏋️‍♂️</span>
+                  <span style={{ fontSize: '15px', fontWeight: '900', color: 'var(--text-primary)', fontFamily: 'Outfit' }}>{totalTonnage.toFixed(1)} T</span>
+                  <span style={{ fontSize: '9px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px' }}>Tonelaje</span>
+                </div>
+                <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '12px', position: 'relative', overflow: 'hidden' }}>
+                  <span style={{ fontSize: '18px', color: 'var(--accent-primary)', marginBottom: '4px' }}>🔁</span>
+                  <span style={{ fontSize: '15px', fontWeight: '900', color: 'var(--text-primary)', fontFamily: 'Outfit' }}>{totalSets}</span>
+                  <span style={{ fontSize: '9px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px' }}>Series</span>
+                </div>
+                <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '12px', position: 'relative', overflow: 'hidden' }}>
+                  <span style={{ fontSize: '18px', color: 'var(--accent-primary)', marginBottom: '4px' }}>🏆</span>
+                  <span style={{ fontSize: '15px', fontWeight: '900', color: 'var(--text-primary)', fontFamily: 'Outfit' }}>{totalWorkouts}</span>
+                  <span style={{ fontSize: '9px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px' }}>Rituales</span>
+                </div>
+              </div>
+
+              {/* Weekly Calendar Card */}
+              <section className="card">
+                <h3 className="card-title">
+                  <Calendar size={15} className="text-purple-400" />
+                  <span>Misiones Semanales</span>
+                </h3>
+                
+                <div className="calendar-grid">
+                  {calendarDays.map((day, idx) => (
+                    <div key={idx} className="calendar-day">
+                      <span className="calendar-day-name">{day.name}</span>
+                      <div 
+                        className={`calendar-day-box ${day.hasTrained ? 'completed' : ''} ${day.isToday ? 'today' : ''}`}
                       >
-                        <div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <h4 className="routine-name">{routine.name}</h4>
-                            {isScheduledForToday && (
-                              <span className="exercise-tag" style={{ fontSize: '8px', padding: '2px 5px', color: 'var(--accent-tertiary)', backgroundColor: 'rgba(16, 185, 129, 0.1)', borderColor: 'rgba(16, 185, 129, 0.2)' }}>
-                                Programada hoy
-                              </span>
-                            )}
+                        {day.hasTrained ? <Check size={14} strokeWidth={3.5} /> : day.dayNum}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              {/* Today's Workout Selector Card */}
+              <section className="card">
+                <h3 className="card-title">
+                  <Dumbbell size={15} className="text-purple-400" />
+                  <span>Misiones del Día</span>
+                </h3>
+                
+                {routines.length === 0 ? (
+                  <div className="no-routines-container">
+                    <p className="no-routines-text">Aún no tienes misiones o rutinas asignadas.</p>
+                    <button 
+                      onClick={() => setActiveTab('rutinas')}
+                      className="btn-primary"
+                    >
+                      Crear primera rutina
+                    </button>
+                  </div>
+                ) : (
+                  <div className="routine-list">
+                    <p className="no-routines-text" style={{ marginBottom: '8px' }}>Selecciona tu objetivo hoy:</p>
+                    {routines.map((routine) => {
+                      const todayDayIndex = new Date().getDay();
+                      const isScheduledForToday = routine.day_of_week && routine.day_of_week.includes(todayDayIndex);
+                      
+                      return (
+                        <button
+                          key={routine.id}
+                          onClick={() => startWorkout(routine)}
+                          className="routine-item-btn"
+                          style={isScheduledForToday ? { borderColor: 'var(--accent-primary)', boxShadow: '0 0 10px rgba(168, 85, 247, 0.1)' } : {}}
+                        >
+                          <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <h4 className="routine-name">{routine.name}</h4>
+                              {isScheduledForToday && (
+                                <span className="exercise-tag" style={{ fontSize: '8px', padding: '2px 5px', color: 'var(--accent-tertiary)', backgroundColor: 'rgba(16, 185, 129, 0.1)', borderColor: 'rgba(16, 185, 129, 0.2)' }}>
+                                  Programada hoy
+                                </span>
+                              )}
+                            </div>
+                            <span className="routine-meta">
+                              {routineExercises.filter((re) => re.routine_id === routine.id).length} ejercicios • Días: {getDaysLabels(routine.day_of_week)}
+                            </span>
                           </div>
-                          <span className="routine-meta">
-                            {routineExercises.filter((re) => re.routine_id === routine.id).length} ejercicios • Días: {getDaysLabels(routine.day_of_week)}
+                          <ChevronRight size={16} style={{ color: 'var(--text-tertiary)' }} />
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </section>
+
+              {/* Personal Records & Black Flashes (New) */}
+              <section className="card">
+                <h3 className="card-title">
+                  <TrendingUp size={15} className="text-purple-400" />
+                  <span>Marcas & Destellos Récords</span>
+                </h3>
+                {Object.keys(personalRecords).length === 0 ? (
+                  <p className="no-routines-text" style={{ textAlign: 'center', padding: '8px 0', fontSize: '12px' }}>
+                    Aún no has registrado récords personales (Destellos Negros).
+                  </p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '180px', overflowY: 'auto', paddingRight: '4px' }}>
+                    {Object.entries(personalRecords).map(([exId, record]) => {
+                      const ex = exercises.find((e) => e.id === exId);
+                      if (!ex) return null;
+                      return (
+                        <div key={exId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 8px', backgroundColor: 'rgba(255,255,255,0.01)', borderBottom: '1px solid rgba(255,255,255,0.03)', borderRadius: '6px' }}>
+                          <div>
+                            <h4 style={{ margin: 0, fontSize: '12px', color: 'var(--text-primary)', fontWeight: 600 }}>{ex.name}</h4>
+                            <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>1RM: {record.oneRM.toFixed(1)} kg • {record.weight}kg x {record.reps}r</span>
+                          </div>
+                          <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--accent-secondary)' }}>
+                            🔥 PR
                           </span>
                         </div>
-                        <ChevronRight size={16} style={{ color: 'var(--text-tertiary)' }} />
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </section>
+                      );
+                    })}
+                  </div>
+                )}
+              </section>
 
-            {/* Glossary Trigger Card */}
-            <section className="card" style={{ cursor: 'pointer', marginTop: '4px' }} onClick={() => setShowGlossary(true)}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <BookOpen size={16} className="text-purple-400" />
-                  <span style={{ fontWeight: '700', fontSize: '13px', color: 'var(--text-primary)' }}>Glosario de Técnicas</span>
-                </div>
-                <span style={{ fontSize: '12px', color: 'var(--accent-primary)', fontWeight: 'bold' }}>Ver Catálogo →</span>
-              </div>
-            </section>
+              {/* Estado de Salud / Composición (New) */}
+              <section className="card">
+                <h3 className="card-title">
+                  <span style={{ marginRight: '6px' }}>❤️</span>
+                  <span>Composición Corporal</span>
+                </h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0' }}>
+                  <div style={{ display: 'flex', gap: '20px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <span style={{ fontSize: '9px', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase' }}>PESO</span>
+                      <span style={{ fontSize: '14px', fontWeight: '900', color: 'var(--text-primary)', fontFamily: 'Outfit' }}>{userWeight} kg</span>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <span style={{ fontSize: '9px', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase' }}>GRASA</span>
+                      <span style={{ fontSize: '14px', fontWeight: '900', color: 'var(--text-primary)', fontFamily: 'Outfit' }}>{userFatPct}%</span>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <span style={{ fontSize: '9px', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase' }}>IMC</span>
+                      <span style={{ fontSize: '14px', fontWeight: '900', color: 'var(--accent-primary)', fontFamily: 'Outfit' }}>{(userWeight / Math.pow(userHeight / 100, 2)).toFixed(1)}</span>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => {
+                      const w = prompt('Introduce tu peso actual (kg):', userWeight.toString());
+                      if (w !== null) {
+                        const parsedW = parseFloat(w) || userWeight;
+                        setUserWeight(parsedW);
+                        localStorage.setItem('user_weight', parsedW.toString());
+                        
+                        const f = prompt('Introduce tu porcentaje de grasa corporal (%):', userFatPct.toString());
+                        if (f !== null) {
+                          const parsedF = parseFloat(f) || userFatPct;
+                          setUserFatPct(parsedF);
+                          localStorage.setItem('user_fat_pct', parsedF.toString());
+                        }
 
-          </div>
-        )}
+                        const h = prompt('Introduce tu altura actual (cm):', userHeight.toString());
+                        if (h !== null) {
+                          const parsedH = parseFloat(h) || userHeight;
+                          setUserHeight(parsedH);
+                          localStorage.setItem('user_height', parsedH.toString());
+                        }
+                      }
+                    }}
+                    className="btn-secondary"
+                    style={{ padding: '6px 12px', fontSize: '11px', borderRadius: '20px', borderColor: 'rgba(255,255,255,0.1)' }}
+                  >
+                    Actualizar
+                  </button>
+                </div>
+              </section>
+
+              {/* Glossary Trigger Card */}
+              <section className="card" style={{ cursor: 'pointer', marginTop: '4px' }} onClick={() => setShowGlossary(true)}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <BookOpen size={16} className="text-purple-400" />
+                    <span style={{ fontWeight: '700', fontSize: '13px', color: 'var(--text-primary)' }}>Glosario de Técnicas</span>
+                  </div>
+                  <span style={{ fontSize: '12px', color: 'var(--accent-primary)', fontWeight: 'bold' }}>Ver Catálogo →</span>
+                </div>
+              </section>
+
+            </div>
+          );
+        })()}
 
         {/* TAB: CALENDARIO */}
         {activeTab === 'calendario' && (
