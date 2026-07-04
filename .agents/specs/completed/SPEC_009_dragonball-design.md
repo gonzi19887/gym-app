@@ -1,7 +1,7 @@
 ---
 id: SPEC_009
 title: Rediseño Dragon Ball — Design System Completo
-status: active
+status: completed
 priority: high
 branch: dev
 created: 2026-07-04

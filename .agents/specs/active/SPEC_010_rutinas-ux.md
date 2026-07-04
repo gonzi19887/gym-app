@@ -1,7 +1,7 @@
 ---
 id: SPEC_010
 title: Rutinas UX — Accesibilidad, Filtros, GIFs, Carry-Over Peso
-status: backlog
+status: active
 priority: high
 branch: dev
 created: 2026-07-04
