@@ -123,6 +123,7 @@ function App() {
   const [selectedExerciseForGlosario, setSelectedExerciseForGlosario] = useState<Exercise | null>(null);
   const [showGlossary, setShowGlossary] = useState(false);
   const [routineExerciseSearch, setRoutineExerciseSearch] = useState('');
+  const [newRoutineCategoryFilter, setNewRoutineCategoryFilter] = useState<string | null>(null);
   const [isTimerMinimized, setIsTimerMinimized] = useState(false);
 
   // Routine Creator Modal State
@@ -135,6 +136,7 @@ function App() {
     sets: number;
     reps: number;
     rest: number;
+    is_time_based?: boolean;
   }[]>([]);
 
 
@@ -1290,7 +1292,8 @@ function App() {
         order_index: index,
         default_sets: config.sets,
         default_reps: config.reps,
-        default_rest_time: config.rest
+        default_rest_time: config.rest,
+        is_time_based: config.is_time_based || false
       };
       await saveRecord('routine_exercises', routineExercise, 'CREATE');
     }
@@ -1408,7 +1411,8 @@ function App() {
           weight: previousSet ? previousSet.weight : 0,
           reps: previousSet ? previousSet.reps : (re.default_reps || 10),
           rest_time: re.default_rest_time,
-          is_completed: false
+          is_completed: false,
+          is_time_based: re.is_time_based || false
         });
       }
     });
@@ -1502,14 +1506,30 @@ function App() {
 
   // Set weights / reps modification
   const handleSetChange = (setId: string, field: 'weight' | 'reps', value: number) => {
-    setActiveWorkoutSets((prev) =>
-      prev.map((set) => {
+    setActiveWorkoutSets((prev) => {
+      const changingSet = prev.find(s => s.id === setId);
+      if (!changingSet) return prev;
+
+      return prev.map((set) => {
         if (set.id === setId) {
           return { ...set, [field]: value };
         }
+
+        // SPEC_010: Carry-over of weight/reps from set 1 to subsequent sets
+        if (
+          changingSet.set_number === 1 && 
+          set.exercise_id === changingSet.exercise_id && 
+          set.set_number > 1 && 
+          !set.is_completed
+        ) {
+          if (set[field] === changingSet[field]) {
+            return { ...set, [field]: value };
+          }
+        }
+
         return set;
-      })
-    );
+      });
+    });
   };
 
   const cancelWorkout = () => {
@@ -1626,7 +1646,8 @@ function App() {
   const currentExerciseSets = activeWorkoutSets.filter((s) => s.exercise_id === currentActiveExercise?.id);
   const isCardioOrStretch = currentActiveExercise ? (
     currentActiveExercise.category.toLowerCase() === 'cardio' || 
-    currentActiveExercise.category.toLowerCase() === 'estiramientos'
+    currentActiveExercise.category.toLowerCase() === 'estiramientos' ||
+    currentExerciseSets.some(s => s.is_time_based)
   ) : false;
 
   const getLastSessionSets = () => {
@@ -3194,7 +3215,8 @@ function App() {
                                 name: ex ? ex.name : 'Ejercicio desconocido',
                                 sets: re.default_sets,
                                 reps: re.default_reps,
-                                rest: re.default_rest_time
+                                rest: re.default_rest_time,
+                                is_time_based: re.is_time_based || false
                               };
                             });
                             setEditingRoutineId(routine.id);
@@ -3374,11 +3396,23 @@ function App() {
                                         {config.name}
                                       </h4>
                                       <p className="font-label-md text-label-md text-on-surface-variant mt-0.5" style={{ fontSize: '12px' }}>
-                                        {config.sets} sets × {config.reps} reps • {config.rest}s desc
+                                        {config.sets} sets × {config.reps} {config.is_time_based ? 'segundos' : 'reps'} • {config.rest}s desc
                                       </p>
                                     </div>
                                   </div>
                                   <div className="flex items-center gap-2">
+                                    <button 
+                                      type="button"
+                                      onClick={() => {
+                                        setNewRoutineSelectedExercises(prev => 
+                                          prev.map(item => item.id === config.id ? { ...item, is_time_based: !item.is_time_based } : item)
+                                        );
+                                      }}
+                                      className="px-2 py-1 text-[11px] rounded bg-white/5 border border-white/10 text-on-surface-variant hover:text-primary hover:bg-white/10 transition-all font-semibold"
+                                      style={{ display: 'flex', alignItems: 'center', gap: '3px' }}
+                                    >
+                                      <span>{config.is_time_based ? '⏱️ Tiempo' : '🔢 Reps'}</span>
+                                    </button>
                                     <button 
                                       type="button"
                                       onClick={() => {
@@ -3396,7 +3430,7 @@ function App() {
                                 <div className="grid grid-cols-3 gap-2 pt-2 border-t border-white/5">
                                   <div>
                                     <label className="text-[11px] text-on-surface-variant/80 uppercase block mb-1" style={{ fontSize: '12px' }}>Series</label>
-                                    <div className="flex items-center bg-surface-container-high border border-border-subtle rounded overflow-hidden h-8">
+                                    <div className="stepper-container bg-surface-container-high">
                                       <button
                                         type="button"
                                         onClick={() => {
@@ -3405,8 +3439,7 @@ function App() {
                                             prev.map(item => item.id === config.id ? { ...item, sets: val } : item)
                                           );
                                         }}
-                                        className="px-3 text-xs text-on-surface-variant hover:text-primary h-full hover:bg-white/5 transition-colors font-bold"
-                                        style={{ fontSize: '12px' }}
+                                        className="stepper-btn-minus"
                                       >
                                         -
                                       </button>
@@ -3422,8 +3455,7 @@ function App() {
                                             prev.map(item => item.id === config.id ? { ...item, sets: val } : item)
                                           );
                                         }}
-                                        className="w-full bg-transparent border-none text-xs text-on-surface text-center focus:outline-none p-0 h-full [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                        style={{ fontSize: '12px' }}
+                                        className="set-input-stepped font-bold"
                                       />
                                       <button
                                         type="button"
@@ -3433,16 +3465,17 @@ function App() {
                                             prev.map(item => item.id === config.id ? { ...item, sets: val } : item)
                                           );
                                         }}
-                                        className="px-3 text-xs text-on-surface-variant hover:text-primary h-full hover:bg-white/5 transition-colors font-bold"
-                                        style={{ fontSize: '12px' }}
+                                        className="stepper-btn-plus"
                                       >
                                         +
                                       </button>
                                     </div>
                                   </div>
                                   <div>
-                                    <label className="text-[11px] text-on-surface-variant/80 uppercase block mb-1" style={{ fontSize: '12px' }}>Reps</label>
-                                    <div className="flex items-center bg-surface-container-high border border-border-subtle rounded overflow-hidden h-8">
+                                    <label className="text-[11px] text-on-surface-variant/80 uppercase block mb-1" style={{ fontSize: '12px' }}>
+                                      {config.is_time_based ? 'Segundos' : 'Reps'}
+                                    </label>
+                                    <div className="stepper-container bg-surface-container-high">
                                       <button
                                         type="button"
                                         onClick={() => {
@@ -3451,8 +3484,7 @@ function App() {
                                             prev.map(item => item.id === config.id ? { ...item, reps: val } : item)
                                           );
                                         }}
-                                        className="px-3 text-xs text-on-surface-variant hover:text-primary h-full hover:bg-white/5 transition-colors font-bold"
-                                        style={{ fontSize: '12px' }}
+                                        className="stepper-btn-minus"
                                       >
                                         -
                                       </button>
@@ -3468,8 +3500,7 @@ function App() {
                                             prev.map(item => item.id === config.id ? { ...item, reps: val } : item)
                                           );
                                         }}
-                                        className="w-full bg-transparent border-none text-xs text-on-surface text-center focus:outline-none p-0 h-full [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                        style={{ fontSize: '12px' }}
+                                        className="set-input-stepped font-bold"
                                       />
                                       <button
                                         type="button"
@@ -3479,8 +3510,7 @@ function App() {
                                             prev.map(item => item.id === config.id ? { ...item, reps: val } : item)
                                           );
                                         }}
-                                        className="px-3 text-xs text-on-surface-variant hover:text-primary h-full hover:bg-white/5 transition-colors font-bold"
-                                        style={{ fontSize: '12px' }}
+                                        className="stepper-btn-plus"
                                       >
                                         +
                                       </button>
@@ -3488,7 +3518,7 @@ function App() {
                                   </div>
                                   <div>
                                     <label className="text-[11px] text-on-surface-variant/80 uppercase block mb-1" style={{ fontSize: '12px' }}>Descanso (s)</label>
-                                    <div className="flex items-center bg-surface-container-high border border-border-subtle rounded overflow-hidden h-8">
+                                    <div className="stepper-container bg-surface-container-high">
                                       <button
                                         type="button"
                                         onClick={() => {
@@ -3497,8 +3527,7 @@ function App() {
                                             prev.map(item => item.id === config.id ? { ...item, rest: val } : item)
                                           );
                                         }}
-                                        className="px-3 text-xs text-on-surface-variant hover:text-primary h-full hover:bg-white/5 transition-colors font-bold"
-                                        style={{ fontSize: '12px' }}
+                                        className="stepper-btn-minus"
                                       >
                                         -
                                       </button>
@@ -3514,8 +3543,7 @@ function App() {
                                             prev.map(item => item.id === config.id ? { ...item, rest: val } : item)
                                           );
                                         }}
-                                        className="w-full bg-transparent border-none text-xs text-on-surface text-center focus:outline-none p-0 h-full [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                        style={{ fontSize: '12px' }}
+                                        className="set-input-stepped font-bold"
                                       />
                                       <button
                                         type="button"
@@ -3525,8 +3553,7 @@ function App() {
                                             prev.map(item => item.id === config.id ? { ...item, rest: val } : item)
                                           );
                                         }}
-                                        className="px-3 text-xs text-on-surface-variant hover:text-primary h-full hover:bg-white/5 transition-colors font-bold"
-                                        style={{ fontSize: '12px' }}
+                                        className="stepper-btn-plus"
                                       >
                                         +
                                       </button>
@@ -3546,10 +3573,40 @@ function App() {
                     <label className="font-label-md text-label-md text-primary uppercase tracking-wider" style={{ fontSize: '13px', fontWeight: 'bold' }}>
                       Añadir Técnicas
                     </label>
+
+                    {/* Muscle group filter chips */}
+                    <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', padding: '4px 0', margin: '4px 0', scrollbarWidth: 'none' }} className="no-scrollbar">
+                      {['Pecho', 'Espalda', 'Piernas', 'Hombros', 'Brazos', 'Abdomen', 'Cardio'].map((cat) => {
+                        const isSelected = newRoutineCategoryFilter === cat;
+                        return (
+                          <button
+                            key={cat}
+                            type="button"
+                            onClick={() => setNewRoutineCategoryFilter(isSelected ? null : cat)}
+                            style={{
+                              padding: '6px 14px',
+                              fontSize: '12px',
+                              fontWeight: '600',
+                              whiteSpace: 'nowrap',
+                              borderRadius: '20px',
+                              border: '1px solid',
+                              borderColor: isSelected ? 'var(--accent-secondary)' : 'var(--border-color)',
+                              backgroundColor: isSelected ? 'rgba(231, 106, 36, 0.15)' : 'var(--bg-secondary)',
+                              color: isSelected ? 'var(--accent-secondary)' : 'var(--text-secondary)',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s ease'
+                            }}
+                          >
+                            {cat}
+                          </button>
+                        );
+                      })}
+                    </div>
+
                     <div className="search-wrapper" style={{ margin: '4px 0', position: 'relative' }}>
                       <input 
                         type="text"
-                        placeholder="Buscar técnica para agregar..."
+                        placeholder="Buscar técnica por nombre..."
                         value={routineExerciseSearch}
                         onChange={(e) => setRoutineExerciseSearch(e.target.value)}
                         className="search-input w-full bg-obsidian-zero border border-border-subtle rounded-lg px-4 py-3 text-on-surface font-body-md"
@@ -3558,23 +3615,36 @@ function App() {
                       <Search size={16} className="search-icon" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
                     </div>
 
-                    <div className="flex flex-col gap-2 max-h-80 overflow-y-auto pr-1">
+                    <div className="flex flex-col gap-3 max-h-96 overflow-y-auto pr-1">
                       {(() => {
-                        const matchingExercises = exercises.filter(ex => 
-                          ex.name.toLowerCase().includes(routineExerciseSearch.toLowerCase()) ||
-                          (ex.name_en && ex.name_en.toLowerCase().includes(routineExerciseSearch.toLowerCase())) ||
-                          ex.category.toLowerCase().includes(routineExerciseSearch.toLowerCase())
-                        );
+                        const matchingExercises = exercises.filter(ex => {
+                          const text = routineExerciseSearch.trim().toLowerCase();
+                          const matchesText = text === '' ||
+                            ex.name.toLowerCase().includes(text) ||
+                            (ex.name_en && ex.name_en.toLowerCase().includes(text));
 
-                        // Only display available exercises (not already in newRoutineSelectedExercises)
+                          let matchesCat = true;
+                          if (newRoutineCategoryFilter) {
+                            if (newRoutineCategoryFilter === 'Piernas') {
+                              matchesCat = ex.category === 'Piernas' || ex.category === 'Pantorrillas';
+                            } else if (newRoutineCategoryFilter === 'Brazos') {
+                              matchesCat = ex.category === 'Bíceps' || ex.category === 'Tríceps' || ex.category === 'Antebrazos';
+                            } else {
+                              matchesCat = ex.category.toLowerCase() === newRoutineCategoryFilter.toLowerCase();
+                            }
+                          }
+
+                          return matchesText && matchesCat;
+                        });
+
                         const availableMatching = matchingExercises.filter(ex => 
                           !newRoutineSelectedExercises.some(item => item.id === ex.id)
                         ).slice(0, 20);
 
-                        if (routineExerciseSearch.trim() === '') {
+                        if (routineExerciseSearch.trim() === '' && !newRoutineCategoryFilter) {
                           return (
                             <span style={{ fontSize: '12px', color: 'var(--text-tertiary)', fontStyle: 'italic', textAlign: 'center', padding: '12px' }}>
-                              Escribe en el buscador de arriba para encontrar y añadir técnicas...
+                              Escribe en el buscador o selecciona una categoría para encontrar técnicas...
                             </span>
                           );
                         }
@@ -3582,7 +3652,7 @@ function App() {
                         if (availableMatching.length === 0) {
                           return (
                             <span style={{ fontSize: '12px', color: 'var(--text-tertiary)', fontStyle: 'italic', textAlign: 'center', padding: '12px' }}>
-                              No se encontraron técnicas disponibles.
+                              No se encontraron técnicas disponibles con los filtros actuales.
                             </span>
                           );
                         }
@@ -3594,19 +3664,21 @@ function App() {
                               display: 'flex', 
                               alignItems: 'center', 
                               justifyContent: 'space-between', 
-                              padding: '10px 12px', 
-                              borderRadius: '8px', 
+                              padding: '12px', 
+                              borderRadius: '12px', 
                               border: '1px solid var(--border-color)', 
-                              backgroundColor: 'var(--bg-secondary)'
+                              backgroundColor: 'var(--bg-secondary)',
+                              minHeight: '120px',
+                              gap: '16px'
                             }}
                           >
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded overflow-hidden bg-obsidian-zero border border-white/5 flex-shrink-0">
+                            <div className="flex items-center gap-4" style={{ flex: 1 }}>
+                              <div style={{ width: '96px', height: '96px', borderRadius: '8px', overflow: 'hidden', backgroundColor: 'var(--bg-primary)', border: '1px solid rgba(255,255,255,0.05)', flexShrink: 0 }}>
                                 {renderExerciseMedia(ex, { style: { width: '100%', height: '100%', objectFit: 'cover' } })}
                               </div>
-                              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{ex.name}</span>
-                                <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{ex.category}</span>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>{ex.name}</span>
+                                <span style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'inline-block', backgroundColor: 'rgba(255,255,255,0.03)', padding: '2px 8px', borderRadius: '4px', alignSelf: 'flex-start' }}>{ex.category}</span>
                               </div>
                             </div>
                             <button
@@ -3614,13 +3686,20 @@ function App() {
                               onClick={() => {
                                 setNewRoutineSelectedExercises(prev => [
                                   ...prev,
-                                  { id: ex.id, name: ex.name, sets: 4, reps: 10, rest: 60 }
+                                  { 
+                                    id: ex.id, 
+                                    name: ex.name, 
+                                    sets: 4, 
+                                    reps: ex.category === 'Cardio' ? 30 : 10, 
+                                    rest: 60,
+                                    is_time_based: ex.category === 'Cardio'
+                                  }
                                 ]);
                               }}
                               className="btn-primary"
-                              style={{ padding: '6px 12px', fontSize: '12px', minWidth: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+                              style={{ padding: '8px 16px', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', height: '40px', borderRadius: '20px' }}
                             >
-                              <Plus size={14} />
+                              <Plus size={16} />
                               <span>Agregar</span>
                             </button>
                           </div>

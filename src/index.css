@@ -1301,6 +1301,19 @@ input[type="password"]::placeholder {
   cursor: not-allowed;
 }
 
+@media (max-width: 767px) {
+  .stepper-container {
+    height: 48px !important;
+  }
+  .stepper-btn-minus, .stepper-btn-plus {
+    width: 48px !important;
+    font-size: 20px !important;
+  }
+  .set-input-stepped {
+    font-size: 15px !important;
+  }
+}
+
 /* Ponytail: Aumentar el tamaño de los textos que eran demasiado pequeños (menores a 12px) */
 *[style*="font-size: 8px"], *[style*="font-size:8px"] { font-size: 11px !important; }
 *[style*="font-size: 9px"], *[style*="font-size:9px"] { font-size: 12px !important; }

@@ -44,6 +44,7 @@ export interface RoutineExercise {
   default_sets: number;
   default_reps: number;
   default_rest_time: number; // in seconds
+  is_time_based?: boolean;
 }
 
 export interface Workout {
@@ -65,6 +66,7 @@ export interface WorkoutSet {
   reps: number;
   rest_time: number; // in seconds
   is_completed: boolean;
+  is_time_based?: boolean;
 }
 
 export interface SyncQueueItem {
