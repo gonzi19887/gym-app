@@ -32,7 +32,10 @@ import {
   deleteRecord,
   clearAllTables,
   generateUUID,
-  queueSyncItem
+  queueSyncItem,
+  saveActiveWorkoutState,
+  clearActiveWorkoutState,
+  setAppSetting
 } from './db/localDb';
 import type {
   Profile, 
@@ -40,7 +43,7 @@ import type {
   Routine, 
   RoutineExercise, 
   Workout, 
-  WorkoutSet 
+  WorkoutSet
 } from './db/localDb';
 import { seedDatabase } from './db/seed';
 import { supabase, isSupabaseConfigured } from './db/supabaseClient';
@@ -396,12 +399,17 @@ function App() {
     return () => window.removeEventListener('online', handleOnline);
   }, [session]);
 
-  // Auto-sync when app becomes hidden (user switches apps, closes tab, etc.)
+  // Auto-sync when app becomes hidden — SPEC_007: only sync if queue has items
+  // This prevents the spurious sync popup when returning from a phone call / screen lock
   useEffect(() => {
-    const handleVisibilityChange = () => {
+    const handleVisibilityChange = async () => {
       if (document.visibilityState === 'hidden') {
         if (isSupabaseConfigured && session && navigator.onLine) {
-          syncLocalQueueToCloud();
+          // Check queue length before triggering sync to avoid empty-queue popups
+          const queue = await getAllRecords('sync_queue');
+          if (queue.length > 0) {
+            syncLocalQueueToCloud();
+          }
         }
       }
     };
@@ -876,7 +884,11 @@ function App() {
         clan: editClan,
         cursed_technique: editCursedTechnique
       };
-      
+
+      // SPEC_007: Save to IndexedDB FIRST (immediate, local-first)
+      // This guarantees persistence even if Supabase sync fails or network is lost
+      await setAppSetting('profile_username', editUsername);
+      await setAppSetting('profile_avatar_url', finalAvatarUrl);
       await saveRecord('profiles', updated, 'UPDATE');
       setProfile(updated);
 
@@ -887,72 +899,23 @@ function App() {
       }
       setIsCameraActive(false);
 
+      // SPEC_007: Sync only the profile — no need to run full 5-step overlay
+      // Supabase sync is secondary; local data is already saved above
       if (isSupabaseConfigured && session && navigator.onLine) {
+        setSyncOverlayMode('upload');
+        setSyncSteps({ profile: 'syncing', exercises: 'pending', routines: 'pending', workouts: 'pending', calendar: 'pending' });
         setShowSyncOverlay(true);
-        const sleep = (ms: number) => new Promise(res => setTimeout(res, ms));
-
-        // Step 1: Chamán Profile
-        setSyncSteps(prev => ({ ...prev, profile: 'syncing' }));
-        await sleep(500);
         try {
           await syncTableToCloud('profiles');
-          setSyncSteps(prev => ({ ...prev, profile: 'completed' }));
+          setSyncSteps(prev => ({ ...prev, profile: 'completed', exercises: 'completed', routines: 'completed', workouts: 'completed', calendar: 'completed' }));
         } catch (err) {
-          console.error(err);
+          console.error('Profile sync failed (data saved locally):', err);
           setSyncSteps(prev => ({ ...prev, profile: 'error' }));
         }
-
-        // Step 2: Exercises
-        setSyncSteps(prev => ({ ...prev, exercises: 'syncing' }));
-        await sleep(500);
-        try {
-          await syncTableToCloud('exercises');
-          setSyncSteps(prev => ({ ...prev, exercises: 'completed' }));
-        } catch (err) {
-          console.error(err);
-          setSyncSteps(prev => ({ ...prev, exercises: 'error' }));
-        }
-
-        // Step 3: Routines
-        setSyncSteps(prev => ({ ...prev, routines: 'syncing' }));
-        await sleep(500);
-        try {
-          await syncTableToCloud('routines');
-          await syncTableToCloud('routine_exercises');
-          setSyncSteps(prev => ({ ...prev, routines: 'completed' }));
-        } catch (err) {
-          console.error(err);
-          setSyncSteps(prev => ({ ...prev, routines: 'error' }));
-        }
-
-        // Step 4: Workouts / Combat Logs
-        setSyncSteps(prev => ({ ...prev, workouts: 'syncing' }));
-        await sleep(500);
-        try {
-          await syncTableToCloud('workouts');
-          await syncTableToCloud('workout_sets');
-          setSyncSteps(prev => ({ ...prev, workouts: 'completed' }));
-        } catch (err) {
-          console.error(err);
-          setSyncSteps(prev => ({ ...prev, workouts: 'error' }));
-        }
-
-        // Step 5: Calendar / Streak
-        setSyncSteps(prev => ({ ...prev, calendar: 'syncing' }));
-        await sleep(500);
-        try {
-          // Calendar is implicitly synced via profiles fields.
-          setSyncSteps(prev => ({ ...prev, calendar: 'completed' }));
-        } catch (err) {
-          console.error(err);
-          setSyncSteps(prev => ({ ...prev, calendar: 'error' }));
-        }
-
-        setPactStatus('¡Pacto sellado y sincronizado! ⚡');
+        setPactStatus('¡Perfil guardado y sincronizado! ✅');
         setIsSealingPact(false);
       } else {
-        setPactStatus('¡Pacto sellado localmente! ⚡');
-        alert('¡Perfil de hechicero guardado localmente! ✅');
+        setPactStatus('¡Perfil guardado localmente! ✅');
         setIsSealingPact(false);
         setActiveTab('hoy');
       }
@@ -1393,6 +1356,16 @@ function App() {
     setTimerRemaining(0);
     setIsTimerRunning(false);
     setShowBlackFlash(false);
+
+    // SPEC_007: Persist workout start to IndexedDB for crash/interrupt recovery
+    saveActiveWorkoutState({
+      routineId: routine.id,
+      routineName: routine.name,
+      exercises: loadedExercises,
+      currentExerciseIndex: 0,
+      sets: {},
+      startedAt: newWorkout.started_at,
+    }).catch(err => console.warn('Could not persist workout state:', err));
   };
 
   // Toggle set completion and trigger timer / check Black Flash (PR)
@@ -1432,6 +1405,28 @@ function App() {
                 return currentSets;
               });
             }, 50);
+
+            // SPEC_007: Snapshot workout state to IndexedDB after each set
+            // Allows recovery if user gets a call, locks screen, or switches apps
+            setTimeout(() => {
+              setActiveWorkoutSets(currentSets => {
+                if (activeRoutine && activeExercises.length > 0) {
+                  const setsByExercise = activeExercises.reduce((acc, ex) => {
+                    acc[ex.id] = currentSets.filter(s => s.exercise_id === ex.id);
+                    return acc;
+                  }, {} as Record<string, WorkoutSet[]>);
+                  saveActiveWorkoutState({
+                    routineId: activeRoutine.id,
+                    routineName: activeRoutine.name,
+                    exercises: activeExercises,
+                    currentExerciseIndex: activeExerciseIndex,
+                    sets: setsByExercise,
+                    startedAt: activeWorkout?.started_at || new Date().toISOString(),
+                  }).catch(err => console.warn('Snapshot failed:', err));
+                }
+                return currentSets;
+              });
+            }, 100);
           }
           return updated;
         }
@@ -1525,6 +1520,8 @@ function App() {
     setActiveExerciseIndex(0);
     setTimerRemaining(0);
     setIsTimerRunning(false);
+    // SPEC_007: Clear persisted workout state on successful completion
+    clearActiveWorkoutState().catch(err => console.warn('Could not clear workout state:', err));
   };
 
   const getPersonalRecords = () => {

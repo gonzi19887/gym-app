@@ -75,8 +75,26 @@ export interface SyncQueueItem {
   timestamp: string;
 }
 
+// Persists the active workout session across app reloads/interruptions
+export interface ActiveWorkoutState {
+  id: 'current'; // singleton key
+  routineId: string;
+  routineName: string;
+  exercises: any[];       // full exercise list for the session
+  currentExerciseIndex: number;
+  sets: Record<string, any[]>; // exerciseId -> set data
+  startedAt: string;
+  savedAt: string;
+}
+
+// Key-value store for local app settings (profile photo, username, etc.)
+export interface AppSetting {
+  key: string;
+  value: any;
+}
+
 const DB_NAME = 'GymAppDB';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 let dbInstance: IDBDatabase | null = null;
 
@@ -123,6 +141,13 @@ export function initDB(): Promise<IDBDatabase> {
       }
       if (!db.objectStoreNames.contains('sync_queue')) {
         db.createObjectStore('sync_queue', { keyPath: 'id' });
+      }
+      // v2: New stores for session resilience
+      if (!db.objectStoreNames.contains('active_workout_state')) {
+        db.createObjectStore('active_workout_state', { keyPath: 'id' });
+      }
+      if (!db.objectStoreNames.contains('app_settings')) {
+        db.createObjectStore('app_settings', { keyPath: 'key' });
       }
     };
   });
@@ -228,3 +253,61 @@ export function clearAllTables(): Promise<void> {
     });
   });
 }
+
+// ─── Active Workout State (SPEC_007) ─────────────────────────────────────────
+// Persists the workout session so it survives app reload, screen lock, or calls.
+
+export async function saveActiveWorkoutState(state: Omit<ActiveWorkoutState, 'id' | 'savedAt'>): Promise<void> {
+  const db = await initDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('active_workout_state', 'readwrite');
+    const record: ActiveWorkoutState = { ...state, id: 'current', savedAt: new Date().toISOString() };
+    const req = tx.objectStore('active_workout_state').put(record);
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
+  });
+}
+
+export async function getActiveWorkoutState(): Promise<ActiveWorkoutState | null> {
+  const db = await initDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('active_workout_state', 'readonly');
+    const req = tx.objectStore('active_workout_state').get('current');
+    req.onsuccess = () => resolve(req.result ?? null);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+export async function clearActiveWorkoutState(): Promise<void> {
+  const db = await initDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('active_workout_state', 'readwrite');
+    const req = tx.objectStore('active_workout_state').delete('current');
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
+  });
+}
+
+// ─── App Settings — local-first profile/photo (SPEC_007) ─────────────────────
+// Writes profile data to IndexedDB immediately. Supabase sync is async/secondary.
+
+export async function setAppSetting(key: string, value: any): Promise<void> {
+  const db = await initDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('app_settings', 'readwrite');
+    const req = tx.objectStore('app_settings').put({ key, value });
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
+  });
+}
+
+export async function getAppSetting<T = any>(key: string): Promise<T | null> {
+  const db = await initDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('app_settings', 'readonly');
+    const req = tx.objectStore('app_settings').get(key);
+    req.onsuccess = () => resolve(req.result?.value ?? null);
+    req.onerror = () => reject(req.error);
+  });
+}
+
