@@ -1,7 +1,7 @@
 ---
 id: SPEC_008
 title: Sync Engine Refactor — Outbox Pattern Robusto
-status: backlog
+status: completed
 priority: high
 branch: dev
 created: 2026-07-04

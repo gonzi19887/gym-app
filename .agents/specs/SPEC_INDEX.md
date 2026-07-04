@@ -16,12 +16,16 @@
 | SPEC_003 | UX v2.0 (Perfil Tab, Rutinas Flat, Glosario) | `f6f64e9` | 2026-06-26 |
 | SPEC_004 | Offline Circuit Breaker (Sync Queue Limit) | `1a57f6e` | 2026-06-29 |
 | SPEC_005 | Catálogo 1279 Ejercicios ES + GIFs | `5793dcb` | 2026-06-29 |
+| SPEC_007 | Fix Zombie State Supabase + Session Loss | `4bf2d62` | 2026-07-04 |
+| SPEC_008 | Sync Engine Refactor — Outbox Pattern | `29ffbe1` | 2026-07-04 |
 
 ---
 
 ## 🔵 En Progreso (`/active`)
 
-_Ninguna spec activa — SPEC_008 es la siguiente_
+| ID | Feature | Prioridad |
+|---|---|---|
+| **SPEC_009** | **Rediseño Dragon Ball — Design System** | 🔴 critical |
 
 ---
 
@@ -30,8 +34,6 @@ _Ninguna spec activa — SPEC_008 es la siguiente_
 | ID | Feature | Prioridad | Depends |
 |---|---|---|---|
 | SPEC_006 | Entrenamiento Activo Mejorado | high | — |
-| **SPEC_008** | **Sync Engine Refactor — Outbox Pattern** | high | ~~SPEC_007~~ ✅ |
-| SPEC_009 | Rediseño Dragon Ball — Design System | high | SPEC_007 ✅ |
 | SPEC_010 | Rutinas UX — Filtros, GIFs, Carry-Over | high | SPEC_009 |
 | SPEC_011 | Pantalla Hoy Simplificada + Onboarding | high | SPEC_009 |
 | SPEC_012 | Calendario Real + Perfil con Dashboard | medium | SPEC_011 |
