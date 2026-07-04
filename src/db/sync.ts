@@ -1,6 +1,6 @@
 import { supabase, isSupabaseConfigured } from './supabaseClient';
-import { getAllRecords, deleteRecord, addRecord, getRecord, queueSyncItem } from './localDb';
-import type { SyncQueueItem, Profile, Exercise, Routine, Workout, RoutineExercise, WorkoutSet } from './localDb';
+import { getAllRecords, deleteRecord, addRecord, getRecord, queueSyncItem, getSyncQueue } from './localDb';
+import type { Profile, Exercise, Routine, Workout, RoutineExercise, WorkoutSet } from './localDb';
 
 // Sync local queue to Supabase
 export async function syncLocalQueueToCloud(): Promise<void> {
@@ -10,10 +10,11 @@ export async function syncLocalQueueToCloud(): Promise<void> {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
 
-    const queue = await getAllRecords<SyncQueueItem>('sync_queue');
+    // Use chronologically sorted queue from outbox
+    const queue = await getSyncQueue();
     if (queue.length === 0) return;
 
-    console.log(`Syncing ${queue.length} items to Supabase...`);
+    console.log(`Syncing ${queue.length} items to Supabase (Outbox Pattern)...`);
 
     for (const item of queue) {
       try {
@@ -57,7 +58,7 @@ export async function syncLocalQueueToCloud(): Promise<void> {
         await deleteRecord('sync_queue', id);
       } catch (err) {
         console.error('Failed to sync item:', item, err);
-        // Break out of the loop on connection or other error to preserve order of operations
+        // Break out of the loop on connection or other error to preserve order of operations (FIFO queue)
         break;
       }
     }
@@ -74,7 +75,8 @@ export async function syncTableToCloud(tableName: 'profiles' | 'exercises' | 'ro
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
 
-    const queue = await getAllRecords<SyncQueueItem>('sync_queue');
+    // Use chronologically sorted queue
+    const queue = await getSyncQueue();
     const items = queue.filter(item => item.tableName === tableName);
     if (items.length === 0) return;
 
@@ -132,9 +134,15 @@ export async function pullCloudDataToLocal(): Promise<void> {
     if (!session) return;
 
     const tables = ['profiles', 'exercises', 'routines', 'routine_exercises', 'workouts', 'workout_sets'] as const;
+    const queue = await getSyncQueue();
 
     for (const table of tables) {
       try {
+        // Collect IDs that are pending local sync to avoid overwriting them
+        const pendingIds = new Set(
+          queue.filter(item => item.tableName === table).map(item => item.payload.id)
+        );
+
         let query = supabase.from(table).select('*');
         
         if (table === 'profiles') {
@@ -150,6 +158,11 @@ export async function pullCloudDataToLocal(): Promise<void> {
 
         if (data && data.length > 0) {
           for (const row of data) {
+            // Local-first: if this record is currently pending synchronization in the outbox, skip pulling it
+            if (pendingIds.has(row.id)) {
+              console.log(`Outbox protection: skipped pulling record ${row.id} of table ${table} to protect local modifications.`);
+              continue;
+            }
             await addRecord(table, row);
           }
         }
@@ -171,6 +184,11 @@ export async function pullTableFromCloud(
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) return;
 
+  const queue = await getSyncQueue();
+  const pendingIds = new Set(
+    queue.filter(item => item.tableName === tableName).map(item => item.payload.id)
+  );
+
   let query = supabase.from(tableName).select('*');
 
   if (tableName === 'profiles') {
@@ -186,6 +204,10 @@ export async function pullTableFromCloud(
 
   if (data && data.length > 0) {
     for (const row of data) {
+      if (pendingIds.has(row.id)) {
+        console.log(`Outbox protection: skipped pulling record ${row.id} of table ${tableName} to protect local modifications.`);
+        continue;
+      }
       await addRecord(tableName, row);
     }
   }

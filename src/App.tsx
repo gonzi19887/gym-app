@@ -2078,11 +2078,61 @@ function App() {
                     <span>Técnica maldita de ejecución</span>
                     <ChevronDown size={14} style={{ marginLeft: 'auto' }} className="group-open:rotate-180 transition-transform" />
                   </summary>
-                  <ul className="exercise-tips-list">
-                    {currentActiveExercise.tips.map((tip, tIdx) => (
-                      <li key={tIdx} style={{ marginBottom: '4px' }}>{tip}</li>
-                    ))}
-                  </ul>
+                  <div style={{ padding: '8px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {((currentActiveExercise.posicion_inicial && currentActiveExercise.posicion_inicial.length > 0) ||
+                      (currentActiveExercise.ejecucion && currentActiveExercise.ejecucion.length > 0) ||
+                      (currentActiveExercise.consejos && currentActiveExercise.consejos.length > 0) ||
+                      (currentActiveExercise.variantes && currentActiveExercise.variantes.length > 0)) ? (
+                      <>
+                        {currentActiveExercise.posicion_inicial && currentActiveExercise.posicion_inicial.length > 0 && (
+                          <div>
+                            <h4 style={{ color: 'var(--accent-primary)', fontSize: '12px', fontWeight: 'bold', margin: '4px 0', textTransform: 'uppercase' }}>🥋 Posición Inicial</h4>
+                            <ul className="exercise-tips-list" style={{ paddingLeft: '16px', margin: 0 }}>
+                              {currentActiveExercise.posicion_inicial.map((step, i) => (
+                                <li key={i} style={{ marginBottom: '2px', fontSize: '12px' }}>{step}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {currentActiveExercise.ejecucion && currentActiveExercise.ejecucion.length > 0 && (
+                          <div>
+                            <h4 style={{ color: 'var(--accent-primary)', fontSize: '12px', fontWeight: 'bold', margin: '4px 0', textTransform: 'uppercase' }}>⚔️ Ejecución</h4>
+                            <ul className="exercise-tips-list" style={{ paddingLeft: '16px', margin: 0 }}>
+                              {currentActiveExercise.ejecucion.map((step, i) => (
+                                <li key={i} style={{ marginBottom: '2px', fontSize: '12px' }}>{step}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {currentActiveExercise.consejos && currentActiveExercise.consejos.length > 0 && (
+                          <div>
+                            <h4 style={{ color: 'var(--accent-primary)', fontSize: '12px', fontWeight: 'bold', margin: '4px 0', textTransform: 'uppercase' }}>💡 Consejos y Tips</h4>
+                            <ul className="exercise-tips-list" style={{ paddingLeft: '16px', margin: 0 }}>
+                              {currentActiveExercise.consejos.map((tip, i) => (
+                                <li key={i} style={{ marginBottom: '2px', fontSize: '12px' }}>{tip}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {currentActiveExercise.variantes && currentActiveExercise.variantes.length > 0 && (
+                          <div>
+                            <h4 style={{ color: 'var(--accent-primary)', fontSize: '12px', fontWeight: 'bold', margin: '4px 0', textTransform: 'uppercase' }}>🌀 Variantes</h4>
+                            <ul className="exercise-tips-list" style={{ paddingLeft: '16px', margin: 0 }}>
+                              {currentActiveExercise.variantes.map((variant, i) => (
+                                <li key={i} style={{ marginBottom: '2px', fontSize: '12px' }}>{variant}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <ul className="exercise-tips-list" style={{ paddingLeft: '16px', margin: 0 }}>
+                        {currentActiveExercise.tips.map((tip, tIdx) => (
+                          <li key={tIdx} style={{ marginBottom: '4px', fontSize: '12px' }}>{tip}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
                 </details>
               </div>
 
