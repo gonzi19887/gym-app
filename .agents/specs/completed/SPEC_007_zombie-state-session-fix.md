@@ -1,7 +1,7 @@
 ---
 id: SPEC_007
 title: Fix Zombie State Supabase + Session Loss + Perfil Persistente
-status: active
+status: completed
 priority: critical
 branch: dev
 created: 2026-07-04

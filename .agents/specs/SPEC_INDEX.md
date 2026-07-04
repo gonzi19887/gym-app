@@ -21,9 +21,7 @@
 
 ## 🔵 En Progreso (`/active`)
 
-| ID | Feature | Prioridad |
-|---|---|---|
-| **SPEC_007** | **Fix Zombie State + Session Loss + Perfil Persistente** | 🔴 critical |
+_Ninguna spec activa — SPEC_008 es la siguiente_
 
 ---
 
@@ -32,8 +30,8 @@
 | ID | Feature | Prioridad | Depends |
 |---|---|---|---|
 | SPEC_006 | Entrenamiento Activo Mejorado | high | — |
-| SPEC_008 | Sync Engine Refactor — Outbox Pattern | high | SPEC_007 |
-| SPEC_009 | Rediseño Dragon Ball — Design System | high | SPEC_007 |
+| **SPEC_008** | **Sync Engine Refactor — Outbox Pattern** | high | ~~SPEC_007~~ ✅ |
+| SPEC_009 | Rediseño Dragon Ball — Design System | high | SPEC_007 ✅ |
 | SPEC_010 | Rutinas UX — Filtros, GIFs, Carry-Over | high | SPEC_009 |
 | SPEC_011 | Pantalla Hoy Simplificada + Onboarding | high | SPEC_009 |
 | SPEC_012 | Calendario Real + Perfil con Dashboard | medium | SPEC_011 |
