@@ -1,7 +1,7 @@
 ---
 id: SPEC_011
 title: Pantalla Hoy Simplificada + Onboarding
-status: backlog
+status: active
 priority: high
 branch: dev
 created: 2026-07-04
