@@ -34,8 +34,10 @@ import {
   generateUUID,
   queueSyncItem,
   saveActiveWorkoutState,
+  getActiveWorkoutState,
   clearActiveWorkoutState,
-  setAppSetting
+  setAppSetting,
+  getAppSetting
 } from './db/localDb';
 import type {
   Profile, 
@@ -575,6 +577,15 @@ function App() {
         await saveRecord('profiles', currentProfile, 'CREATE');
       }
     }
+    // SPEC_007: Local-first profile settings check
+    try {
+      const localUsername = await getAppSetting('profile_username');
+      const localAvatarUrl = await getAppSetting('profile_avatar_url');
+      if (localUsername) currentProfile.username = localUsername;
+      if (localAvatarUrl) currentProfile.avatar_url = localAvatarUrl;
+    } catch (err) {
+      console.warn('Could not restore local profile settings:', err);
+    }
     setProfile(currentProfile);
     setEditUsername(currentProfile.username);
     setEditAvatarUrl(currentProfile.avatar_url);
@@ -689,6 +700,59 @@ function App() {
     setRoutineExercises(loadedRoutineExs);
     setWorkouts(loadedWorkouts);
     setWorkoutSets(loadedSets);
+
+    // SPEC_007: Load persisted active workout session from IndexedDB if it exists
+    try {
+      const activeState = await getActiveWorkoutState();
+      if (activeState) {
+        console.log('Restoring active workout session from IndexedDB:', activeState);
+        const activeW: Workout = {
+          id: activeState.startedAt ? `${activeState.routineId}-active` : generateUUID(),
+          user_id: userId,
+          routine_id: activeState.routineId,
+          started_at: activeState.startedAt,
+          completed_at: '',
+          experience_earned: 0,
+          synced: false
+        };
+        
+        const flatSets: WorkoutSet[] = [];
+        Object.values(activeState.sets).forEach((exSets) => {
+          flatSets.push(...exSets);
+        });
+
+        if (flatSets.length === 0) {
+          const relExs = loadedRoutineExs
+            .filter((re) => re.routine_id === activeState.routineId)
+            .sort((a, b) => a.order_index - b.order_index);
+          
+          relExs.forEach((re) => {
+            for (let s = 1; s <= re.default_sets; s++) {
+              flatSets.push({
+                id: generateUUID(),
+                workout_id: activeW.id,
+                exercise_id: re.exercise_id,
+                set_number: s,
+                weight: 0,
+                reps: re.default_reps || 10,
+                rest_time: re.default_rest_time,
+                is_completed: false
+              });
+            }
+          });
+        }
+
+        const matchedRoutine = loadedRoutines.find((r) => r.id === activeState.routineId);
+        
+        setActiveWorkout(activeW);
+        if (matchedRoutine) setActiveRoutine(matchedRoutine);
+        setActiveExercises(activeState.exercises);
+        setActiveWorkoutSets(flatSets);
+        setActiveExerciseIndex(activeState.currentExerciseIndex);
+      }
+    } catch (err) {
+      console.warn('Could not restore active workout state:', err);
+    }
   };
 
   // Helper to determine if a URL represents a video format
