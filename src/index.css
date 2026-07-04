@@ -1,23 +1,23 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
 
 :root {
-  /* Colors - Focused Obsidian (JJK Aesthetic) */
-  --bg-primary: #131314; /* Obsidian Dark */
-  --bg-secondary: #1c1b1c; /* Surface Level 1 */
-  --bg-tertiary: #201f20; /* Surface Container */
-  --bg-accent: rgba(184, 211, 0, 0.08); /* Electric Lime accent bg */
+  /* Colors - Dragon Ball Theme */
+  --bg-primary: #01080a; /* Space/Universe Black */
+  --bg-secondary: #0d1117; /* Gi Surface Level 1 */
+  --bg-tertiary: #161b22; /* Gi Surface Level 2 */
+  --bg-accent: rgba(28, 69, 149, 0.08); /* Gi Blue accent bg */
   
-  --text-primary: #e5e2e3; /* On-Surface */
-  --text-secondary: #c6c9ad; /* On-Surface Variant */
-  --text-tertiary: #90937a; /* Outline */
+  --text-primary: #e7e5e8; /* Off-White */
+  --text-secondary: #8b949e; /* Muted Gray */
+  --text-tertiary: #484f58; /* Muted Outline */
   
-  --accent-primary: #b8d300; /* Electric Lime */
-  --accent-secondary: #ddb7ff; /* Neon Purple */
-  --accent-tertiary: #10b981; /* Success */
+  --accent-primary: #1c4595; /* Goku Gi Blue */
+  --accent-secondary: #e76a24; /* Super Saiyan Orange */
+  --accent-tertiary: #fbbc42; /* Dragon Ball Star Yellow */
   
-  --accent-glow: rgba(184, 211, 0, 0.15);
-  --border-color: rgba(255, 255, 255, 0.05); /* Border Subtle */
-  --border-color-glow: rgba(184, 211, 0, 0.2);
+  --accent-glow: rgba(231, 106, 36, 0.15); /* Ki Glow */
+  --border-color: rgba(255, 255, 255, 0.08); /* Border Subtle */
+  --border-color-glow: rgba(231, 106, 36, 0.2);
   
   /* Borders & Spacing */
   --border-radius-smooth: 16px;

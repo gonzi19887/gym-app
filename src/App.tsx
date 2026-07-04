@@ -72,13 +72,16 @@ const triggerVibration = (pattern: number | number[]) => {
   }
 };
 
-// Jujutsu Kaisen thematic rank calculation
-const getJJKGrade = (level: number): string => {
-  if (level === 1) return 'Chamán de 4.° Grado 🛡️';
-  if (level === 2) return 'Chamán de 3.° Grado ⚔️';
-  if (level === 3) return 'Chamán de 2.° Grado 🌀';
-  if (level === 4) return 'Chamán de 1.° Grado 🔴🔵';
-  return 'Chamán de Grado Especial 🔴🔵🟣';
+// Dragon Ball Z thematic level calculation
+const getDBZLevelTitle = (level: number): string => {
+  if (level <= 1) return 'Humano Normal (Krillin día 1) 🥋';
+  if (level === 2) return 'Guerrero Z (Saiyan Clase Baja) ⚡';
+  if (level === 3) return 'Guerrero Elite (Fuerza Especial) 🌀';
+  if (level === 4) return 'Super Saiyan (Poder Despertado) 🟡';
+  if (level === 5) return 'Super Saiyan 2 (Rayos Eléctricos) ⚡🟡';
+  if (level === 6) return 'Super Saiyan 3 (Poder Absoluto) 💥🟡';
+  if (level === 7) return 'Super Saiyan God (Fuego Divino) 🔴';
+  return 'Goku Ultra Instinto (Esquive Divino) ⚪';
 };
 
 const WEEKDAYS = [
@@ -91,16 +94,14 @@ const WEEKDAYS = [
   { label: 'D', value: 0, name: 'Domingo' }
 ];
 
-
-
 const REST_REMINDERS = [
-  "💧 Recuerda tomar un sorbo de agua para rehidratar tus reservas de energía maldita.",
-  "🧘 Estira suavemente los músculos trabajados para acelerar su recuperación.",
-  "💧 La hidratación adecuada optimiza tus reflejos y fuerza en el siguiente set.",
-  "🧘 Aprovecha para estirar tus articulaciones y relajar los hombros rígidos.",
-  "⚡ Mantén el foco en la respiración y canaliza tu energía maldita para el combate.",
-  "💧 Bebe un trago de agua: hidratar tus células previene la fatiga precoz.",
-  "🧘 Haz un estiramiento activo suave: mejora el flujo sanguíneo hacia el músculo."
+  "💧 Recuerda tomar un sorbo de agua para rehidratar tus reservas de Ki.",
+  "🧘 Estira suavemente los músculos trabajados para acelerar tu Zenkai Boost.",
+  "💧 La hidratación adecuada optimiza tus reflejos de combate en el siguiente set.",
+  "🧘 Relaja tus hombros rígidos como si entrenaras en la Cámara de Gravedad Aumentada.",
+  "⚡ Mantén el foco en la respiración y canaliza tu Ki para romper tus límites.",
+  "💧 Bebe un trago de agua: hidratar tus células previene la fatiga en combate.",
+  "🧘 Recupera tu aliento como un verdadero Guerrero Z listo para la siguiente batalla."
 ];
 
 function App() {
@@ -231,74 +232,74 @@ function App() {
     
     if (primaryCat.includes('BICEPS') || primaryCat.includes('TRICEPS') || primaryCat.includes('ANTEBRAZOS') || primaryCat.includes('BRAZO') || primaryCat.includes('BRAZOS')) {
       const names = [
-        'Divergent Fist: Fuerza de Brazos 🤜🌀',
-        'Black Flash: Impacto de Brazos ⚡🤛',
-        'Boogie Woogie: Danza de Manos 👏✨',
-        'Fuerza de Toji: Brazos de Grado Especial 💪🔥'
+        'Puño Dragón: Fuerza de Saiyan 🤜🐉',
+        'Kamehameha: Poder de Brazos ⚡👐',
+        'Esferas del Dragón: Brazos Z 🌟🦾',
+        'Fuerza de Vegeta: Brazos de Orgullo Saiyan 💪🔥'
       ];
       return names[Math.floor(Math.random() * names.length)];
     }
     
     if (primaryCat.includes('PECHO')) {
       const names = [
-        'Cuerpo de Sukuna: Pecho Blindado 👹🛡️',
-        'Ritual de Sangre: Pecho de Acero 🩸🛡️',
-        'Escudo de Energía Maldita: Pectoral 🌀🛡️'
+        'Armadura Saiyan: Pecho Blindado 🛡️',
+        'Entrenamiento Z: Pecho de Acero 💥🛡️',
+        'Escudo de Ki: Pectoral Supremo 🌀🛡️'
       ];
       return names[Math.floor(Math.random() * names.length)];
     }
     
     if (primaryCat.includes('ESPALDA')) {
       const names = [
-        'Back of the Demon: Espalda Maldita 👺🗡️',
-        'Wings of the Curse: Dorsales de Grado Especial 🪽🌀',
-        'Restricción Celestial: Espalda de Acero 🦾'
+        'Espalda de Ozaru: Fuerza Desatada 🦍💥',
+        'Alas de Shenlong: Dorsales Supremos 🐉🌀',
+        'Gravedad 100x: Espalda de Acero 🦾🛸'
       ];
       return names[Math.floor(Math.random() * names.length)];
     }
     
     if (primaryCat.includes('PIERNA') || primaryCat.includes('PANTORRILLA') || primaryCat.includes('CADERA') || primaryCat.includes('PIERNAS')) {
       const names = [
-        'Desplazamiento Divino: Piernas de Gojo ⚡👣',
-        'Puntapié del Dios del Trueno: Piernas 👣⚡',
-        'Velocidad de Toji: Entrenamiento de Piernas 🐆🦿',
-        'Ritual del Viento: Piernas Malditas 🌀👣'
+        'Velocidad de la Luz: Piernas de Goku ⚡👣',
+        'Golpe de Destello: Piernas Z 👣⚡',
+        'Entrenamiento Piccolo: Piernas Pesadas 🦿',
+        'Zenkai Boost: Piernas de Saiyan 🌀👣'
       ];
       return names[Math.floor(Math.random() * names.length)];
     }
     
     if (primaryCat.includes('ABDOMEN') || primaryCat.includes('TRONCO') || primaryCat.includes('COLUMNA') || primaryCat.includes('ABS') || primaryCat.includes('ABDOMINAL')) {
       const names = [
-        'Domain Expansion: Núcleo Absoluto 🔮🧘',
-        'Estabilidad del Velo: Core Maldito 🛡️🌀',
-        'Fuerza Interior de Nanami: Abdomen 7:3 📐🌀'
+        'Cámara del Tiempo: Core Absoluto 🧘⌛',
+        'Estabilidad del Ki: Core Saiyan 🛡️🌀',
+        'Fuerza Interior de Gohan: Abdomen Feroz 📐🌀'
       ];
       return names[Math.floor(Math.random() * names.length)];
     }
     
     if (primaryCat.includes('HOMBRO') || primaryCat.includes('TRAPECIOS') || primaryCat.includes('HOMBROS')) {
       const names = [
-        'Soporte del Cielo: Hombros de Titanio 🦾🌌',
-        'Fuerza Escapular: Ritual de Hombros 🦾🌀',
-        'Hombros de Sukuna: Carga Maldita 👹🦾'
+        'Soporte Cósmico: Hombros de Titanio 🦾🌌',
+        'Fuerza de Broly: Deltoides Legendarios 🦾🌀',
+        'Hombros de Majin Buu: Carga Pesada 🦾'
       ];
       return names[Math.floor(Math.random() * names.length)];
     }
     
     if (primaryCat.includes('ESTIRAMIENTOS') || primaryCat.includes('CUELLO') || primaryCat.includes('ESTIRAMIENTO')) {
       const names = [
-        'Reverse Cursed Technique: Curación Inversa 🔮🩹',
-        'Ritual de Restauración Maldita 🧘🩹',
-        'Liberación del Límite de Energía 🌀🩹'
+        'Semilla del Ermitaño: Recuperación 🟢🩹',
+        'Meditación del Templo Sagrado 🧘🩹',
+        'Liberación del Límite del Ki 🌀🩹'
       ];
       return names[Math.floor(Math.random() * names.length)];
     }
     
     const combos = [
-      'Heavenly Restriction (Restricción Celestial) 🦾💀',
-      'Special Grade Ritual (Ritual de Grado Especial) 👹🔮',
-      'Cursed Energy Manifestation (Manifestación de Energía) 🌀⚡',
-      'Shaman Training (Entrenamiento de Chamán) 🛡️⚔️'
+      'Gravedad 400x: Guerrero Legendario 🦾🛸',
+      'Modo Dios Super Saiyan 🔴',
+      'Manifestación del Ultra Instinto ⚪⚡',
+      'Entrenamiento Z del Gran Kaio 🥋⚔️'
     ];
     return combos[Math.floor(Math.random() * combos.length)];
   };
@@ -459,7 +460,7 @@ function App() {
           options: {
             emailRedirectTo: window.location.origin,
             data: {
-              username: authUsername.trim() || 'Chamán Novato'
+              username: authUsername.trim() || 'Guerrero Z Novato'
             }
           }
         });
@@ -561,7 +562,7 @@ function App() {
           username: authUser?.user_metadata?.full_name || 
                     authUser?.user_metadata?.name || 
                     authUser?.user_metadata?.username || 
-                    (authUser?.email ? authUser.email.split('@')[0] : 'Yuji Itadori (Chamán Novato)'),
+                    (authUser?.email ? authUser.email.split('@')[0] : 'Son Goku (Guerrero Z Novato)'),
           avatar_url: authUser?.user_metadata?.avatar_url || 
                       authUser?.user_metadata?.picture || 
                       '',
@@ -614,7 +615,7 @@ function App() {
         const r1: Routine = {
           id: 'routine-torso',
           user_id: currentProfile.id,
-          name: 'Destello Negro: Torso Superior ⚡',
+          name: 'Entrenamiento del Maestro Roshi 🐢',
           day_of_week: [1, 4], // Monday, Thursday
           created_at: new Date().toISOString()
         };
@@ -643,7 +644,7 @@ function App() {
         const r2: Routine = {
           id: 'routine-inferior',
           user_id: currentProfile.id,
-          name: 'Ritual de Fuerza: Inferior y Brazos 🌀',
+          name: 'Cámara de Gravedad: Fuerza Saiyan 🦾',
           day_of_week: [2, 5], // Tuesday, Friday
           created_at: new Date().toISOString()
         };
@@ -1900,7 +1901,7 @@ function App() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                 <div className="profile-level" style={{ fontSize: '12px' }}>
                   <Award size={12} />
-                  <span>{getJJKGrade(levelInfo.level)}</span>
+                  <span>{getDBZLevelTitle(levelInfo.level)}</span>
                 </div>
                 {(profile.clan || profile.cursed_technique) && (
                   <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
@@ -1952,17 +1953,17 @@ function App() {
             <div className="lvl-badge-container">
               <Award size={52} />
             </div>
-            <h1 className="lvl-title">¡ASCENSO DE HECHICERO!</h1>
+            <h1 className="lvl-title">¡RANGO Z SUPERADO!</h1>
             <p className="lvl-text">
-              Liberaste <span style={{ color: 'var(--accent-primary)', fontWeight: 'bold' }}>+{levelUpInfo.xpEarned} Energía Maldita (XP)</span> en combate.
+              Has incrementado tu nivel de Ki en <span style={{ color: 'var(--accent-secondary)', fontWeight: 'bold' }}>+{levelUpInfo.xpEarned} XP</span>.
             </p>
             <div className="lvl-comparison">
-              <span className="lvl-old">{getJJKGrade(levelUpInfo.oldLevel).split(' ')[1]} Grado</span>
+              <span className="lvl-old" style={{ fontSize: '14px' }}>{getDBZLevelTitle(levelUpInfo.oldLevel)}</span>
               <ChevronRight size={20} className="lvl-arrow" />
-              <span className="lvl-new" style={{ fontSize: '20px', fontWeight: '800' }}>{getJJKGrade(levelUpInfo.newLevel)}</span>
+              <span className="lvl-new" style={{ fontSize: '18px', fontWeight: '800', color: 'var(--accent-tertiary)' }}>{getDBZLevelTitle(levelUpInfo.newLevel)}</span>
             </div>
             <p className="lvl-text" style={{ fontSize: '11px', fontStyle: 'italic', color: 'var(--text-tertiary)' }}>
-              "¡Has expandido tu Dominio!" 🔮
+              "¡Supera tus límites! ¡Un verdadero Saiyan no tiene límites!" 💥🐉
             </p>
             <button 
               onClick={() => setLevelUpInfo(null)}
@@ -1980,7 +1981,7 @@ function App() {
             
             <header className="overlay-header">
               <div>
-                <span className="overlay-header-title-sub">Purificando Energía Maldita</span>
+                <span className="overlay-header-title-sub">Entrenamiento Z en Curso</span>
                 <h2 className="overlay-header-title" style={{ fontSize: '15px' }}>{activeRoutine?.name}</h2>
               </div>
               <div style={{ display: 'flex', gap: '8px' }}>
@@ -2075,7 +2076,7 @@ function App() {
                 <details className="exercise-tips-details group">
                   <summary className="exercise-tips-summary">
                     <BookOpen size={14} />
-                    <span>Técnica maldita de ejecución</span>
+                    <span>Instrucciones y Técnica de Combate</span>
                     <ChevronDown size={14} style={{ marginLeft: 'auto' }} className="group-open:rotate-180 transition-transform" />
                   </summary>
                   <div style={{ padding: '8px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -2576,22 +2577,22 @@ function App() {
               <section className="card">
                 <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full bg-purple-500/10 blur-3xl pointer-events-none" />
                 <div className="level-xp-info">
-                  <span style={{ fontWeight: '700', color: 'var(--text-secondary)' }}>Energía Maldita (XP)</span>
-                  <span style={{ color: 'var(--accent-primary)', fontWeight: '700' }}>
-                    {levelInfo.progressXP} / {levelInfo.totalRequiredXP} EM
+                  <span style={{ fontWeight: '700', color: 'var(--text-secondary)' }}>Nivel de Ki (XP)</span>
+                  <span style={{ color: 'var(--accent-secondary)', fontWeight: '700' }}>
+                    {levelInfo.progressXP} / {levelInfo.totalRequiredXP} XP
                   </span>
                 </div>
                 
                 <div className="progress-track">
                   <div 
                     className="progress-fill" 
-                    style={{ width: `${levelInfo.percentage}%` }}
+                    style={{ width: `${levelInfo.percentage}%`, backgroundColor: 'var(--accent-secondary)' }}
                   />
                 </div>
                 
-                <div className="level-range">
-                  <span>{getJJKGrade(levelInfo.level).split(' ')[1]} Grado</span>
-                  <span>{getJJKGrade(levelInfo.level + 1).split(' ')[1]} Grado</span>
+                <div className="level-range" style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                  <span>Nivel {levelInfo.level} ({getDBZLevelTitle(levelInfo.level).split(' (')[0]})</span>
+                  <span>Nivel {levelInfo.level + 1}</span>
                 </div>
               </section>
 
@@ -3197,7 +3198,7 @@ function App() {
                       </div>
                       <h2 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface">Gestor de Rutinas</h2>
                     </div>
-                    <p className="font-body-md text-body-md text-on-surface-variant">Forja un nuevo circuito de entrenamiento. Ajusta los parámetros de tu energía maldita.</p>
+                    <p className="font-body-md text-body-md text-on-surface-variant">Forja un nuevo programa de entrenamiento. Ajusta tus parámetros de Ki.</p>
                   </section>
 
                   {/* Configuration Form */}
@@ -3573,7 +3574,7 @@ function App() {
                     >
                       <div className="absolute inset-0 bg-white/20 w-full translate-x-[-100%] skew-x-[-15deg] group-hover:animate-[shimmer_1s_infinite]" aria-hidden="true"></div>
                       <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>vpn_key</span>
-                      {editingRoutineId ? 'Actualizar Ritual ⚡' : 'Sellar Ritual'}
+                      {editingRoutineId ? 'Actualizar Programa Z ⚡' : 'Guardar Programa'}
                     </button>
                   </div>
                 </main>
@@ -3711,7 +3712,7 @@ function App() {
                 </span>
               </div>
               <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>
-                Configura tu avatar chamánico y afilia tu técnica maldita.
+                Configura tu avatar Z y selecciona tu técnica especial.
               </p>
             </section>
 
@@ -3815,15 +3816,15 @@ function App() {
             {/* Configuración de Datos */}
             <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <h3 className="card-title">
-                <User size={15} className="text-purple-400" />
-                <span>Datos del Chamán</span>
+                <User size={15} style={{ color: 'var(--accent-secondary)' }} />
+                <span>Datos del Guerrero Z</span>
               </h3>
 
               <div className="form-group">
-                <label className="form-label" style={{ fontSize: '13px', fontWeight: 'bold' }}>Nombre del Chamán</label>
+                <label className="form-label" style={{ fontSize: '13px', fontWeight: 'bold' }}>Nombre del Guerrero</label>
                 <input 
                   type="text"
-                  placeholder="Ej: Yuji Itadori"
+                  placeholder="Ej: Son Goku"
                   value={editUsername}
                   onChange={(e) => setEditUsername(e.target.value)}
                   className="form-input"
@@ -3832,7 +3833,7 @@ function App() {
               </div>
 
               <div className="form-group">
-                <label className="form-label" style={{ fontSize: '13px', fontWeight: 'bold' }}>Linaje / Clan</label>
+                <label className="form-label" style={{ fontSize: '13px', fontWeight: 'bold' }}>Raza / Escuela</label>
                 <select 
                   value={editClan}
                   onChange={(e) => setEditClan(e.target.value)}
@@ -3848,40 +3849,40 @@ function App() {
                     cursor: 'pointer'
                   }}
                 >
-                  <option value="none">Sin Afiliación (Hechicero de 1ra Generación)</option>
-                  <option value="Gojo">Clan Gojo (Los Seis Ojos)</option>
-                  <option value="Zen'in">Clan Zenin (Restricción Celestial)</option>
-                  <option value="Kamo">Clan Kamo (Manipulación de Sangre)</option>
-                  <option value="Itadori">Clan Itadori</option>
-                  <option value="Fushiguro">Clan Fushiguro</option>
-                  <option value="Inumaki">Clan Inumaki</option>
+                  <option value="none">Terrícola (Guerrero de la Tierra)</option>
+                  <option value="Saiyan">Raza Saiyan (Guerrero del Espacio)</option>
+                  <option value="Hibrido">Híbrido Saiyan (Potencial Ilimitado)</option>
+                  <option value="Namek">Raza Namekiana (Regeneración)</option>
+                  <option value="Ginyu">Fuerza Especial Ginyu</option>
+                  <option value="Tortuga">Escuela Tortuga (Maestro Roshi)</option>
+                  <option value="Grulla">Escuela Grulla (Maestro Shen)</option>
                 </select>
               </div>
 
               <div className="form-group">
-                <label className="form-label" style={{ fontSize: '13px', fontWeight: 'bold' }}>Técnica Ritual / Habilidad Especial</label>
+                <label className="form-label" style={{ fontSize: '13px', fontWeight: 'bold' }}>Técnica Especial / Habilidad</label>
                 <input 
                   type="text"
-                  placeholder="Ej: Destello Negro, Diez Sombras..."
+                  placeholder="Ej: Kamehameha, Destello Final..."
                   value={editCursedTechnique}
                   onChange={(e) => setEditCursedTechnique(e.target.value)}
                   className="form-input"
                   style={{ fontSize: '13px' }}
                 />
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '8px' }}>
-                  {['Destello Negro ⚡', 'Ilimitado ♾️', 'Diez Sombras 🐺', 'Discurso Maldito 🗣️', 'Restricción Celestial 🏋️', 'Manipulación de Sangre 🩸'].map(t => (
+                  {['Kamehameha 👐', 'Destello Final ⚡', 'Genkidama 🌟', 'Kienzan 🌀', 'Kaio-ken 🔴', 'Puño Dragón 🐉'].map(t => (
                     <button
-                      key={t}
-                      type="button"
-                      onClick={() => setEditCursedTechnique(t)}
-                      style={{
-                        padding: '6px 12px',
-                        fontSize: '12px',
-                        backgroundColor: editCursedTechnique === t ? 'rgba(184, 211, 0, 0.15)' : 'rgba(255,255,255,0.03)',
-                        border: `1px solid ${editCursedTechnique === t ? 'var(--accent-primary)' : 'var(--border-color)'}`,
-                        borderRadius: '16px',
-                        color: editCursedTechnique === t ? 'var(--accent-primary)' : 'var(--text-secondary)',
-                        cursor: 'pointer'
+                       key={t}
+                       type="button"
+                       onClick={() => setEditCursedTechnique(t)}
+                       style={{
+                         padding: '6px 12px',
+                         fontSize: '12px',
+                         backgroundColor: editCursedTechnique === t ? 'rgba(231, 106, 36, 0.15)' : 'rgba(255,255,255,0.03)',
+                         border: `1px solid ${editCursedTechnique === t ? 'var(--accent-secondary)' : 'var(--border-color)'}`,
+                         borderRadius: '16px',
+                         color: editCursedTechnique === t ? 'var(--accent-secondary)' : 'var(--text-secondary)',
+                         cursor: 'pointer'
                       }}
                     >
                       {t}
@@ -3993,13 +3994,13 @@ function App() {
                 </div>
               </section>
             ) : (
-              /* Romper Pacto / Estado de Alianza */
+              /* Deshacer Vínculo / Estado de Conexión */
               <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: '12px', border: '1px solid #ef4444' }}>
                 <h4 style={{ fontSize: '13px', fontWeight: 'bold', color: '#ef4444', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span>💀 Estado de Alianza</span>
+                  <span>💥 Estado del Vínculo Z</span>
                 </h4>
                 <p style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                  Conectado como: <strong>{session.user.email}</strong>. Al romper el pacto, se cerrará tu sesión actual y se limpiará el templo local de este dispositivo.
+                  Conectado como: <strong>{session.user.email}</strong>. Al deshacer el vínculo, se cerrará tu sesión actual y se limpiará el registro local de este dispositivo.
                 </p>
                 <button
                   type="button"
@@ -4017,7 +4018,7 @@ function App() {
                     cursor: 'pointer'
                   }}
                 >
-                  Romper Pacto (Cerrar Sesión)
+                  Deshacer Vínculo Z (Cerrar Sesión)
                 </button>
               </section>
             )}
@@ -4042,17 +4043,17 @@ function App() {
                   fontSize: '14px',
                   letterSpacing: '1px',
                   textTransform: 'uppercase',
-                  boxShadow: '0 0 20px rgba(184, 211, 0, 0.4)',
+                  boxShadow: '0 0 20px rgba(28, 69, 149, 0.4)',
                   border: 'none',
                   backgroundColor: 'var(--accent-primary)',
-                  color: '#000',
+                  color: '#fff',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: '8px'
                 }}
               >
-                <span>{pactStatus || 'Sellar Pacto'}</span>
+                <span>{pactStatus || 'Guardar Perfil'}</span>
                 <UserCheck size={16} strokeWidth={3} />
               </button>
             </div>
@@ -4488,8 +4489,8 @@ function App() {
                   width: '56px', 
                   height: '56px', 
                   borderRadius: '50%', 
-                  backgroundColor: 'rgba(184, 211, 0, 0.1)', 
-                  border: '1px solid rgba(184, 211, 0, 0.2)', 
+                  backgroundColor: 'rgba(28, 69, 149, 0.1)', 
+                  border: '1px solid rgba(28, 69, 149, 0.2)', 
                   display: 'flex', 
                   alignItems: 'center', 
                   justifyContent: 'center',
@@ -4499,12 +4500,12 @@ function App() {
                 <Zap className="text-primary animate-pulse" size={28} />
               </div>
               <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-                {syncOverlayMode === 'download' ? 'Despertando al Chamán' : 'Estableciendo Pacto Celestial'}
+                {syncOverlayMode === 'download' ? 'Entrenamiento Z: Cargando' : 'Estableciendo Vínculo Z'}
               </h3>
               <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px', margin: 0 }}>
                 {syncOverlayMode === 'download'
-                  ? 'Restaurando tu alma maldita desde la nube...'
-                  : 'Sincronizando tu alma maldita con la base de datos celestial...'}
+                  ? 'Restaurando tus datos Z desde la nube...'
+                  : 'Sincronizando tus datos Z con el planeta Kaito...'}
               </p>
             </div>
 
