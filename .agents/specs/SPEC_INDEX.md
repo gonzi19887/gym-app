@@ -21,26 +21,52 @@
 
 ## 🔵 En Progreso (`/active`)
 
-_Ninguna spec activa actualmente._
+| ID | Feature | Prioridad |
+|---|---|---|
+| **SPEC_007** | **Fix Zombie State + Session Loss + Perfil Persistente** | 🔴 critical |
 
 ---
 
 ## ⚪ Backlog (`/backlog`)
 
-| ID | Feature | Prioridad |
-|---|---|---|
-| SPEC_006 | Entrenamiento Activo Mejorado | high |
-| SPEC_007 | Notificaciones Push PWA | medium |
-| SPEC_008 | Gráficas de Progreso / Historial | medium |
-| SPEC_009 | Sincronización Multi-Dispositivo | low |
+| ID | Feature | Prioridad | Depends |
+|---|---|---|---|
+| SPEC_006 | Entrenamiento Activo Mejorado | high | — |
+| SPEC_008 | Sync Engine Refactor — Outbox Pattern | high | SPEC_007 |
+| SPEC_009 | Rediseño Dragon Ball — Design System | high | SPEC_007 |
+| SPEC_010 | Rutinas UX — Filtros, GIFs, Carry-Over | high | SPEC_009 |
+| SPEC_011 | Pantalla Hoy Simplificada + Onboarding | high | SPEC_009 |
+| SPEC_012 | Calendario Real + Perfil con Dashboard | medium | SPEC_011 |
+| SPEC_013 | Indicador Agua + Peso Carry-Over | medium | SPEC_010 |
+| SPEC_014 | Code Quality — Ponytail + Atomic Design | medium | SPEC_012 |
 
 ---
 
-## 📐 Workflow
+## 📐 Workflow SDD Completo
 
 ```
-/backlog → /active (al comenzar) → /completed (al verificar con agent-browser)
+💡 Idea
+  │
+  ▼
+🔬 INVESTIGACIÓN — NotebookLM
+  │  nlm notebook query gym-app "¿Cómo debería funcionar X?"
+  │  nlm research start "mejores prácticas para X en PWA"
+  │
+  ▼
+📝 SPEC.md en /active  ← escribir DESPUÉS de investigar
+  │  Usar /grill-me para refinar con el agente
+  │
+  ▼
+⚙️  IMPLEMENTACIÓN en rama dev
+  │
+  ▼
+🧪 VERIFICACIÓN — agent-browser
+  │  URL: https://gym-app-git-dev-oscarmarley1988-6438s-projects.vercel.app/#
+  │
+  ▼
+✅ SPEC movida a /completed → deploy preview → aprobación → producción
 ```
 
-Usar `/grill-me` para refinar specs antes de implementar.
-Usar `agent-browser` en `https://gym-app-git-dev-oscarmarley1988-6438s-projects.vercel.app/#` para verificar.
+### Notebooks de NotebookLM disponibles
+- **gym-app** (alias): Documentación técnica del proyecto, Manual de Usuario, Tutorial Pantallas
+- Configurado con `nlm alias set gym-app <notebook-id>`
