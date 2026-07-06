@@ -20,14 +20,13 @@
 | SPEC_008 | Sync Engine Refactor — Outbox Pattern | `29ffbe1` | 2026-07-04 |
 | SPEC_009 | Rediseño Dragon Ball — Design System | `cd2823d` | 2026-07-04 |
 | SPEC_010 | Rutinas UX — Filtros, GIFs, Carry-Over | `ac84f68` | 2026-07-04 |
+| SPEC_011 | Pantalla Hoy Simplificada + Onboarding | `c5e4d28` | 2026-07-06 |
 
 ---
 
 ## 🔵 En Progreso (`/active`)
 
-| ID | Feature | Prioridad |
-|---|---|---|
-| **SPEC_011** | **Pantalla Hoy Simplificada + Onboarding** | 🔴 critical |
+*Ninguna spec activa en este momento. Usa `/grill-me` para refinar la siguiente feature.*
 
 ---
 
