@@ -177,6 +177,29 @@ function App() {
   const [userFatPct, setUserFatPct] = useState<number>(() => parseFloat(localStorage.getItem('user_fat_pct') || '14'));
   const [userHeight, setUserHeight] = useState<number>(() => parseFloat(localStorage.getItem('user_height') || '180'));
 
+  // SPEC_011: Onboarding, Weekly Goal, and Hydration State
+  const [onboardingCompleted, setOnboardingCompleted] = useState<boolean>(() => {
+    return localStorage.getItem('onboarding_completed') === 'true';
+  });
+  const [onboardingStep, setOnboardingStep] = useState<number>(1);
+  const [weeklyGoalDays, setWeeklyGoalDays] = useState<number>(() => {
+    return parseInt(localStorage.getItem('weekly_goal_days') || '3');
+  });
+  const [waterIntake, setWaterIntake] = useState<number>(() => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    return parseInt(localStorage.getItem(`water_intake_${todayStr}`) || '0');
+  });
+  const [showCTARoutineDropdown, setShowCTARoutineDropdown] = useState<boolean>(false);
+
+  const [onboardingUsername, setOnboardingUsername] = useState('');
+  const [onboardingAvatarUrl, setOnboardingAvatarUrl] = useState('');
+  const [onboardingClan, setOnboardingClan] = useState('Tortuga');
+  const [onboardingCursedTechnique, setOnboardingCursedTechnique] = useState('Kamehameha 👐');
+  const [onboardingWeight, setOnboardingWeight] = useState<number>(75);
+  const [onboardingHeight, setOnboardingHeight] = useState<number>(175);
+  const [onboardingGoalDays, setOnboardingGoalDays] = useState<number>(3);
+  const [onboardingRoutineTemplate, setOnboardingRoutineTemplate] = useState<string>('roshi');
+
   // Camera & Custom Photo State
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
@@ -316,9 +339,19 @@ function App() {
       setEditAvatarUrl(profile.avatar_url);
       setEditClan(profile.clan || 'none');
       setEditCursedTechnique(profile.cursed_technique || '');
+      setOnboardingUsername(profile.username || '');
+      setOnboardingAvatarUrl(profile.avatar_url || '');
+      setOnboardingClan(profile.clan || 'Tortuga');
+      setOnboardingCursedTechnique(profile.cursed_technique || 'Kamehameha 👐');
       lastProfileIdRef.current = profile.id;
     }
   }, [profile]);
+
+  useEffect(() => {
+    if (editAvatarUrl) {
+      setOnboardingAvatarUrl(editAvatarUrl);
+    }
+  }, [editAvatarUrl]);
 
   useEffect(() => {
     if (showRoutineCreator) {
@@ -1967,6 +2000,501 @@ function App() {
     );
   }
 
+  if (!onboardingCompleted && profile) {
+    const imc = onboardingWeight / Math.pow(onboardingHeight / 100, 2);
+    let imcCategory = 'Normal';
+    let imcColor = '#10b981'; // Green
+    if (imc < 18.5) {
+      imcCategory = 'Bajo peso';
+      imcColor = 'var(--accent-tertiary)'; // Yellow
+    } else if (imc >= 25 && imc < 30) {
+      imcCategory = 'Sobrepeso';
+      imcColor = 'var(--accent-secondary)'; // Orange
+    } else if (imc >= 30) {
+      imcCategory = 'Obesidad';
+      imcColor = '#ef4444'; // Red
+    }
+
+    const presetAvatars = [
+      { name: 'Goku', url: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="%23e76a24" stroke="%23fbbc42" stroke-width="3"/><text x="50" y="65" font-family="'Outfit', sans-serif" font-size="45" font-weight="900" fill="%2301080a" text-anchor="middle">悟</text></svg>` },
+      { name: 'Vegeta', url: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="%231c4595" stroke="%23fbbc42" stroke-width="3"/><text x="50" y="65" font-family="'Outfit', sans-serif" font-size="40" font-weight="900" fill="%23e7e5e8" text-anchor="middle">Z</text></svg>` },
+      { name: 'Roshi', url: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="%238b5cf6" stroke="%23fbbc42" stroke-width="3"/><text x="50" y="65" font-family="'Outfit', sans-serif" font-size="45" font-weight="900" fill="%23e7e5e8" text-anchor="middle">亀</text></svg>` },
+      { name: 'Piccolo', url: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="%2310b981" stroke="%23fbbc42" stroke-width="3"/><text x="50" y="65" font-family="'Outfit', sans-serif" font-size="45" font-weight="900" fill="%2301080a" text-anchor="middle">魔</text></svg>` },
+      { name: 'Kaio', url: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="%23ef4444" stroke="%23fbbc42" stroke-width="3"/><text x="50" y="65" font-family="'Outfit', sans-serif" font-size="45" font-weight="900" fill="%2301080a" text-anchor="middle">界</text></svg>` },
+      { name: 'Esfera', url: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="%23fbbc42" stroke="%23e76a24" stroke-width="3"/><polygon points="50,22 53,32 63,32 55,38 58,48 50,42 42,48 45,38 37,32 47,32" fill="%23e76a24"/><polygon points="30,50 33,60 43,60 35,66 38,76 30,70 22,76 25,66 17,60 27,60" fill="%23e76a24"/><polygon points="70,50 73,60 83,60 75,66 78,76 70,70 62,76 65,66 57,60 67,60" fill="%23e76a24"/><polygon points="50,60 53,70 63,70 55,76 58,86 50,80 42,86 45,76 37,70 47,70" fill="%23e76a24"/></svg>` },
+    ];
+
+    const handleFinishOnboarding = async () => {
+      const updatedProfile = {
+        ...profile,
+        username: onboardingUsername.trim() || 'Guerrero Z',
+        avatar_url: onboardingAvatarUrl || profile.avatar_url,
+        clan: onboardingClan,
+        cursed_technique: onboardingCursedTechnique
+      };
+      await setAppSetting('profile_username', updatedProfile.username);
+      await setAppSetting('profile_avatar_url', updatedProfile.avatar_url);
+      await saveRecord('profiles', updatedProfile, 'UPDATE');
+      setProfile(updatedProfile);
+
+      localStorage.setItem('user_weight', onboardingWeight.toString());
+      localStorage.setItem('user_height', onboardingHeight.toString());
+      localStorage.setItem('user_fat_pct', '14');
+      setUserWeight(onboardingWeight);
+      setUserHeight(onboardingHeight);
+      setUserFatPct(14);
+
+      localStorage.setItem('weekly_goal_days', onboardingGoalDays.toString());
+      setWeeklyGoalDays(onboardingGoalDays);
+
+      if (onboardingRoutineTemplate !== 'empty') {
+        const loadedExercises = await getAllRecords<Exercise>('exercises');
+        const pressBanca = loadedExercises.find(e => e.name.includes('Press de Banca'));
+        const remoBarra = loadedExercises.find(e => e.name.includes('Remo con Barra'));
+        const sentadilla = loadedExercises.find(e => e.name.includes('Sentadilla'));
+        const curlBiceps = loadedExercises.find(e => e.name.includes('Curl de Bíceps'));
+
+        if (onboardingRoutineTemplate === 'roshi' && pressBanca && remoBarra) {
+          const r1: Routine = {
+            id: generateUUID(),
+            user_id: profile.id,
+            name: 'Entrenamiento del Maestro Roshi 🐢',
+            day_of_week: [1, 4],
+            created_at: new Date().toISOString()
+          };
+          await saveRecord('routines', r1, 'CREATE');
+          await saveRecord('routine_exercises', {
+            id: generateUUID(),
+            routine_id: r1.id,
+            exercise_id: pressBanca.id,
+            order_index: 0,
+            default_sets: 4,
+            default_reps: 10,
+            default_rest_time: 90
+          }, 'CREATE');
+          await saveRecord('routine_exercises', {
+            id: generateUUID(),
+            routine_id: r1.id,
+            exercise_id: remoBarra.id,
+            order_index: 1,
+            default_sets: 4,
+            default_reps: 10,
+            default_rest_time: 90
+          }, 'CREATE');
+        } else if (onboardingRoutineTemplate === 'saiyan' && sentadilla && curlBiceps) {
+          const r2: Routine = {
+            id: generateUUID(),
+            user_id: profile.id,
+            name: 'Cámara de Gravedad: Fuerza Saiyan 🦾',
+            day_of_week: [2, 5],
+            created_at: new Date().toISOString()
+          };
+          await saveRecord('routines', r2, 'CREATE');
+          await saveRecord('routine_exercises', {
+            id: generateUUID(),
+            routine_id: r2.id,
+            exercise_id: sentadilla.id,
+            order_index: 0,
+            default_sets: 4,
+            default_reps: 8,
+            default_rest_time: 90
+          }, 'CREATE');
+          await saveRecord('routine_exercises', {
+            id: generateUUID(),
+            routine_id: r2.id,
+            exercise_id: curlBiceps.id,
+            order_index: 1,
+            default_sets: 3,
+            default_reps: 12,
+            default_rest_time: 60
+          }, 'CREATE');
+        }
+      } else {
+        const r3: Routine = {
+          id: generateUUID(),
+          user_id: profile.id,
+          name: 'Mi Entrenamiento Ki 🌟',
+          day_of_week: [1, 3, 5],
+          created_at: new Date().toISOString()
+        };
+        await saveRecord('routines', r3, 'CREATE');
+      }
+
+      let loadedRoutines = await getAllRecords<Routine>('routines');
+      loadedRoutines = loadedRoutines.filter(r => r.user_id === profile.id);
+      setRoutines(loadedRoutines);
+      let loadedRoutineExs = await getAllRecords<RoutineExercise>('routine_exercises');
+      const activeRoutineIds = new Set(loadedRoutines.map(r => r.id));
+      loadedRoutineExs = loadedRoutineExs.filter(re => activeRoutineIds.has(re.routine_id));
+      setRoutineExercises(loadedRoutineExs);
+
+      localStorage.setItem('onboarding_completed', 'true');
+      setOnboardingCompleted(true);
+    };
+
+    return (
+      <div className="app-container" style={{ display: 'flex', flexDirection: 'column', minHeight: '100svh', padding: '24px', justifyContent: 'flex-start', alignItems: 'center', backgroundColor: 'var(--bg-primary)', overflowY: 'auto' }}>
+        <header style={{ width: '100%', maxWidth: '480px', display: 'flex', flexDirection: 'column', gap: '8px', textAlign: 'center', margin: '20px 0' }}>
+          <h1 style={{ fontSize: '26px', fontFamily: 'var(--font-headline)', color: 'var(--accent-secondary)', fontWeight: 'bold', margin: 0, textTransform: 'uppercase', letterSpacing: '1px' }}>
+            Forja tu Destino
+          </h1>
+          <p style={{ fontSize: '12px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '2px', margin: 0 }}>
+            Iniciación en la Cámara de Gravedad
+          </p>
+          <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginTop: '16px' }}>
+            {[1, 2, 3, 4].map(step => (
+              <div 
+                key={step} 
+                style={{ 
+                  height: '6px', 
+                  flex: 1, 
+                  maxWidth: '60px', 
+                  borderRadius: '3px', 
+                  backgroundColor: step <= onboardingStep ? 'var(--accent-secondary)' : 'rgba(255, 255, 255, 0.1)',
+                  boxShadow: step <= onboardingStep ? '0 0 8px var(--accent-glow)' : 'none',
+                  transition: 'var(--transition-smooth)'
+                }}
+              />
+            ))}
+          </div>
+        </header>
+
+        <main className="card" style={{ width: '100%', maxWidth: '480px', display: 'flex', flexDirection: 'column', gap: '20px', padding: '24px', position: 'relative', overflow: 'hidden' }}>
+          {onboardingStep === 1 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ textAlign: 'center', marginBottom: '8px' }}>
+                <h2 style={{ fontSize: '18px', fontWeight: 'bold', margin: '0 0 6px 0', color: 'var(--text-primary)' }}>1. Forja tu Identidad</h2>
+                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0 }}>Define tu apodo y elige un avatar para tu ficha de guerrero Z.</p>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label" style={{ fontSize: '13px', fontWeight: 'bold' }}>Nombre del Guerrero</label>
+                <input 
+                  type="text"
+                  placeholder="Ej: Son Goku"
+                  value={onboardingUsername}
+                  onChange={(e) => setOnboardingUsername(e.target.value)}
+                  className="form-input"
+                  style={{ fontSize: '14px', padding: '12px' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+                <label className="form-label" style={{ fontSize: '13px', fontWeight: 'bold', alignSelf: 'flex-start' }}>Foto / Emblema de Ki</label>
+                <div style={{
+                  position: 'relative',
+                  width: '100px',
+                  height: '100px',
+                  borderRadius: '50%',
+                  overflow: 'hidden',
+                  border: '2px solid var(--accent-primary)',
+                  boxShadow: '0 0 20px var(--accent-glow)',
+                  backgroundColor: 'var(--bg-secondary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  {onboardingAvatarUrl ? (
+                    <img 
+                      src={onboardingAvatarUrl} 
+                      alt="Avatar" 
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                  ) : (
+                    <Dumbbell size={36} color="var(--accent-primary)" style={{ opacity: 0.8 }} />
+                  )}
+                </div>
+
+                {isCameraActive ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', width: '100%' }}>
+                    <video 
+                      ref={videoRef} 
+                      autoPlay 
+                      playsInline 
+                      style={{ width: '100%', maxWidth: '200px', height: '200px', objectFit: 'cover', borderRadius: '12px', border: '2px solid var(--accent-primary)', transform: 'scaleX(-1)' }}
+                    />
+                    <div style={{ display: 'flex', gap: '8px', width: '100%', maxWidth: '200px' }}>
+                      <button type="button" onClick={capturePhoto} className="btn-primary" style={{ flex: 1, padding: '8px', fontSize: '11px' }}>Capturar 📸</button>
+                      <button type="button" onClick={stopCamera} className="btn-secondary" style={{ flex: 1, padding: '8px', fontSize: '11px', borderColor: '#ef4444', color: '#ef4444' }}>Cancelar</button>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%' }}>
+                    <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', padding: '6px 2px', width: '100%', WebkitOverflowScrolling: 'touch' }}>
+                      {presetAvatars.map((p, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => setOnboardingAvatarUrl(p.url)}
+                          style={{
+                            flex: '0 0 54px',
+                            height: '54px',
+                            borderRadius: '50%',
+                            border: `2px solid ${onboardingAvatarUrl === p.url ? 'var(--accent-secondary)' : 'transparent'}`,
+                            padding: '2px',
+                            backgroundColor: 'transparent',
+                            cursor: 'pointer',
+                            transition: 'var(--transition-smooth)'
+                          }}
+                        >
+                          <img src={p.url} style={{ width: '100%', height: '100%', borderRadius: '50%' }} alt={p.name} />
+                        </button>
+                      ))}
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
+                      <button type="button" onClick={() => fileInputRef.current?.click()} className="btn-secondary" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px', fontSize: '12px', borderRadius: '10px' }}>
+                        <Upload size={12} color="var(--accent-primary)" />
+                        <span>Subir</span>
+                      </button>
+                      <button type="button" onClick={startCamera} className="btn-secondary" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px', fontSize: '12px', borderRadius: '10px' }}>
+                        <Camera size={12} color="var(--accent-primary)" />
+                        <span>Cámara</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="form-group">
+                <label className="form-label" style={{ fontSize: '13px', fontWeight: 'bold' }}>Raza / Escuela</label>
+                <select 
+                  value={onboardingClan}
+                  onChange={(e) => setOnboardingClan(e.target.value)}
+                  className="form-input"
+                  style={{ fontSize: '13px', width: '100%', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px' }}
+                >
+                  <option value="Tortuga">Escuela Tortuga (Maestro Roshi)</option>
+                  <option value="Saiyan">Raza Saiyan (Guerrero del Espacio)</option>
+                  <option value="Hibrido">Híbrido Saiyan (Potencial Ilimitado)</option>
+                  <option value="Namek">Raza Namekiana (Regeneración)</option>
+                  <option value="Terrícola">Terrícola (Guerrero de la Tierra)</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label" style={{ fontSize: '13px', fontWeight: 'bold' }}>Técnica Especial</label>
+                <input 
+                  type="text"
+                  placeholder="Ej: Kamehameha..."
+                  value={onboardingCursedTechnique}
+                  onChange={(e) => setOnboardingCursedTechnique(e.target.value)}
+                  className="form-input"
+                  style={{ fontSize: '13px' }}
+                />
+              </div>
+            </div>
+          )}
+
+          {onboardingStep === 2 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ textAlign: 'center', marginBottom: '8px' }}>
+                <h2 style={{ fontSize: '18px', fontWeight: 'bold', margin: '0 0 6px 0', color: 'var(--text-primary)' }}>2. Fisonomía Ki</h2>
+                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0 }}>Registra tu peso y estatura. Calcularemos tu nivel de masa para ajustar tus aumentos de Ki.</p>
+              </div>
+
+              <div style={{ display: 'flex', gap: '16px' }}>
+                <div className="form-group" style={{ flex: 1 }}>
+                  <label className="form-label" style={{ fontSize: '13px', fontWeight: 'bold' }}>Peso (kg)</label>
+                  <input 
+                    type="number"
+                    value={onboardingWeight || ''}
+                    onChange={(e) => setOnboardingWeight(parseFloat(e.target.value) || 0)}
+                    className="form-input"
+                    style={{ fontSize: '14px', padding: '12px' }}
+                  />
+                </div>
+                <div className="form-group" style={{ flex: 1 }}>
+                  <label className="form-label" style={{ fontSize: '13px', fontWeight: 'bold' }}>Estatura (cm)</label>
+                  <input 
+                    type="number"
+                    value={onboardingHeight || ''}
+                    onChange={(e) => setOnboardingHeight(parseFloat(e.target.value) || 0)}
+                    className="form-input"
+                    style={{ fontSize: '14px', padding: '12px' }}
+                  />
+                </div>
+              </div>
+
+              {onboardingWeight > 0 && onboardingHeight > 0 && (
+                <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '16px', backgroundColor: 'rgba(255,255,255,0.01)', border: '1px dashed var(--border-color)', borderRadius: '12px', marginTop: '12px' }}>
+                  <span style={{ fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 700 }}>Índice de Masa Corporal (IMC)</span>
+                  <span style={{ fontSize: '28px', fontWeight: '950', color: imcColor, margin: '6px 0', fontFamily: 'Outfit' }}>{imc.toFixed(1)}</span>
+                  <span style={{ fontSize: '13px', fontWeight: 'bold', color: imcColor }}>Categoría: {imcCategory}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {onboardingStep === 3 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ textAlign: 'center', marginBottom: '8px' }}>
+                <h2 style={{ fontSize: '18px', fontWeight: 'bold', margin: '0 0 6px 0', color: 'var(--text-primary)' }}>3. Meta Semanal</h2>
+                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0 }}>¿Cuántas veces expandirás tu dominio en el gimnasio a la semana? Esto definirá tu meta de Ki.</p>
+              </div>
+
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'center', padding: '12px 0' }}>
+                {[1, 2, 3, 4, 5, 6, 7].map(num => {
+                  const isSelected = onboardingGoalDays === num;
+                  return (
+                    <button
+                      key={num}
+                      type="button"
+                      onClick={() => setOnboardingGoalDays(num)}
+                      style={{
+                        width: '54px',
+                        height: '54px',
+                        borderRadius: '50%',
+                        border: `2px solid ${isSelected ? 'var(--accent-secondary)' : 'var(--border-color)'}`,
+                        backgroundColor: isSelected ? 'rgba(231, 106, 36, 0.15)' : 'rgba(255,255,255,0.02)',
+                        boxShadow: isSelected ? '0 0 15px var(--accent-glow)' : 'none',
+                        color: isSelected ? 'var(--accent-secondary)' : 'var(--text-primary)',
+                        fontSize: '18px',
+                        fontWeight: '900',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'var(--transition-smooth)',
+                        fontFamily: 'Outfit'
+                      }}
+                    >
+                      {num}
+                    </button>
+                  );
+                })}
+              </div>
+              <p style={{ fontSize: '12px', color: 'var(--text-secondary)', textAlign: 'center', fontStyle: 'italic', margin: 0 }}>
+                Recomendado: 3 a 5 días para un aumento de nivel de Ki óptimo.
+              </p>
+            </div>
+          )}
+
+          {onboardingStep === 4 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ textAlign: 'center', marginBottom: '8px' }}>
+                <h2 style={{ fontSize: '18px', fontWeight: 'bold', margin: '0 0 6px 0', color: 'var(--text-primary)' }}>4. Inicia tu Entrenamiento</h2>
+                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0 }}>Elige una plantilla inicial o comienza desde cero. Podrás personalizarla después en la sección de Rutinas.</p>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <button
+                  type="button"
+                  onClick={() => setOnboardingRoutineTemplate('roshi')}
+                  style={{
+                    padding: '16px',
+                    borderRadius: '12px',
+                    border: `1.5px solid ${onboardingRoutineTemplate === 'roshi' ? 'var(--accent-secondary)' : 'var(--border-color)'}`,
+                    backgroundColor: onboardingRoutineTemplate === 'roshi' ? 'rgba(231, 106, 36, 0.05)' : 'transparent',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '4px',
+                    transition: 'var(--transition-smooth)'
+                  }}
+                >
+                  <span style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--text-primary)' }}>Entrenamiento del Maestro Roshi 🐢 (Torso)</span>
+                  <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Ideal para principiantes. 2 ejercicios fundamentales (Banca y Remo) programados para Lunes y Jueves.</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setOnboardingRoutineTemplate('saiyan')}
+                  style={{
+                    padding: '16px',
+                    borderRadius: '12px',
+                    border: `1.5px solid ${onboardingRoutineTemplate === 'saiyan' ? 'var(--accent-secondary)' : 'var(--border-color)'}`,
+                    backgroundColor: onboardingRoutineTemplate === 'saiyan' ? 'rgba(231, 106, 36, 0.05)' : 'transparent',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '4px',
+                    transition: 'var(--transition-smooth)'
+                  }}
+                >
+                  <span style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--text-primary)' }}>Cámara de Gravedad: Fuerza Saiyan 🦾 (Fuerza)</span>
+                  <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Enfoque en piernas e hipertrofia de brazos (Sentadillas y Curl de Bíceps). Programada para Martes y Viernes.</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setOnboardingRoutineTemplate('empty')}
+                  style={{
+                    padding: '16px',
+                    borderRadius: '12px',
+                    border: `1.5px solid ${onboardingRoutineTemplate === 'empty' ? 'var(--accent-secondary)' : 'var(--border-color)'}`,
+                    backgroundColor: onboardingRoutineTemplate === 'empty' ? 'rgba(231, 106, 36, 0.05)' : 'transparent',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '4px',
+                    transition: 'var(--transition-smooth)'
+                  }}
+                >
+                  <span style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--text-primary)' }}>Crear Personalizada 🌀 (Comenzar Vacía)</span>
+                  <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Crea una rutina en blanco ("Mi Entrenamiento Ki") para diseñar tus propias batallas desde cero.</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          <footer style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
+            {onboardingStep > 1 && (
+              <button
+                type="button"
+                onClick={() => setOnboardingStep(prev => prev - 1)}
+                className="btn-secondary"
+                style={{ flex: 1, padding: '12px' }}
+              >
+                Atrás
+              </button>
+            )}
+            
+            {onboardingStep < 4 ? (
+              <button
+                type="button"
+                disabled={onboardingStep === 1 && !onboardingUsername.trim()}
+                onClick={() => setOnboardingStep(prev => prev + 1)}
+                className="btn-primary"
+                style={{ flex: onboardingStep === 1 ? 'none' : 1, width: onboardingStep === 1 ? '100%' : 'auto', padding: '12px' }}
+              >
+                Siguiente
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleFinishOnboarding}
+                className="btn-primary"
+                style={{ flex: 1, padding: '12px', backgroundColor: 'var(--accent-secondary)', borderColor: 'var(--accent-secondary)', fontWeight: 'bold' }}
+              >
+                FINALIZAR FORJA ⚡
+              </button>
+            )}
+          </footer>
+        </main>
+        
+        <input 
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileChange}
+          accept="image/*"
+          style={{ display: 'none' }}
+        />
+        <input 
+          type="file"
+          ref={cameraFallbackInputRef}
+          onChange={handleFileChange}
+          accept="image/*"
+          capture="user"
+          style={{ display: 'none' }}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="app-container">
       
@@ -2001,7 +2529,7 @@ function App() {
           
           <div className="streak-badge" style={{ borderColor: 'rgba(249, 115, 22, 0.3)', color: '#f97316', backgroundColor: 'rgba(249, 115, 22, 0.1)' }}>
             <Flame size={15} fill="currentColor" />
-            <span>Voto: {profile.current_streak} m</span>
+            <span>Zenkai: {profile.current_streak} d</span>
           </div>
         </header>
       )}
@@ -2721,139 +3249,256 @@ function App() {
                 </div>
               </section>
 
-              {/* Today's Workout Selector Card */}
-              <section className="card">
-                <h3 className="card-title">
-                  <Dumbbell size={15} className="text-purple-400" />
+              {/* Weekly Goal Progress Card (SPEC_011) */}
+              <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h3 className="card-title" style={{ margin: 0 }}>
+                    <span style={{ color: 'var(--accent-secondary)', marginRight: '6px' }}>🔥</span>
+                    <span>Objetivo Semanal</span>
+                  </h3>
+                  <span style={{ fontSize: '13px', fontWeight: '800', color: 'var(--accent-secondary)' }}>
+                    {calendarDays.filter(day => day.hasTrained).length} / {weeklyGoalDays} días
+                  </span>
+                </div>
+                
+                <div className="progress-track" style={{ height: '8px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '4px', overflow: 'hidden' }}>
+                  <div 
+                    className="progress-fill" 
+                    style={{ 
+                      width: `${Math.min(100, (calendarDays.filter(day => day.hasTrained).length / weeklyGoalDays) * 100)}%`, 
+                      backgroundColor: calendarDays.filter(day => day.hasTrained).length >= weeklyGoalDays ? 'var(--accent-tertiary)' : 'var(--accent-secondary)',
+                      height: '100%',
+                      borderRadius: '4px'
+                    }}
+                  />
+                </div>
+                
+                <p style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: 0 }}>
+                  {calendarDays.filter(day => day.hasTrained).length >= weeklyGoalDays 
+                    ? '¡Logro desbloqueado! Has superado tu meta semanal de Ki 🌟' 
+                    : `Entrena ${Math.max(1, weeklyGoalDays - calendarDays.filter(day => day.hasTrained).length)} día(s) más para alcanzar tu meta de Ki de esta semana.`}
+                </p>
+              </section>
+
+              {/* Today's Workout Selector Card / Giant CTA (SPEC_011) */}
+              <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <h3 className="card-title" style={{ margin: 0 }}>
+                  <Dumbbell size={15} style={{ color: 'var(--accent-secondary)' }} />
                   <span>Misiones del Día</span>
                 </h3>
                 
-                {routines.length === 0 ? (
-                  <div className="no-routines-container">
-                    <p className="no-routines-text">Aún no tienes misiones o rutinas asignadas.</p>
-                    <button 
-                      onClick={() => setActiveTab('rutinas')}
-                      className="btn-primary"
-                    >
-                      Crear primera rutina
-                    </button>
-                  </div>
-                ) : (
-                  <div className="routine-list">
-                    <p className="no-routines-text" style={{ marginBottom: '8px' }}>Selecciona tu objetivo hoy:</p>
-                    {routines.map((routine) => {
-                      const todayDayIndex = new Date().getDay();
-                      const isScheduledForToday = routine.day_of_week && routine.day_of_week.includes(todayDayIndex);
-                      
-                      return (
-                        <button
-                          key={routine.id}
-                          onClick={() => startWorkout(routine)}
-                          className="routine-item-btn"
-                          style={isScheduledForToday ? { borderColor: 'var(--accent-primary)', boxShadow: '0 0 10px rgba(168, 85, 247, 0.1)' } : {}}
+                {(() => {
+                  const todayDayIndex = new Date().getDay();
+                  const todayRoutine = routines.find(r => r.day_of_week && r.day_of_week.includes(todayDayIndex));
+                  
+                  if (routines.length === 0) {
+                    return (
+                      <div className="no-routines-container" style={{ textAlign: 'center', padding: '12px 0' }}>
+                        <p className="no-routines-text" style={{ marginBottom: '12px' }}>Aún no tienes misiones o rutinas de Ki asignadas.</p>
+                        <button 
+                          onClick={() => setActiveTab('rutinas')}
+                          className="btn-primary"
+                          style={{ width: '100%', padding: '14px', borderRadius: '30px', fontWeight: '900', fontSize: '14px', textTransform: 'uppercase', letterSpacing: '1px' }}
                         >
-                          <div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <h4 className="routine-name">{routine.name}</h4>
-                              {isScheduledForToday && (
-                                <span className="exercise-tag" style={{ fontSize: '8px', padding: '2px 5px', color: 'var(--accent-tertiary)', backgroundColor: 'rgba(16, 185, 129, 0.1)', borderColor: 'rgba(16, 185, 129, 0.2)' }}>
-                                  Programada hoy
-                                </span>
-                              )}
-                            </div>
-                            <span className="routine-meta">
-                              {routineExercises.filter((re) => re.routine_id === routine.id).length} ejercicios • Días: {getDaysLabels(routine.day_of_week)}
-                            </span>
-                          </div>
-                          <ChevronRight size={16} style={{ color: 'var(--text-tertiary)' }} />
+                          Crear Primera Rutina 🛠️
                         </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </section>
+                      </div>
+                    );
+                  }
 
-              {/* Personal Records & Black Flashes (New) */}
-              <section className="card">
-                <h3 className="card-title">
-                  <TrendingUp size={15} className="text-purple-400" />
-                  <span>Marcas & Destellos Récords</span>
-                </h3>
-                {Object.keys(personalRecords).length === 0 ? (
-                  <p className="no-routines-text" style={{ textAlign: 'center', padding: '8px 0', fontSize: '12px' }}>
-                    Aún no has registrado récords personales (Destellos Negros).
-                  </p>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '180px', overflowY: 'auto', paddingRight: '4px' }}>
-                    {Object.entries(personalRecords).map(([exId, record]) => {
-                      const ex = exercises.find((e) => e.id === exId);
-                      if (!ex) return null;
-                      return (
-                        <div key={exId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 8px', backgroundColor: 'rgba(255,255,255,0.01)', borderBottom: '1px solid rgba(255,255,255,0.03)', borderRadius: '6px' }}>
-                          <div>
-                            <h4 style={{ margin: 0, fontSize: '12px', color: 'var(--text-primary)', fontWeight: 600 }}>{ex.name}</h4>
-                            <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>1RM: {record.oneRM.toFixed(1)} kg • {record.weight}kg x {record.reps}r</span>
-                          </div>
-                          <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--accent-secondary)' }}>
-                            🔥 PR
+                  if (todayRoutine) {
+                    return (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <p className="no-routines-text" style={{ fontSize: '12px', margin: '0 0 4px 0', color: 'var(--text-secondary)' }}>Rutina programada para hoy:</p>
+                        <button
+                          onClick={() => startWorkout(todayRoutine)}
+                          className="btn-primary animate-pulse"
+                          style={{ 
+                            width: '100%', 
+                            padding: '18px 24px', 
+                            borderRadius: '24px', 
+                            fontWeight: '900', 
+                            fontSize: '15px', 
+                            textTransform: 'uppercase', 
+                            letterSpacing: '1.5px', 
+                            boxShadow: '0 0 25px var(--accent-glow)',
+                            background: 'linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%)',
+                            border: 'none',
+                            color: '#fff',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: '4px',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <span>INICIAR RITUAL 🦾</span>
+                          <span style={{ fontSize: '11px', opacity: 0.9, fontWeight: '700', textTransform: 'none', letterSpacing: 'normal' }}>
+                            {todayRoutine.name} ({routineExercises.filter((re) => re.routine_id === todayRoutine.id).length} ej.)
                           </span>
+                        </button>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', position: 'relative' }}>
+                      <p className="no-routines-text" style={{ fontSize: '12px', margin: '0 0 4px 0', color: 'var(--text-secondary)' }}>No tienes rutinas asignadas hoy. Elige tu objetivo:</p>
+                      <button
+                        onClick={() => setShowCTARoutineDropdown(prev => !prev)}
+                        className="btn-primary"
+                        style={{ 
+                          width: '100%', 
+                          padding: '16px', 
+                          borderRadius: '20px', 
+                          fontWeight: '800', 
+                          fontSize: '14px', 
+                          textTransform: 'uppercase', 
+                          letterSpacing: '1px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '8px'
+                        }}
+                      >
+                        <span>Iniciar Entrenamiento ⚡</span>
+                        <ChevronDown size={16} style={{ transform: showCTARoutineDropdown ? 'rotate(180deg)' : 'rotate(0)', transition: 'var(--transition-smooth)' }} />
+                      </button>
+
+                      {showCTARoutineDropdown && (
+                        <div className="card animate-pop" style={{ 
+                          position: 'absolute',
+                          top: '100%',
+                          left: 0,
+                          right: 0,
+                          zIndex: 100,
+                          backgroundColor: 'var(--bg-secondary)',
+                          border: '1.5px solid var(--accent-secondary)',
+                          boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
+                          padding: '10px', 
+                          marginTop: '8px',
+                          borderRadius: '16px',
+                          maxHeight: '260px',
+                          overflowY: 'auto'
+                        }}>
+                          {routines.map(routine => (
+                            <button
+                              key={routine.id}
+                              onClick={() => {
+                                setShowCTARoutineDropdown(false);
+                                startWorkout(routine);
+                              }}
+                              className="routine-item-btn"
+                              style={{ 
+                                width: '100%', 
+                                padding: '12px', 
+                                display: 'flex', 
+                                justifyContent: 'space-between', 
+                                alignItems: 'center', 
+                                marginBottom: '6px', 
+                                backgroundColor: 'rgba(255,255,255,0.02)',
+                                border: '1px solid var(--border-color)',
+                                borderRadius: '10px',
+                                color: 'var(--text-primary)',
+                                textAlign: 'left',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              <div>
+                                <h4 className="routine-name" style={{ fontSize: '13px', margin: 0, fontWeight: '700' }}>{routine.name}</h4>
+                                <span className="routine-meta" style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                                  {routineExercises.filter((re) => re.routine_id === routine.id).length} ejercicios
+                                </span>
+                              </div>
+                              <ChevronRight size={14} style={{ color: 'var(--accent-secondary)' }} />
+                            </button>
+                          ))}
                         </div>
-                      );
-                    })}
-                  </div>
-                )}
+                      )}
+                    </div>
+                  );
+                })()}
               </section>
 
-              {/* Estado de Salud / Composición (New) */}
-              <section className="card">
-                <h3 className="card-title">
-                  <span style={{ marginRight: '6px' }}>❤️</span>
-                  <span>Composición Corporal</span>
-                </h3>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0' }}>
-                  <div style={{ display: 'flex', gap: '20px' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <span style={{ fontSize: '9px', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase' }}>PESO</span>
-                      <span style={{ fontSize: '14px', fontWeight: '900', color: 'var(--text-primary)', fontFamily: 'Outfit' }}>{userWeight} kg</span>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <span style={{ fontSize: '9px', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase' }}>GRASA</span>
-                      <span style={{ fontSize: '14px', fontWeight: '900', color: 'var(--text-primary)', fontFamily: 'Outfit' }}>{userFatPct}%</span>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <span style={{ fontSize: '9px', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase' }}>IMC</span>
-                      <span style={{ fontSize: '14px', fontWeight: '900', color: 'var(--accent-primary)', fontFamily: 'Outfit' }}>{(userWeight / Math.pow(userHeight / 100, 2)).toFixed(1)}</span>
-                    </div>
-                  </div>
+              {/* Hydration Widget (SPEC_011) */}
+              <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h3 className="card-title" style={{ margin: 0 }}>
+                    <span style={{ marginRight: '6px' }}>💧</span>
+                    <span>Hidratación del Guerrero</span>
+                  </h3>
+                  <span style={{ fontSize: '13px', fontWeight: '800', color: '#38bdf8' }}>
+                    {waterIntake * 250} ml / 2000 ml
+                  </span>
+                </div>
+                
+                <div style={{ display: 'flex', gap: '6px', justifyContent: 'space-between', padding: '4px 0' }}>
+                  {Array.from({ length: 8 }).map((_, idx) => {
+                    const isFilled = idx < waterIntake;
+                    return (
+                      <div 
+                        key={idx} 
+                        onClick={() => {
+                          const newVal = idx + 1;
+                          setWaterIntake(newVal);
+                          const todayStr = new Date().toISOString().split('T')[0];
+                          localStorage.setItem(`water_intake_${todayStr}`, newVal.toString());
+                        }}
+                        style={{
+                          flex: 1,
+                          height: '32px',
+                          borderRadius: '6px',
+                          border: `1.5px solid ${isFilled ? '#38bdf8' : 'rgba(255,255,255,0.1)'}`,
+                          backgroundColor: isFilled ? 'rgba(56, 189, 248, 0.2)' : 'transparent',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '15px',
+                          cursor: 'pointer',
+                          transition: 'var(--transition-smooth)',
+                          transform: isFilled ? 'scale(1.05)' : 'scale(1)'
+                        }}
+                        title={`Vaso ${idx + 1}`}
+                      >
+                        {isFilled ? '💧' : '🥛'}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div style={{ display: 'flex', gap: '8px' }}>
                   <button 
                     onClick={() => {
-                      const w = prompt('Introduce tu peso actual (kg):', userWeight.toString());
-                      if (w !== null) {
-                        const parsedW = parseFloat(w) || userWeight;
-                        setUserWeight(parsedW);
-                        localStorage.setItem('user_weight', parsedW.toString());
-                        
-                        const f = prompt('Introduce tu porcentaje de grasa corporal (%):', userFatPct.toString());
-                        if (f !== null) {
-                          const parsedF = parseFloat(f) || userFatPct;
-                          setUserFatPct(parsedF);
-                          localStorage.setItem('user_fat_pct', parsedF.toString());
-                        }
-
-                        const h = prompt('Introduce tu altura actual (cm):', userHeight.toString());
-                        if (h !== null) {
-                          const parsedH = parseFloat(h) || userHeight;
-                          setUserHeight(parsedH);
-                          localStorage.setItem('user_height', parsedH.toString());
-                        }
-                      }
+                      const newVal = Math.min(12, waterIntake + 1);
+                      setWaterIntake(newVal);
+                      const todayStr = new Date().toISOString().split('T')[0];
+                      localStorage.setItem(`water_intake_${todayStr}`, newVal.toString());
+                    }}
+                    className="btn-primary"
+                    style={{ flex: 1, padding: '10px', fontSize: '12px', backgroundColor: '#1c4595', borderColor: '#38bdf8', color: '#fff', borderRadius: '12px', cursor: 'pointer' }}
+                  >
+                    +250ml 💧
+                  </button>
+                  <button 
+                    onClick={() => {
+                      const newVal = Math.max(0, waterIntake - 1);
+                      setWaterIntake(newVal);
+                      const todayStr = new Date().toISOString().split('T')[0];
+                      localStorage.setItem(`water_intake_${todayStr}`, newVal.toString());
                     }}
                     className="btn-secondary"
-                    style={{ padding: '6px 12px', fontSize: '11px', borderRadius: '20px', borderColor: 'rgba(255,255,255,0.1)' }}
+                    style={{ flex: 1, padding: '10px', fontSize: '12px', borderColor: 'rgba(255,255,255,0.1)', color: 'var(--text-secondary)', borderRadius: '12px', cursor: 'pointer' }}
+                    disabled={waterIntake === 0}
                   >
-                    Actualizar
+                    Remover 🥛
                   </button>
                 </div>
+                
+                {waterIntake >= 8 && (
+                  <p style={{ fontSize: '11px', color: '#10b981', margin: 0, textAlign: 'center', fontWeight: 'bold' }}>
+                    ¡Ki Hidratado al 100%! Has alcanzado tu meta de agua hoy 🌊
+                  </p>
+                )}
               </section>
 
               {/* Glossary Trigger Card */}
@@ -3819,6 +4464,11 @@ function App() {
               onClick={async () => {
                 if (confirm('¿Seguro que deseas restablecer el templo? Esto eliminará todo tu historial de hechicería y cargará los datos por defecto.')) {
                   await clearAllTables();
+                  localStorage.removeItem('onboarding_completed');
+                  localStorage.removeItem('weekly_goal_days');
+                  localStorage.removeItem('user_weight');
+                  localStorage.removeItem('user_height');
+                  localStorage.removeItem('user_fat_pct');
                   location.reload();
                 }
               }}
@@ -4033,6 +4683,89 @@ function App() {
                   ))}
                 </div>
               </div>
+            </section>
+
+            {/* Composición Corporal (moved from Hoy) (SPEC_011) */}
+            <section className="card">
+              <h3 className="card-title">
+                <span style={{ marginRight: '6px' }}>❤️</span>
+                <span>Composición Corporal</span>
+              </h3>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0' }}>
+                <div style={{ display: 'flex', gap: '20px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontSize: '9px', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase' }}>PESO</span>
+                    <span style={{ fontSize: '14px', fontWeight: '900', color: 'var(--text-primary)', fontFamily: 'Outfit' }}>{userWeight} kg</span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontSize: '9px', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase' }}>GRASA</span>
+                    <span style={{ fontSize: '14px', fontWeight: '900', color: 'var(--text-primary)', fontFamily: 'Outfit' }}>{userFatPct}%</span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontSize: '9px', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase' }}>IMC</span>
+                    <span style={{ fontSize: '14px', fontWeight: '900', color: 'var(--accent-primary)', fontFamily: 'Outfit' }}>{(userWeight / Math.pow(userHeight / 100, 2)).toFixed(1)}</span>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => {
+                    const w = prompt('Introduce tu peso actual (kg):', userWeight.toString());
+                    if (w !== null) {
+                      const parsedW = parseFloat(w) || userWeight;
+                      setUserWeight(parsedW);
+                      localStorage.setItem('user_weight', parsedW.toString());
+                      
+                      const f = prompt('Introduce tu porcentaje de grasa corporal (%):', userFatPct.toString());
+                      if (f !== null) {
+                        const parsedF = parseFloat(f) || userFatPct;
+                        setUserFatPct(parsedF);
+                        localStorage.setItem('user_fat_pct', parsedF.toString());
+                      }
+
+                      const h = prompt('Introduce tu altura actual (cm):', userHeight.toString());
+                      if (h !== null) {
+                        const parsedH = parseFloat(h) || userHeight;
+                        setUserHeight(parsedH);
+                        localStorage.setItem('user_height', parsedH.toString());
+                      }
+                    }
+                  }}
+                  className="btn-secondary"
+                  style={{ padding: '6px 12px', fontSize: '11px', borderRadius: '20px', borderColor: 'rgba(255,255,255,0.1)', cursor: 'pointer' }}
+                >
+                  Actualizar
+                </button>
+              </div>
+            </section>
+
+            {/* Marcas & Destellos Récords (moved from Hoy) (SPEC_011) */}
+            <section className="card">
+              <h3 className="card-title">
+                <TrendingUp size={15} className="text-purple-400" />
+                <span>Marcas & Destellos Récords</span>
+              </h3>
+              {Object.keys(personalRecords).length === 0 ? (
+                <p className="no-routines-text" style={{ textAlign: 'center', padding: '8px 0', fontSize: '12px' }}>
+                  Aún no has registrado récords personales (Zenkai Boosts).
+                </p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '180px', overflowY: 'auto', paddingRight: '4px' }}>
+                  {Object.entries(personalRecords).map(([exId, record]) => {
+                    const ex = exercises.find((e) => e.id === exId);
+                    if (!ex) return null;
+                    return (
+                      <div key={exId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 8px', backgroundColor: 'rgba(255,255,255,0.01)', borderBottom: '1px solid rgba(255,255,255,0.03)', borderRadius: '6px' }}>
+                        <div>
+                          <h4 style={{ margin: 0, fontSize: '12px', color: 'var(--text-primary)', fontWeight: 600 }}>{ex.name}</h4>
+                          <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>1RM: {record.oneRM.toFixed(1)} kg • {record.weight}kg x {record.reps}r</span>
+                        </div>
+                        <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--accent-secondary)' }}>
+                          🔥 PR
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </section>
 
             {/* Supabase Cloud Connection & Authentication */}
