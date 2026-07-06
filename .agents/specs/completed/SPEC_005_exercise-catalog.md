@@ -7,8 +7,9 @@ branch: dev → main
 created: 2026-06-29
 updated: 2026-06-30
 commit: 5793dcb
+linear_id: ca422308-2358-40d0-94c8-b344854a9041
+linear_key: GON-27
 ---
-
 ## 🎯 Objetivo
 Construir y desplegar un catálogo completo de 1279 ejercicios en español con GIFs demostrativos almacenados localmente, sincronizados tanto en IndexedDB (offline) como en Supabase (cloud), usando UUIDs deterministas para consistencia.
 

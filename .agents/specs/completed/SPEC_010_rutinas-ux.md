@@ -7,8 +7,9 @@ branch: dev
 created: 2026-07-04
 updated: 2026-07-04
 depends_on: SPEC_009
+linear_id: 87162fca-7688-4ce0-8d2f-cf384333ab08
+linear_key: GON-6
 ---
-
 ## 🎯 Objetivo
 Hacer la pantalla de construcción y ejecución de rutinas visualmente
 accesible y funcional: ejercicios más grandes, filtros por músculo,

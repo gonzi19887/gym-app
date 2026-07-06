@@ -6,8 +6,9 @@ priority: high
 branch: dev (pendiente)
 created: 2026-07-03
 updated: 2026-07-03
+linear_id: d49af164-b37a-4ede-94ff-f4da1f815253
+linear_key: GON-89
 ---
-
 ## 🎯 Objetivo
 _Por definir con /grill-me antes de implementar._
 

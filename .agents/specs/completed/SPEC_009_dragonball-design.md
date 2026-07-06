@@ -7,8 +7,9 @@ branch: dev
 created: 2026-07-04
 updated: 2026-07-04
 depends_on: SPEC_007
+linear_id: 3881b637-2cf8-4550-8f58-0626ec960960
+linear_key: GON-5
 ---
-
 ## 🎯 Objetivo
 Reemplazar el design system JJK/Obsidian por el universo Dragon Ball Z.
 Nueva paleta, sistema de niveles, vocabulario y toda la UI.

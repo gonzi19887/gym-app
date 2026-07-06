@@ -7,8 +7,9 @@ branch: dev
 created: 2026-07-04
 updated: 2026-07-06
 depends_on: SPEC_009
+linear_id: a30a31dd-5566-4e0c-b9ab-e64831acbad7
+linear_key: GON-75
 ---
-
 ## 🎯 Objetivo
 Centrar la pantalla principal en el entrenamiento (un solo CTA primario), añadir indicadores de salud simplificados (objetivo semanal, hidratación) y crear una pantalla de onboarding obligatoria para nuevos usuarios.
 

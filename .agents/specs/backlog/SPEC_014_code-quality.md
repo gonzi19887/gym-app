@@ -7,8 +7,9 @@ branch: dev
 created: 2026-07-04
 updated: 2026-07-04
 depends_on: SPEC_012
+linear_id: 561d785d-6da7-4c1e-934f-84a8a76e5ffa
+linear_key: GON-90
 ---
-
 ## 🎯 Objetivo
 Dividir el monolito App.tsx (216KB+) en componentes atómicos mantenibles,
 eliminar código muerto, y establecer una arquitectura de componentes

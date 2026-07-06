@@ -7,8 +7,9 @@ branch: dev
 created: 2026-07-04
 updated: 2026-07-04
 depends_on: SPEC_007
+linear_id: 55ec526b-a925-413e-b266-12ef78337f7e
+linear_key: GON-39
 ---
-
 ## 🎯 Objetivo
 Refactorizar el motor de sincronización para que IndexedDB sea SIEMPRE
 la fuente de verdad local y Supabase sea únicamente el espejo cloud.

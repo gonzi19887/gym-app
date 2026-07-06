@@ -7,8 +7,9 @@ branch: dev
 created: 2026-07-04
 updated: 2026-07-04
 depends_on: SPEC_010
+linear_id: 800f7037-2096-4234-bcce-64c616a7bdbb
+linear_key: GON-92
 ---
-
 ## 🎯 Objetivo
 Añadir un indicador de hidratación durante el entrenamiento basado en
 recomendaciones de la NIH, y carry-over de peso entre sets de la sesión.

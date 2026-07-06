@@ -7,8 +7,9 @@ branch: dev
 created: 2026-06-29
 updated: 2026-06-29
 commit: 1a57f6e
+linear_id: 3b900ba7-4bf2-4b58-b4a2-b1c9aa0f415c
+linear_key: GON-7
 ---
-
 ## 🎯 Objetivo
 Implementar un límite máximo de operaciones en la cola de sincronización offline (SyncQueue) para evitar que el IndexedDB se llene indefinidamente cuando el usuario no tiene conexión por períodos prolongados, previniendo fallos en la base de datos local.
 

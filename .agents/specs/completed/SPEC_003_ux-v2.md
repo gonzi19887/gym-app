@@ -8,8 +8,9 @@ created: 2026-06-26
 updated: 2026-06-26
 commit: f6f64e9
 deployed: https://gym-app-ten-lovat.vercel.app
+linear_id: aaa702fd-01ef-4942-955d-7e35b4d823ed
+linear_key: GON-16
 ---
-
 ## 🎯 Objetivo
 Rediseño completo de la navegación y las pantallas principales para mejorar la usabilidad mobile-first: Perfil como tab completa, Rutinas con búsqueda flat sin acordeones, y Glosario accesible desde el Dashboard.
 

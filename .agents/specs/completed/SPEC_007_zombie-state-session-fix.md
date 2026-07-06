@@ -7,8 +7,9 @@ branch: dev
 created: 2026-07-04
 updated: 2026-07-04
 issues: "#2 popup sync, #3 pérdida rutina, #4 foto/nombre no guarda"
+linear_id: 7c95d312-a653-4f80-af76-2a5be029ff89
+linear_key: GON-51
 ---
-
 ## 🎯 Objetivo
 Eliminar los tres bugs críticos que hacen la app inutilizable en mobile:
 el popup de sync al bloquear pantalla, la pérdida completa de la rutina

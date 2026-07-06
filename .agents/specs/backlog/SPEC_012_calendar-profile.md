@@ -7,8 +7,9 @@ branch: dev
 created: 2026-07-04
 updated: 2026-07-04
 depends_on: SPEC_011
+linear_id: 0ad80035-52af-46a8-ac25-ac14dafff658
+linear_key: GON-91
 ---
-
 ## 🎯 Objetivo
 Rediseñar el calendario como un calendario real (vista mes + semana con
 swipe) y mover el dashboard/composición corporal al tab de Perfil.

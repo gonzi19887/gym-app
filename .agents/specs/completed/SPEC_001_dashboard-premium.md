@@ -7,8 +7,9 @@ branch: dev
 created: 2026-06-30
 updated: 2026-07-01
 commit: dc9a5df
+linear_id: d8b335ba-b4f1-4d3a-90d1-cb083bd61293
+linear_key: GON-40
 ---
-
 ## 🎯 Objetivo
 Rediseñar el tab "Hoy" con un dashboard premium tipo glassmorphism que muestre métricas de entrenamiento del día, composición corporal interactiva y récords personales, elevando la experiencia visual al nivel "Grado Especial" de la temática JJK.
 

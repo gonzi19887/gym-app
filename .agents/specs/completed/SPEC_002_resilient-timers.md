@@ -7,8 +7,9 @@ branch: dev
 created: 2026-06-30
 updated: 2026-07-01
 commit: dc9a5df
+linear_id: 51f7a9bf-aa58-43a0-b1c0-8f90d4dd1b03
+linear_key: GON-65
 ---
-
 ## 🎯 Objetivo
 Hacer que el temporizador de descanso y el cronómetro de ejercicio no se congelen cuando el smartphone bloquea la pantalla o el usuario minimiza la app, usando timestamps absolutos en lugar de decrementos relativos.
 
