@@ -47,6 +47,9 @@ import type {
   Workout, 
   WorkoutSet
 } from './db/localDb';
+import { CalendarKi } from './components/CalendarKi';
+import { ShenronRewardModal } from './components/ShenronRewardModal';
+
 import { seedDatabase } from './db/seed';
 import { supabase, isSupabaseConfigured } from './db/supabaseClient';
 import { syncLocalQueueToCloud, migrateGuestDataToUser, syncTableToCloud, pullTableFromCloud } from './db/sync';
@@ -107,6 +110,31 @@ const REST_REMINDERS = [
 ];
 
 function App() {
+
+  // Theme State (Persisted in localStorage with system fallback)
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    try {
+      const saved = localStorage.getItem('theme_preference');
+      if (saved === 'dark' || saved === 'light') return saved;
+      return window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+    } catch {
+      return 'dark';
+    }
+  });
+
+  const [showShenronModal, setShowShenronModal] = useState<boolean>(false);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('theme_preference', theme);
+      document.documentElement.setAttribute('data-theme', theme);
+      document.documentElement.classList.toggle('dark', theme === 'dark');
+      document.documentElement.classList.toggle('light', theme === 'light');
+    } catch (e) {
+      console.error(e);
+    }
+  }, [theme]);
+
   // Navigation & General Tabs
   const [activeTab, setActiveTab] = useState<'hoy' | 'calendario' | 'rutinas' | 'progreso' | 'perfil'>('hoy');
   
@@ -2501,7 +2529,52 @@ function App() {
       {/* Header Profile Summary */}
       {!activeWorkout && profile && levelInfo && (
         <header className="app-header">
-          <div className="profile-section" style={{ cursor: 'pointer' }} onClick={() => setActiveTab('perfil')} title="Ver perfil del hechicero">
+          {/* Capsule Corp Brand Logo (Stitch Spec) */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                backgroundColor: 'var(--accent-primary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: '900',
+                fontSize: '12px',
+                color: '#141722',
+                letterSpacing: '-1px',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.2)'
+              }}>
+                CC
+              </div>
+              <span style={{ fontFamily: 'Outfit, sans-serif', fontWeight: '800', fontSize: '12px', letterSpacing: '1px', textTransform: 'uppercase', color: 'var(--accent-primary)' }}>
+                Capsule Corp
+              </span>
+            </div>
+
+            {/* Theme Toggle Button */}
+            <button
+              onClick={() => setTheme(prev => prev === 'dark' ? 'light' : 'dark')}
+              style={{
+                background: 'var(--bg-tertiary)',
+                color: 'var(--text-primary)',
+                border: '1px solid var(--border-color)',
+                padding: '4px 10px',
+                borderRadius: '9999px',
+                fontSize: '11px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}
+              title="Cambiar tema"
+            >
+              <span>{theme === 'dark' ? '☀️' : '🌙'}</span>
+              <span style={{ fontSize: '10px' }}>{theme === 'dark' ? 'CLARO' : 'OSCURO'}</span>
+            </button>
+
+            <div className="profile-section" style={{ cursor: 'pointer' }} onClick={() => setActiveTab('perfil')} title="Ver perfil del hechicero">
             <img 
               src={profile.avatar_url} 
               alt="Avatar" 
@@ -3518,283 +3591,23 @@ function App() {
 
         {/* TAB: CALENDARIO */}
         {activeTab === 'calendario' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            
-            {/* Header Description */}
-            <section className="card" style={{ position: 'relative', overflow: 'hidden' }}>
-              <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full bg-purple-500/10 blur-3xl pointer-events-none" />
-              <h2 className="lvl-title" style={{ fontSize: '20px', display: 'flex', alignItems: 'center', gap: '8px', margin: '0 0 6px 0' }}>
-                <Calendar size={20} className="text-purple-400" />
-                <span>Expansión de Dominio Semanal</span>
-              </h2>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '12px', lineHeight: '1.4' }}>
-                Planifica tu semana de entrenamiento asignando tus rituales a los días correspondientes. Las misiones programadas aparecerán en tu pantalla de inicio.
-              </p>
-            </section>
-
-            {/* Week Planner List */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {calendarDays.map((day) => {
-                const dayRoutines = routines.filter(r => r.day_of_week && r.day_of_week.includes(day.value));
-                
-                return (
-                  <section 
-                    key={day.value} 
-                    className="card"
-                    style={{
-                      borderColor: day.isToday ? 'var(--accent-primary)' : 'var(--border-color)',
-                      boxShadow: day.isToday ? '0 0 15px rgba(168, 85, 247, 0.15)' : 'none',
-                      backgroundColor: day.isToday ? 'rgba(20, 20, 25, 0.95)' : 'var(--bg-card)',
-                      transition: 'var(--transition-smooth)'
-                    }}
-                  >
-                    {/* Day Header */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <div 
-                          className={`calendar-day-box ${day.hasTrained ? 'completed' : ''} ${day.isToday ? 'today' : ''}`}
-                          style={{ width: '36px', height: '36px', fontSize: '12px', flexShrink: 0 }}
-                        >
-                          {day.hasTrained ? <Check size={14} strokeWidth={3.5} /> : day.dayNum}
-                        </div>
-                        <div>
-                          <h4 style={{ margin: 0, fontSize: '15px', fontWeight: '700', color: day.isToday ? 'var(--accent-primary)' : 'var(--text-primary)' }}>
-                            {day.fullName}
-                            {day.isToday && (
-                              <span style={{ fontSize: '8px', padding: '2px 6px', backgroundColor: 'rgba(168, 85, 247, 0.15)', border: '1px solid var(--accent-primary)', borderRadius: '4px', marginLeft: '6px', verticalAlign: 'middle' }}>
-                                HOY
-                              </span>
-                            )}
-                          </h4>
-                          <span style={{ fontSize: '10px', color: 'var(--text-tertiary)' }}>{day.dateStr}</span>
-                        </div>
-                      </div>
-                      
-                      <button
-                        onClick={() => setAssigningRoutineDayValue(assigningRoutineDayValue === day.value ? null : day.value)}
-                        className="btn-secondary"
-                        style={{ padding: '6px 10px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }}
-                      >
-                        <Plus size={12} />
-                        <span>Programar</span>
-                      </button>
-                    </div>
-
-                    {/* Inline Routine Assign/Unassign Selector Dropdown */}
-                    {assigningRoutineDayValue === day.value && (
-                      <div style={{
-                        backgroundColor: 'var(--bg-primary)',
-                        border: '1px solid var(--border-color)',
-                        borderRadius: '8px',
-                        padding: '10px',
-                        marginBottom: '12px',
-                        animation: 'fadeIn 0.2s ease'
-                      }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                          <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-secondary)' }}>
-                            Programar rutina para {day.fullName}:
-                          </span>
-                          <button 
-                            onClick={() => setAssigningRoutineDayValue(null)}
-                            style={{ background: 'none', border: 'none', color: 'var(--accent-primary)', fontSize: '10px', cursor: 'pointer' }}
-                          >
-                            Cerrar
-                          </button>
-                        </div>
-                        
-                        {routines.length === 0 ? (
-                          <div style={{ textAlign: 'center', padding: '10px 0' }}>
-                            <p style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginBottom: '8px' }}>No tienes rutinas de hechicería creadas.</p>
-                            <button 
-                              onClick={() => {
-                                setAssigningRoutineDayValue(null);
-                                setActiveTab('rutinas');
-                                setShowRoutineCreator(true);
-                              }}
-                              className="btn-primary"
-                              style={{ padding: '6px 12px', fontSize: '11px' }}
-                            >
-                              Crear nueva rutina
-                            </button>
-                          </div>
-                        ) : (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '180px', overflowY: 'auto' }}>
-                            {routines.map(r => {
-                              const isAlreadyScheduled = r.day_of_week && r.day_of_week.includes(day.value);
-                              return (
-                                <button
-                                  key={r.id}
-                                  onClick={() => {
-                                    if (isAlreadyScheduled) {
-                                      unscheduleRoutine(r.id, day.value);
-                                    } else {
-                                      scheduleRoutine(r.id, day.value);
-                                    }
-                                  }}
-                                  style={{
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center',
-                                    width: '100%',
-                                    padding: '8px 12px',
-                                    backgroundColor: isAlreadyScheduled ? 'rgba(168, 85, 247, 0.08)' : 'var(--bg-card)',
-                                    border: `1px solid ${isAlreadyScheduled ? 'var(--accent-primary)' : 'var(--border-color)'}`,
-                                    borderRadius: '6px',
-                                    color: 'var(--text-primary)',
-                                    cursor: 'pointer',
-                                    fontSize: '12px',
-                                    textAlign: 'left'
-                                  }}
-                                >
-                                  <span>{r.name}</span>
-                                  {isAlreadyScheduled ? (
-                                    <span style={{ color: 'var(--accent-primary)', fontWeight: '700', fontSize: '11px' }}>✓ Programada</span>
-                                  ) : (
-                                    <span style={{ color: 'var(--text-tertiary)', fontSize: '11px' }}>+ Asignar</span>
-                                  )}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Scheduled Routines Content */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      {dayRoutines.length > 0 ? (
-                        dayRoutines.map(routine => {
-                          const exercisesCount = routineExercises.filter(re => re.routine_id === routine.id).length;
-                          return (
-                            <div 
-                              key={routine.id}
-                              style={{
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                                padding: '10px 12px',
-                                backgroundColor: 'rgba(255, 255, 255, 0.01)',
-                                border: '1px solid var(--border-color)',
-                                borderRadius: '8px'
-                              }}
-                            >
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)' }}>
-                                  {routine.name}
-                                </span>
-                                <span style={{ fontSize: '10px', color: 'var(--text-tertiary)' }}>
-                                  {exercisesCount} {exercisesCount === 1 ? 'ejercicio' : 'ejercicios'}
-                                </span>
-                              </div>
-                              
-                              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                                {/* Start Workout Shortcut */}
-                                <button
-                                  onClick={() => startWorkout(routine)}
-                                  className="btn-primary"
-                                  style={{
-                                    padding: '5px 10px',
-                                    fontSize: '11px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '4px'
-                                  }}
-                                  title="Iniciar rutina ahora"
-                                >
-                                  <Play size={10} fill="currentColor" />
-                                  <span>Iniciar</span>
-                                </button>
-
-                                {/* Desprogramar Routine Button */}
-                                <button
-                                  onClick={() => unscheduleRoutine(routine.id, day.value)}
-                                  className="btn-secondary"
-                                  style={{
-                                    padding: '5px 8px',
-                                    borderColor: 'rgba(239, 68, 68, 0.2)',
-                                    color: '#ef4444',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center'
-                                  }}
-                                  title="Quitar programación"
-                                >
-                                  <Trash2 size={12} />
-                                </button>
-                              </div>
-                            </div>
-                          );
-                        })
-                      ) : (
-                        <div style={{
-                          padding: '12px',
-                          textAlign: 'center',
-                          backgroundColor: 'rgba(255, 255, 255, 0.01)',
-                          border: '1px dashed var(--border-color)',
-                          borderRadius: '8px',
-                          color: 'var(--text-tertiary)',
-                          fontSize: '11px'
-                        }}>
-                          🧘 Meditación y control de Energía Maldita (Descanso)
-                        </div>
-                      )}
-
-                      {/* Training Log / Completed Workouts for this Day */}
-                      {day.trainedWorkouts && day.trainedWorkouts.length > 0 && (
-                        <div style={{ 
-                          marginTop: '6px', 
-                          borderTop: '1px dashed var(--border-color)', 
-                          paddingTop: '8px',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: '6px'
-                        }}>
-                          <span style={{ fontSize: '9px', fontWeight: '800', color: 'var(--accent-tertiary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                            Misiones del Día Completadas:
-                          </span>
-                          {day.trainedWorkouts.map((workout: any) => {
-                            const matchingRoutine = routines.find(r => r.id === workout.routine_id);
-                            const matchingSets = workoutSets.filter(s => s.workout_id === workout.id && s.is_completed);
-                            const durationMinutes = Math.round(
-                              (new Date(workout.completed_at).getTime() - new Date(workout.started_at).getTime()) / 60000
-                            );
-                            
-                            return (
-                              <div 
-                                key={workout.id}
-                                style={{
-                                  display: 'flex',
-                                  justifyContent: 'space-between',
-                                  alignItems: 'center',
-                                  fontSize: '11px',
-                                  backgroundColor: 'rgba(16, 185, 129, 0.03)',
-                                  border: '1px solid rgba(16, 185, 129, 0.1)',
-                                  padding: '6px 10px',
-                                  borderRadius: '6px',
-                                  color: 'var(--text-primary)'
-                                }}
-                              >
-                                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                  💥 {matchingRoutine ? matchingRoutine.name : 'Entrenamiento Libre'} 
-                                  <span style={{ color: 'var(--text-tertiary)', fontSize: '10px' }}>
-                                    ({durationMinutes > 0 ? `${durationMinutes} min` : '<1 min'}, {matchingSets.length} sets)
-                                  </span>
-                                </span>
-                                <span style={{ color: 'var(--accent-primary)', fontWeight: 'bold' }}>
-                                  +{workout.experience_earned} EM
-                                </span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  </section>
-                );
-              })}
-            </div>
-          </div>
-        )}
+            <CalendarKi
+              routines={routines}
+              routineExercises={routineExercises}
+              exercises={exercises}
+              workouts={workouts}
+              workoutSets={workoutSets}
+              weeklyGoalDays={weeklyGoalDays}
+              onStartWorkout={startWorkout}
+              onOpenRoutineCreator={(dayVal) => {
+                setAssigningRoutineDayValue(dayVal ?? null);
+                setActiveTab('rutinas');
+                setShowRoutineCreator(true);
+              }}
+              onClaimShenron={() => setShowShenronModal(true)}
+              theme={theme}
+            />
+          )}
 
         {/* TAB: RUTINAS */}
         {activeTab === 'rutinas' && (
