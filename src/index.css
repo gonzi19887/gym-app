@@ -1,3 +1,191 @@
+
+/* ==========================================================================
+   CAPSULE CORP FITNESS TECH - BIMODAL DESIGN SYSTEM (V2.0 STITCH MCP)
+   ========================================================================== */
+
+:root,
+:root[data-theme="dark"],
+.dark {
+  /* Dark Mode: Cámara del Tiempo / Espacio Profundo */
+  --bg-primary: #10131e;
+  --bg-secondary: #1c202e;
+  --bg-tertiary: #24293a;
+  --bg-surface-elevated: #272935;
+  --bg-accent: rgba(244, 162, 97, 0.12);
+
+  --text-primary: #f0f2f5;
+  --text-secondary: #9ca3af;
+  --text-tertiary: #6b7280;
+
+  --accent-primary: #f4a261; /* Sun Ki Amber */
+  --accent-secondary: #2a9d8f; /* Scouter Teal */
+  --accent-tertiary: #ffd700; /* SSJ Dragon Ball Gold */
+  --accent-alert: #e76f51; /* Terracotta Red PR */
+
+  --border-color: rgba(255, 255, 255, 0.08);
+  --border-color-glow: rgba(244, 162, 97, 0.25);
+  --card-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+:root[data-theme="light"],
+.light {
+  /* Light Mode: Laboratorio Zenith */
+  --bg-primary: #fcf9f8;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f0eded;
+  --bg-surface-elevated: #eae7e7;
+  --bg-accent: rgba(170, 48, 21, 0.08);
+
+  --text-primary: #1c1b1b;
+  --text-secondary: #59413c;
+  --text-tertiary: #8d716a;
+
+  --accent-primary: #aa3015; /* Terracotta Primary */
+  --accent-secondary: #7e5700; /* Golden Amber */
+  --accent-tertiary: #ffb625; /* Dragon Ball Gold */
+  --accent-alert: #ba1a1a;
+
+  --border-color: rgba(0, 0, 0, 0.08);
+  --border-color-glow: rgba(170, 48, 21, 0.2);
+  --card-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+/* Material Symbols font configuration */
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined' !important;
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Offset Shadow Utility for Pill Buttons (Stitch Spec) */
+.btn-pill-offset {
+  box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.35);
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+.btn-pill-offset:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0px rgba(0, 0, 0, 0.35);
+}
+
+/* Floating Navigation Bar Dock (Pill Shape) */
+.tab-bar {
+  background: var(--bg-secondary) !important;
+  border-top: 1px solid var(--border-color) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.tab-button.active {
+  color: var(--accent-primary) !important;
+  font-weight: 800 !important;
+}
+
+.tab-button.active .tab-icon-wrapper {
+  color: var(--accent-primary) !important;
+}
+
+/* SHENRON REWARD MODAL STYLES */
+.shenron-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(10, 12, 18, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.shenron-modal-content {
+  background: var(--bg-secondary);
+  border: 1px solid var(--accent-primary);
+  border-radius: 24px;
+  padding: 32px 24px;
+  text-align: center;
+  max-width: 380px;
+  width: 100%;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+.shenron-emoji {
+  font-size: 56px;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.shenron-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 19px;
+  font-weight: 800;
+  color: var(--accent-primary);
+  margin-bottom: 6px;
+}
+
+.shenron-subtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 18px;
+}
+
+.ki-reward-badge {
+  background: var(--bg-tertiary);
+  padding: 14px;
+  border-radius: 14px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border-color);
+}
+
+.ki-amount {
+  font-family: 'Outfit', sans-serif;
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--accent-primary);
+}
+
+.ki-unit {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  letter-spacing: 1px;
+}
+
+.shenron-wish-text {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-style: italic;
+  margin-bottom: 20px;
+}
+
+.shenron-claim-btn {
+  background: var(--accent-primary);
+  color: #141722;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 9999px;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800;
+  font-size: 13px;
+  cursor: pointer;
+  width: 100%;
+  box-shadow: 0 4px 12px rgba(244, 162, 97, 0.35);
+}
+
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
 
 :root {
