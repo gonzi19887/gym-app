@@ -48,7 +48,7 @@ import type {
   WorkoutSet
 } from './db/localDb';
 import { CalendarKi } from './components/CalendarKi';
-import { ShenronRewardModal } from './components/ShenronRewardModal';
+// import ShenronRewardModal from './components/ShenronRewardModal'; // Comentado temporalmente para evitar error TS6133
 
 import { seedDatabase } from './db/seed';
 import { supabase, isSupabaseConfigured } from './db/supabaseClient';
@@ -122,7 +122,8 @@ function App() {
     }
   });
 
-  const [showShenronModal, setShowShenronModal] = useState<boolean>(false);
+  // showShenronModal removido para evitar error TS6133 "declared but never read"
+// const [showShenronModal, setShowShenronModal] = useState<boolean>(false);
 
   useEffect(() => {
     try {
@@ -198,7 +199,8 @@ function App() {
   const [editAvatarUrl, setEditAvatarUrl] = useState('');
   const [editClan, setEditClan] = useState('');
   const [editCursedTechnique, setEditCursedTechnique] = useState('');
-  const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number | null>(null);
+  // assigningRoutineDayValue removido para evitar error TS6133 "declared but never read"
+// const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number | null>(null);
 
   // Health Metrics Local State (Persisted in localStorage)
   const [userWeight, setUserWeight] = useState<number>(() => parseFloat(localStorage.getItem('user_weight') || '78'));
@@ -1277,38 +1279,39 @@ function App() {
     return profileToUpdate;
   };
 
-  // Schedule/Unschedule Routine helper methods
-  const scheduleRoutine = async (routineId: string, dayValue: number) => {
-    const routine = routines.find(r => r.id === routineId);
-    if (!routine) return;
+  // Schedule/Unschedule Routine helper methods removidos para evitar error TS6133
+// (código comentado/borrado)
+// const scheduleRoutine = async (routineId: string, dayValue: number) => {
+//   const routine = routines.find(r => r.id === routineId);
+//   if (!routine) return;
+  
+//   const updatedDays = routine.day_of_week.includes(dayValue)
+//     ? routine.day_of_week
+//     : [...routine.day_of_week, dayValue];
     
-    const updatedDays = routine.day_of_week.includes(dayValue)
-      ? routine.day_of_week
-      : [...routine.day_of_week, dayValue];
-      
-    const updatedRoutine = {
-      ...routine,
-      day_of_week: updatedDays
-    };
+//   const updatedRoutine = {
+//     ...routine,
+//     day_of_week: updatedDays
+// };
     
-    await saveRecord('routines', updatedRoutine, 'UPDATE');
-    setRoutines(prev => prev.map(r => r.id === routineId ? updatedRoutine : r));
-  };
+//   await saveRecord('routines', updatedRoutine, 'UPDATE');
+//   setRoutines(prev => prev.map(r => r.id === routineId ? updatedRoutine : r));
+// };
 
-  const unscheduleRoutine = async (routineId: string, dayValue: number) => {
-    const routine = routines.find(r => r.id === routineId);
-    if (!routine) return;
+// const unscheduleRoutine = async (routineId: string, dayValue: number) => {
+//   const routine = routines.find(r => r.id === routineId);
+//   if (!routine) return;
     
-    const updatedDays = routine.day_of_week.filter(v => v !== dayValue);
+//   const updatedDays = routine.day_of_week.filter(v => v !== dayValue);
     
-    const updatedRoutine = {
-      ...routine,
-      day_of_week: updatedDays
-    };
+//   const updatedRoutine = {
+//     ...routine,
+//     day_of_week: updatedDays
+// };
     
-    await saveRecord('routines', updatedRoutine, 'UPDATE');
-    setRoutines(prev => prev.map(r => r.id === routineId ? updatedRoutine : r));
-  };
+//   await saveRecord('routines', updatedRoutine, 'UPDATE');
+//   setRoutines(prev => prev.map(r => r.id === routineId ? updatedRoutine : r));
+// };
 
   // Create / Edit Routine
   const handleCreateRoutine = async () => {
