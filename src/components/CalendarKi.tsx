@@ -50,7 +50,7 @@ export const DragonBallIcon: React.FC<{ stars: number; size?: number; inactive?:
           border: '1px solid var(--border-color, rgba(255,255,255,0.08))'
         }}
       >
-        <span style={{ fontSize: size * 0.4, color: 'var(--text-tertiary, #6b7280)' }}>â˜…</span>
+        <span style={{ fontSize: size * 0.4, color: 'var(--text-tertiary, #6b7280)' }}>★</span>
       </div>
     );
   }
@@ -210,7 +210,7 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
     const monday = new Date(d);
     monday.setDate(d.getDate() + mondayDiff);
 
-    const weekdaysShort = ['LUN', 'MAR', 'MIÃ‰', 'JUE', 'VIE', 'SÃB', 'DOM'];
+    const weekdaysShort = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
     const weekdayValues = [1, 2, 3, 4, 5, 6, 0];
 
     const result = [];
@@ -375,7 +375,7 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
               textTransform: 'uppercase', 
               color: 'var(--accent-primary, #f4a261)' 
             }}>
-              CÃMARA DE GRAVEDAD CC-900
+              CÁMARA DE GRAVEDAD CC-900
             </span>
             <h1 style={{ 
               fontFamily: 'Outfit, sans-serif', 
@@ -393,7 +393,7 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
               margin: '2px 0 0 0',
               lineHeight: '1.4'
             }}>
-              Organiza tus sesiones en la cÃ¡mara de gravedad â€¢ Frecuencia y racha Saiyan
+              Organiza tus sesiones en la cámara de gravedad • Frecuencia y racha Saiyan
             </p>
           </div>
           
@@ -489,7 +489,7 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
               textTransform: 'uppercase',
               letterSpacing: '0.5px'
             }}>
-              {monthNames[currentMonth]} {currentYear} {viewMode === 'semana' && `â€¢ Sem ${currentWeekNumber}`}
+              {monthNames[currentMonth]} {currentYear} {viewMode === 'semana' && `• Sem ${currentWeekNumber}`}
             </span>
 
             <button
@@ -513,7 +513,7 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
         </div>
       </section>
 
-      {/* 2. Carousel Header: Dragon Balls Racha vs MÃ©tricas Saiyan */}
+      {/* 2. Carousel Header: Dragon Balls Racha vs Métricas Saiyan */}
       <section style={{
         backgroundColor: 'var(--bg-secondary, #1c202e)',
         borderRadius: '16px',
@@ -563,7 +563,7 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
               }}
             >
               <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>military_tech</span>
-              <span>MÃ©tricas Saiyan</span>
+              <span>Métricas Saiyan</span>
             </button>
           </div>
 
@@ -591,11 +591,11 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
                 boxShadow: '0 0 8px var(--accent-secondary, #2a9d8f)'
               }} />
               <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary, #f0f2f5)' }}>
-                {completedDaysThisWeek} de 7 Esferas del DragÃ³n
+                {completedDaysThisWeek} de 7 Esferas del Dragón
               </span>
             </div>
             <span style={{ fontSize: '12px', color: 'var(--text-secondary, #9ca3af)' }}>
-              Racha Activa: <strong style={{ color: 'var(--accent-primary, #f4a261)' }}>{completedDaysThisWeek} DÃ­as</strong>
+              Racha Activa: <strong style={{ color: 'var(--accent-primary, #f4a261)' }}>{completedDaysThisWeek} Días</strong>
             </span>
           </div>
         )}
@@ -616,7 +616,7 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
               <div style={{ backgroundColor: 'var(--bg-tertiary, #24293a)', padding: '12px', borderRadius: '12px' }}>
                 <span style={{ fontSize: '11px', color: 'var(--text-secondary, #9ca3af)' }}>Fuego Ki Continuo</span>
                 <p style={{ fontFamily: 'Outfit, sans-serif', fontSize: '20px', fontWeight: '800', margin: '4px 0 0 0', color: 'var(--accent-secondary, #2a9d8f)' }}>
-                  {completedDaysThisWeek * 3} DÃAS
+                  {completedDaysThisWeek * 3} DÍAS
                 </p>
                 <span style={{ fontSize: '10px', color: 'var(--text-secondary, #9ca3af)' }}>Adherencia: {adherencePercent}%</span>
               </div>
@@ -633,10 +633,10 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
             }}>
               <div>
                 <p style={{ margin: 0, fontWeight: '700', fontSize: '12px', color: 'var(--accent-primary, #f4a261)' }}>
-                  InvocaciÃ³n Shenlong Disponible
+                  Invocación Shenlong Disponible
                 </p>
                 <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-secondary, #9ca3af)' }}>
-                  ReÃºne 7 esferas para obtener bonus de Ki
+                  Reúne 7 esferas para obtener bonus de Ki
                 </p>
               </div>
               <button
@@ -812,7 +812,7 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
                   </span>
 
                   {cell.hasTrained ? (
-                    <span style={{ fontSize: '11px', color: '#ffbe3b', lineHeight: 1 }}>â˜…</span>
+                    <span style={{ fontSize: '11px', color: '#ffbe3b', lineHeight: 1 }}>★</span>
                   ) : cell.hasRoutine ? (
                     <span style={{ width: '4px', height: '4px', borderRadius: '50%', backgroundColor: 'var(--accent-primary, #f4a261)' }} />
                   ) : (
@@ -833,7 +833,7 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
             borderTop: '1px solid var(--border-color, rgba(255,255,255,0.07))'
           }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <span style={{ color: '#ffbe3b' }}>â˜…</span> Completado
+              <span style={{ color: '#ffbe3b' }}>★</span> Completado
             </span>
             <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
               <span className="material-symbols-outlined" style={{ fontSize: '13px', color: 'var(--text-tertiary, #6b7280)' }}>shield</span> Descanso
@@ -905,7 +905,7 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
                   textTransform: 'uppercase', 
                   letterSpacing: '0.5px' 
                 }}>
-                  {selectedDayInfo.dayNameStr} {selectedDayInfo.isToday && 'â€¢ HOY'}
+                  {selectedDayInfo.dayNameStr} {selectedDayInfo.isToday && '• HOY'}
                 </span>
 
                 <span style={{
@@ -939,8 +939,8 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
                 {selectedDayInfo.primaryRoutine 
                   ? selectedDayInfo.primaryRoutine.name 
                   : selectedDayInfo.wasTrained 
-                    ? 'SesiÃ³n de Entrenamiento Completada' 
-                    : 'DÃ­a de Descanso y RegeneraciÃ³n Celular'}
+                    ? 'Sesión de Entrenamiento Completada' 
+                    : 'Día de Descanso y Regeneración Celular'}
               </h3>
             </div>
           </div>
@@ -1037,7 +1037,7 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
                       }}
                     >
                       <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>play_arrow</span>
-                      <span>INICIAR SESIÃ“N</span>
+                      <span>INICIAR SESIÓN</span>
                     </button>
                   )}
 
@@ -1066,7 +1066,7 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary, #9ca3af)', lineHeight: '1.5' }}>
-                  RecuperaciÃ³n de Ki activo para evitar sobreentrenamiento muscular. Ideal para descanso o sesiÃ³n ligera de estiramientos.
+                  Recuperación de Ki activo para evitar sobreentrenamiento muscular. Ideal para descanso o sesión ligera de estiramientos.
                 </p>
 
                 <button
@@ -1089,7 +1089,7 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
                   }}
                 >
                   <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>add_circle</span>
-                  <span>+ PROGRAMAR RUTINA O CÃPSULA PARA ESTE DÃA</span>
+                  <span>+ PROGRAMAR RUTINA O CÁPSULA PARA ESTE DÍA</span>
                 </button>
               </div>
             )}

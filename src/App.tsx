@@ -79,34 +79,34 @@ const triggerVibration = (pattern: number | number[]) => {
 
 // Dragon Ball Z thematic level calculation
 const getDBZLevelTitle = (level: number): string => {
-  if (level <= 1) return 'Humano Normal (Krillin dÃ­a 1) ðŸ¥‹';
-  if (level === 2) return 'Guerrero Z (Saiyan Clase Baja) âš¡';
-  if (level === 3) return 'Guerrero Elite (Fuerza Especial) ðŸŒ€';
-  if (level === 4) return 'Super Saiyan (Poder Despertado) ðŸŸ¡';
-  if (level === 5) return 'Super Saiyan 2 (Rayos ElÃ©ctricos) âš¡ðŸŸ¡';
-  if (level === 6) return 'Super Saiyan 3 (Poder Absoluto) ðŸ’¥ðŸŸ¡';
-  if (level === 7) return 'Super Saiyan God (Fuego Divino) ðŸ”´';
-  return 'Goku Ultra Instinto (Esquive Divino) âšª';
+  if (level <= 1) return 'Humano Normal (Krillin día 1) 🥋';
+  if (level === 2) return 'Guerrero Z (Saiyan Clase Baja) ⚡';
+  if (level === 3) return 'Guerrero Elite (Fuerza Especial) 🌀';
+  if (level === 4) return 'Super Saiyan (Poder Despertado) 🟡';
+  if (level === 5) return 'Super Saiyan 2 (Rayos Eléctricos) ⚡🟡';
+  if (level === 6) return 'Super Saiyan 3 (Poder Absoluto) 💥🟡';
+  if (level === 7) return 'Super Saiyan God (Fuego Divino) 🔴';
+  return 'Goku Ultra Instinto (Esquive Divino) ⚪';
 };
 
 const WEEKDAYS = [
   { label: 'L', value: 1, name: 'Lunes' },
   { label: 'M', value: 2, name: 'Martes' },
-  { label: 'M', value: 3, name: 'MiÃ©rcoles' },
+  { label: 'M', value: 3, name: 'Miércoles' },
   { label: 'J', value: 4, name: 'Jueves' },
   { label: 'V', value: 5, name: 'Viernes' },
-  { label: 'S', value: 6, name: 'SÃ¡bado' },
+  { label: 'S', value: 6, name: 'Sábado' },
   { label: 'D', value: 0, name: 'Domingo' }
 ];
 
 const REST_REMINDERS = [
-  "ðŸ’§ Recuerda tomar un sorbo de agua para rehidratar tus reservas de Ki.",
-  "ðŸ§˜ Estira suavemente los mÃºsculos trabajados para acelerar tu Zenkai Boost.",
-  "ðŸ’§ La hidrataciÃ³n adecuada optimiza tus reflejos de combate en el siguiente set.",
-  "ðŸ§˜ Relaja tus hombros rÃ­gidos como si entrenaras en la CÃ¡mara de Gravedad Aumentada.",
-  "âš¡ MantÃ©n el foco en la respiraciÃ³n y canaliza tu Ki para romper tus lÃ­mites.",
-  "ðŸ’§ Bebe un trago de agua: hidratar tus cÃ©lulas previene la fatiga en combate.",
-  "ðŸ§˜ Recupera tu aliento como un verdadero Guerrero Z listo para la siguiente batalla."
+  "💧 Recuerda tomar un sorbo de agua para rehidratar tus reservas de Ki.",
+  "🧘 Estira suavemente los músculos trabajados para acelerar tu Zenkai Boost.",
+  "💧 La hidratación adecuada optimiza tus reflejos de combate en el siguiente set.",
+  "🧘 Relaja tus hombros rígidos como si entrenaras en la Cámara de Gravedad Aumentada.",
+  "⚡ Mantén el foco en la respiración y canaliza tu Ki para romper tus límites.",
+  "💧 Bebe un trago de agua: hidratar tus células previene la fatiga en combate.",
+  "🧘 Recupera tu aliento como un verdadero Guerrero Z listo para la siguiente batalla."
 ];
 
 function App() {
@@ -226,7 +226,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
   const [onboardingUsername, setOnboardingUsername] = useState('');
   const [onboardingAvatarUrl, setOnboardingAvatarUrl] = useState('');
   const [onboardingClan, setOnboardingClan] = useState('Tortuga');
-  const [onboardingCursedTechnique, setOnboardingCursedTechnique] = useState('Kamehameha ðŸ‘');
+  const [onboardingCursedTechnique, setOnboardingCursedTechnique] = useState('Kamehameha 👐');
   const [onboardingWeight, setOnboardingWeight] = useState<number>(75);
   const [onboardingHeight, setOnboardingHeight] = useState<number>(175);
   const [onboardingGoalDays, setOnboardingGoalDays] = useState<number>(3);
@@ -291,74 +291,74 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
     
     if (primaryCat.includes('BICEPS') || primaryCat.includes('TRICEPS') || primaryCat.includes('ANTEBRAZOS') || primaryCat.includes('BRAZO') || primaryCat.includes('BRAZOS')) {
       const names = [
-        'PuÃ±o DragÃ³n: Fuerza de Saiyan ðŸ¤œðŸ‰',
-        'Kamehameha: Poder de Brazos âš¡ðŸ‘',
-        'Esferas del DragÃ³n: Brazos Z ðŸŒŸðŸ¦¾',
-        'Fuerza de Vegeta: Brazos de Orgullo Saiyan ðŸ’ªðŸ”¥'
+        'Puño Dragón: Fuerza de Saiyan 🤜🐉',
+        'Kamehameha: Poder de Brazos ⚡👐',
+        'Esferas del Dragón: Brazos Z 🌟🦾',
+        'Fuerza de Vegeta: Brazos de Orgullo Saiyan 💪🔥'
       ];
       return names[Math.floor(Math.random() * names.length)];
     }
     
     if (primaryCat.includes('PECHO')) {
       const names = [
-        'Armadura Saiyan: Pecho Blindado ðŸ›¡ï¸',
-        'Entrenamiento Z: Pecho de Acero ðŸ’¥ðŸ›¡ï¸',
-        'Escudo de Ki: Pectoral Supremo ðŸŒ€ðŸ›¡ï¸'
+        'Armadura Saiyan: Pecho Blindado 🛡️',
+        'Entrenamiento Z: Pecho de Acero 💥🛡️',
+        'Escudo de Ki: Pectoral Supremo 🌀🛡️'
       ];
       return names[Math.floor(Math.random() * names.length)];
     }
     
     if (primaryCat.includes('ESPALDA')) {
       const names = [
-        'Espalda de Ozaru: Fuerza Desatada ðŸ¦ðŸ’¥',
-        'Alas de Shenlong: Dorsales Supremos ðŸ‰ðŸŒ€',
-        'Gravedad 100x: Espalda de Acero ðŸ¦¾ðŸ›¸'
+        'Espalda de Ozaru: Fuerza Desatada 🦍💥',
+        'Alas de Shenlong: Dorsales Supremos 🐉🌀',
+        'Gravedad 100x: Espalda de Acero 🦾🛸'
       ];
       return names[Math.floor(Math.random() * names.length)];
     }
     
     if (primaryCat.includes('PIERNA') || primaryCat.includes('PANTORRILLA') || primaryCat.includes('CADERA') || primaryCat.includes('PIERNAS')) {
       const names = [
-        'Velocidad de la Luz: Piernas de Goku âš¡ðŸ‘£',
-        'Golpe de Destello: Piernas Z ðŸ‘£âš¡',
-        'Entrenamiento Piccolo: Piernas Pesadas ðŸ¦¿',
-        'Zenkai Boost: Piernas de Saiyan ðŸŒ€ðŸ‘£'
+        'Velocidad de la Luz: Piernas de Goku ⚡👣',
+        'Golpe de Destello: Piernas Z 👣⚡',
+        'Entrenamiento Piccolo: Piernas Pesadas 🦿',
+        'Zenkai Boost: Piernas de Saiyan 🌀👣'
       ];
       return names[Math.floor(Math.random() * names.length)];
     }
     
     if (primaryCat.includes('ABDOMEN') || primaryCat.includes('TRONCO') || primaryCat.includes('COLUMNA') || primaryCat.includes('ABS') || primaryCat.includes('ABDOMINAL')) {
       const names = [
-        'CÃ¡mara del Tiempo: Core Absoluto ðŸ§˜âŒ›',
-        'Estabilidad del Ki: Core Saiyan ðŸ›¡ï¸ðŸŒ€',
-        'Fuerza Interior de Gohan: Abdomen Feroz ðŸ“ðŸŒ€'
+        'Cámara del Tiempo: Core Absoluto 🧘⌛',
+        'Estabilidad del Ki: Core Saiyan 🛡️🌀',
+        'Fuerza Interior de Gohan: Abdomen Feroz 📐🌀'
       ];
       return names[Math.floor(Math.random() * names.length)];
     }
     
     if (primaryCat.includes('HOMBRO') || primaryCat.includes('TRAPECIOS') || primaryCat.includes('HOMBROS')) {
       const names = [
-        'Soporte CÃ³smico: Hombros de Titanio ðŸ¦¾ðŸŒŒ',
-        'Fuerza de Broly: Deltoides Legendarios ðŸ¦¾ðŸŒ€',
-        'Hombros de Majin Buu: Carga Pesada ðŸ¦¾'
+        'Soporte Cósmico: Hombros de Titanio 🦾🌌',
+        'Fuerza de Broly: Deltoides Legendarios 🦾🌀',
+        'Hombros de Majin Buu: Carga Pesada 🦾'
       ];
       return names[Math.floor(Math.random() * names.length)];
     }
     
     if (primaryCat.includes('ESTIRAMIENTOS') || primaryCat.includes('CUELLO') || primaryCat.includes('ESTIRAMIENTO')) {
       const names = [
-        'Semilla del ErmitaÃ±o: RecuperaciÃ³n ðŸŸ¢ðŸ©¹',
-        'MeditaciÃ³n del Templo Sagrado ðŸ§˜ðŸ©¹',
-        'LiberaciÃ³n del LÃ­mite del Ki ðŸŒ€ðŸ©¹'
+        'Semilla del Ermitaño: Recuperación 🟢🩹',
+        'Meditación del Templo Sagrado 🧘🩹',
+        'Liberación del Límite del Ki 🌀🩹'
       ];
       return names[Math.floor(Math.random() * names.length)];
     }
     
     const combos = [
-      'Gravedad 400x: Guerrero Legendario ðŸ¦¾ðŸ›¸',
-      'Modo Dios Super Saiyan ðŸ”´',
-      'ManifestaciÃ³n del Ultra Instinto âšªâš¡',
-      'Entrenamiento Z del Gran Kaio ðŸ¥‹âš”ï¸'
+      'Gravedad 400x: Guerrero Legendario 🦾🛸',
+      'Modo Dios Super Saiyan 🔴',
+      'Manifestación del Ultra Instinto ⚪⚡',
+      'Entrenamiento Z del Gran Kaio 🥋⚔️'
     ];
     return combos[Math.floor(Math.random() * combos.length)];
   };
@@ -374,7 +374,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
       setOnboardingUsername(profile.username || '');
       setOnboardingAvatarUrl(profile.avatar_url || '');
       setOnboardingClan(profile.clan || 'Tortuga');
-      setOnboardingCursedTechnique(profile.cursed_technique || 'Kamehameha ðŸ‘');
+      setOnboardingCursedTechnique(profile.cursed_technique || 'Kamehameha 👐');
       lastProfileIdRef.current = profile.id;
     }
   }, [profile]);
@@ -424,7 +424,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
         }
       } catch (err: any) {
         console.error('Offline sync queue failure (circuit breaker):', err);
-        alert(err.message || 'La cola de sincronizaciÃ³n estÃ¡ llena.');
+        alert(err.message || 'La cola de sincronización está llena.');
       }
     }
   };
@@ -469,7 +469,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
     return () => window.removeEventListener('online', handleOnline);
   }, [session]);
 
-  // Auto-sync when app becomes hidden â€” SPEC_007: only sync if queue has items
+  // Auto-sync when app becomes hidden — SPEC_007: only sync if queue has items
   // This prevents the spurious sync popup when returning from a phone call / screen lock
   useEffect(() => {
     const handleVisibilityChange = async () => {
@@ -489,7 +489,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
 
   const handleGoogleLogin = async () => {
     if (!isSupabaseConfigured || !supabase) {
-      alert('Supabase no estÃ¡ configurado.');
+      alert('Supabase no está configurado.');
       return;
     }
     setAuthLoading(true);
@@ -502,7 +502,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
       });
       if (error) throw error;
     } catch (err: any) {
-      alert(err.message || 'Error al iniciar sesiÃ³n con Google');
+      alert(err.message || 'Error al iniciar sesión con Google');
     } finally {
       setAuthLoading(false);
     }
@@ -520,7 +520,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
           redirectTo: window.location.origin
         });
         if (error) throw error;
-        alert('Â¡Enlace enviado! Revisa tu bandeja de entrada (y la carpeta de spam) para restablecer tu contraseÃ±a.');
+        alert('¡Enlace enviado! Revisa tu bandeja de entrada (y la carpeta de spam) para restablecer tu contraseña.');
         setAuthMode('login');
       } else if (authMode === 'signup') {
         const { error } = await supabase.auth.signUp({
@@ -534,7 +534,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
           }
         });
         if (error) throw error;
-        alert('Â¡Registro exitoso! Si tu configuraciÃ³n de Supabase tiene activa la confirmaciÃ³n de correo (activada por defecto), debes confirmar el correo de verificaciÃ³n antes de poder iniciar sesiÃ³n.');
+        alert('¡Registro exitoso! Si tu configuración de Supabase tiene activa la confirmación de correo (activada por defecto), debes confirmar el correo de verificación antes de poder iniciar sesión.');
         setAuthMode('login');
       } else {
         const { error } = await supabase.auth.signInWithPassword({
@@ -594,7 +594,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
     await initDB();
     await seedDatabase();
 
-    // Load Profile â€” use overrideUserId to avoid stale session state on login
+    // Load Profile — use overrideUserId to avoid stale session state on login
     const userId = overrideUserId || session?.user?.id || 'user-default-id';
     let currentProfile = await getRecord<Profile>('profiles', userId);
     
@@ -684,7 +684,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
       const pressBanca = loadedExercises.find(e => e.name.includes('Press de Banca'));
       const sentadilla = loadedExercises.find(e => e.name.includes('Sentadilla'));
       const remoBarra = loadedExercises.find(e => e.name.includes('Remo con Barra'));
-      const curlBiceps = loadedExercises.find(e => e.name.includes('Curl de BÃ­ceps'));
+      const curlBiceps = loadedExercises.find(e => e.name.includes('Curl de Bíceps'));
 
       const newRoutines: Routine[] = [];
       const newRoutineExs: RoutineExercise[] = [];
@@ -693,7 +693,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
         const r1: Routine = {
           id: 'routine-torso',
           user_id: currentProfile.id,
-          name: 'Entrenamiento del Maestro Roshi ðŸ¢',
+          name: 'Entrenamiento del Maestro Roshi 🐢',
           day_of_week: [1, 4], // Monday, Thursday
           created_at: new Date().toISOString()
         };
@@ -722,7 +722,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
         const r2: Routine = {
           id: 'routine-inferior',
           user_id: currentProfile.id,
-          name: 'CÃ¡mara de Gravedad: Fuerza Saiyan ðŸ¦¾',
+          name: 'Cámara de Gravedad: Fuerza Saiyan 🦾',
           day_of_week: [2, 5], // Tuesday, Friday
           created_at: new Date().toISOString()
         };
@@ -854,7 +854,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
           fontStyle: 'italic',
           ...options?.style
         }}>
-          Sin visualizaciÃ³n
+          Sin visualización
         </div>
       );
     }
@@ -994,7 +994,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
       setSyncSteps(prev => ({ ...prev, calendar: 'error' }));
     }
 
-    // Load local data into state â€” pass userId to avoid stale session closure
+    // Load local data into state — pass userId to avoid stale session closure
     await loadData(userId);
   };
 
@@ -1031,7 +1031,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
       }
       setIsCameraActive(false);
 
-      // SPEC_007: Sync only the profile â€” no need to run full 5-step overlay
+      // SPEC_007: Sync only the profile — no need to run full 5-step overlay
       // Supabase sync is secondary; local data is already saved above
       if (isSupabaseConfigured && session && navigator.onLine) {
         setSyncOverlayMode('upload');
@@ -1044,10 +1044,10 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
           console.error('Profile sync failed (data saved locally):', err);
           setSyncSteps(prev => ({ ...prev, profile: 'error' }));
         }
-        setPactStatus('Â¡Perfil guardado y sincronizado! âœ…');
+        setPactStatus('¡Perfil guardado y sincronizado! ✅');
         setIsSealingPact(false);
       } else {
-        setPactStatus('Â¡Perfil guardado localmente! âœ…');
+        setPactStatus('¡Perfil guardado localmente! ✅');
         setIsSealingPact(false);
         setActiveTab('hoy');
       }
@@ -1203,7 +1203,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
     };
   }, [isExerciseTimerRunning]);
 
-  // Ponytail: Reiniciar y configurar el cronÃ³metro al cambiar de ejercicio
+  // Ponytail: Reiniciar y configurar el cronómetro al cambiar de ejercicio
   useEffect(() => {
     setExerciseTimeElapsed(0);
     const activeEx = activeExercises[activeExerciseIndex];
@@ -1282,7 +1282,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
   };
 
   // Schedule/Unschedule Routine helper methods removidos para evitar error TS6133
-// (cÃ³digo comentado/borrado)
+// (código comentado/borrado)
 // const scheduleRoutine = async (routineId: string, dayValue: number) => {
 //   const routine = routines.find(r => r.id === routineId);
 //   if (!routine) return;
@@ -1529,7 +1529,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
               }
             }
 
-            // Ponytail: Detener el cronÃ³metro del ejercicio si se completan todas las series
+            // Ponytail: Detener el cronómetro del ejercicio si se completan todas las series
             setTimeout(() => {
               setActiveWorkoutSets(currentSets => {
                 const exerciseSets = currentSets.filter(s => s.exercise_id === set.exercise_id);
@@ -1599,7 +1599,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
   };
 
   const cancelWorkout = () => {
-    if (window.confirm("Â¿Seguro que deseas cancelar esta misiÃ³n? PerderÃ¡s todo el progreso no guardado de esta sesiÃ³n.")) {
+    if (window.confirm("¿Seguro que deseas cancelar esta misión? Perderás todo el progreso no guardado de esta sesión.")) {
       setActiveWorkout(null);
       setActiveRoutine(null);
       setActiveWorkoutSets([]);
@@ -1744,8 +1744,8 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
     monday.setDate(today.getDate() + mondayDiff);
 
     const days = [];
-    const weekdaysName = ['Lunes', 'Martes', 'MiÃ©rcoles', 'Jueves', 'Viernes', 'SÃ¡bado', 'Domingo'];
-    const weekdaysShort = ['Lun', 'Mar', 'MiÃ©', 'Jue', 'Vie', 'SÃ¡b', 'Dom'];
+    const weekdaysName = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+    const weekdaysShort = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
     const weekdayValues = [1, 2, 3, 4, 5, 6, 0]; // Monday is 1, Sunday is 0
 
     for (let i = 0; i < 7; i++) {
@@ -1776,7 +1776,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
   // Helper to format days assigned for a routine
   const getDaysLabels = (days: number[]) => {
     if (!days || days.length === 0) return 'Sin asignar';
-    const names = ['Dom', 'Lun', 'Mar', 'MiÃ©', 'Jue', 'Vie', 'SÃ¡b'];
+    const names = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
     const sorted = [...days].sort((a, b) => {
       const valA = a === 0 ? 7 : a;
       const valB = b === 0 ? 7 : b;
@@ -1809,10 +1809,10 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
         <div className="w-full max-w-sm z-10 flex flex-col gap-6" style={{ width: '100%', maxWidth: '360px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <div className="text-center mb-4" style={{ textAlign: 'center' }}>
             <h1 className="font-headline text-primary mb-2 uppercase tracking-wide drop-shadow-md" style={{ fontSize: '32px', color: 'var(--accent-primary)', marginBottom: '8px', fontWeight: '800' }}>
-              HechicerÃ­a Fitness
+              Hechicería Fitness
             </h1>
             <p className="text-on-surface-variant uppercase tracking-widest font-semibold" style={{ fontSize: '12px', color: 'var(--text-secondary)', letterSpacing: '2px' }}>
-              Expande tu Dominio â€¢ Forja tu Fuerza
+              Expande tu Dominio • Forja tu Fuerza
             </p>
           </div>
 
@@ -1835,7 +1835,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                     fontSize: '12px'
                   }}
                 >
-                  Iniciar SesiÃ³n
+                  Iniciar Sesión
                 </button>
                 <button
                   type="button"
@@ -1858,8 +1858,8 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
               </div>
             ) : (
               <div style={{ textAlign: 'center', marginBottom: '12px' }}>
-                <h3 style={{ color: 'var(--text-primary)', fontSize: '15px', fontWeight: 'bold', margin: 0 }}>Restablecer ContraseÃ±a</h3>
-                <p style={{ color: 'var(--text-tertiary)', fontSize: '12px', marginTop: '4px' }}>Te enviaremos un enlace de recuperaciÃ³n.</p>
+                <h3 style={{ color: 'var(--text-primary)', fontSize: '15px', fontWeight: 'bold', margin: 0 }}>Restablecer Contraseña</h3>
+                <p style={{ color: 'var(--text-tertiary)', fontSize: '12px', marginTop: '4px' }}>Te enviaremos un enlace de recuperación.</p>
               </div>
             )}
 
@@ -1893,20 +1893,20 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
               {authMode !== 'reset_password' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <label style={{ fontSize: '12px', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontWeight: 'bold' }}>ContraseÃ±a</label>
+                    <label style={{ fontSize: '12px', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontWeight: 'bold' }}>Contraseña</label>
                     {authMode === 'login' && (
                       <button
                         type="button"
                         onClick={() => setAuthMode('reset_password')}
                         style={{ background: 'none', border: 'none', color: 'var(--accent-secondary)', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', padding: 0 }}
                       >
-                        Â¿Olvidaste tu contraseÃ±a?
+                        ¿Olvidaste tu contraseña?
                       </button>
                     )}
                   </div>
                   <input
                     type="password"
-                    placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+                    placeholder="••••••••"
                     value={authPassword}
                     onChange={(e) => setAuthPassword(e.target.value)}
                     className="form-input"
@@ -1922,12 +1922,12 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                 style={{ padding: '12px', width: '100%', marginTop: '8px', cursor: 'pointer' }}
               >
                 {authLoading 
-                  ? 'Canalizando energÃ­a...' 
+                  ? 'Canalizando energía...' 
                   : authMode === 'login' 
-                    ? 'Entrar âš¡' 
+                    ? 'Entrar ⚡' 
                     : authMode === 'signup' 
-                      ? 'Registrarse âš”ï¸' 
-                      : 'Enviar enlace âœ‰ï¸'}
+                      ? 'Registrarse ⚔️' 
+                      : 'Enviar enlace ✉️'}
               </button>
 
               {authMode !== 'reset_password' && (
@@ -2001,7 +2001,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                     textAlign: 'center'
                   }}
                 >
-                  Volver a Iniciar SesiÃ³n
+                  Volver a Iniciar Sesión
                 </button>
               )}
             </form>
@@ -2025,7 +2025,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                 letterSpacing: '1px'
               }}
             >
-              Continuar como Invitado ðŸ§˜ (Modo Offline)
+              Continuar como Invitado 🧘 (Modo Offline)
             </button>
           </div>
         </div>
@@ -2049,11 +2049,11 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
     }
 
     const presetAvatars = [
-      { name: 'Goku', url: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="%23e76a24" stroke="%23fbbc42" stroke-width="3"/><text x="50" y="65" font-family="'Outfit', sans-serif" font-size="45" font-weight="900" fill="%2301080a" text-anchor="middle">æ‚Ÿ</text></svg>` },
+      { name: 'Goku', url: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="%23e76a24" stroke="%23fbbc42" stroke-width="3"/><text x="50" y="65" font-family="'Outfit', sans-serif" font-size="45" font-weight="900" fill="%2301080a" text-anchor="middle">悟</text></svg>` },
       { name: 'Vegeta', url: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="%231c4595" stroke="%23fbbc42" stroke-width="3"/><text x="50" y="65" font-family="'Outfit', sans-serif" font-size="40" font-weight="900" fill="%23e7e5e8" text-anchor="middle">Z</text></svg>` },
-      { name: 'Roshi', url: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="%238b5cf6" stroke="%23fbbc42" stroke-width="3"/><text x="50" y="65" font-family="'Outfit', sans-serif" font-size="45" font-weight="900" fill="%23e7e5e8" text-anchor="middle">äº€</text></svg>` },
-      { name: 'Piccolo', url: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="%2310b981" stroke="%23fbbc42" stroke-width="3"/><text x="50" y="65" font-family="'Outfit', sans-serif" font-size="45" font-weight="900" fill="%2301080a" text-anchor="middle">é­”</text></svg>` },
-      { name: 'Kaio', url: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="%23ef4444" stroke="%23fbbc42" stroke-width="3"/><text x="50" y="65" font-family="'Outfit', sans-serif" font-size="45" font-weight="900" fill="%2301080a" text-anchor="middle">ç•Œ</text></svg>` },
+      { name: 'Roshi', url: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="%238b5cf6" stroke="%23fbbc42" stroke-width="3"/><text x="50" y="65" font-family="'Outfit', sans-serif" font-size="45" font-weight="900" fill="%23e7e5e8" text-anchor="middle">亀</text></svg>` },
+      { name: 'Piccolo', url: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="%2310b981" stroke="%23fbbc42" stroke-width="3"/><text x="50" y="65" font-family="'Outfit', sans-serif" font-size="45" font-weight="900" fill="%2301080a" text-anchor="middle">魔</text></svg>` },
+      { name: 'Kaio', url: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="%23ef4444" stroke="%23fbbc42" stroke-width="3"/><text x="50" y="65" font-family="'Outfit', sans-serif" font-size="45" font-weight="900" fill="%2301080a" text-anchor="middle">界</text></svg>` },
       { name: 'Esfera', url: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="%23fbbc42" stroke="%23e76a24" stroke-width="3"/><polygon points="50,22 53,32 63,32 55,38 58,48 50,42 42,48 45,38 37,32 47,32" fill="%23e76a24"/><polygon points="30,50 33,60 43,60 35,66 38,76 30,70 22,76 25,66 17,60 27,60" fill="%23e76a24"/><polygon points="70,50 73,60 83,60 75,66 78,76 70,70 62,76 65,66 57,60 67,60" fill="%23e76a24"/><polygon points="50,60 53,70 63,70 55,76 58,86 50,80 42,86 45,76 37,70 47,70" fill="%23e76a24"/></svg>` },
     ];
 
@@ -2085,13 +2085,13 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
         const pressBanca = loadedExercises.find(e => e.name.includes('Press de Banca'));
         const remoBarra = loadedExercises.find(e => e.name.includes('Remo con Barra'));
         const sentadilla = loadedExercises.find(e => e.name.includes('Sentadilla'));
-        const curlBiceps = loadedExercises.find(e => e.name.includes('Curl de BÃ­ceps'));
+        const curlBiceps = loadedExercises.find(e => e.name.includes('Curl de Bíceps'));
 
         if (onboardingRoutineTemplate === 'roshi' && pressBanca && remoBarra) {
           const r1: Routine = {
             id: generateUUID(),
             user_id: profile.id,
-            name: 'Entrenamiento del Maestro Roshi ðŸ¢',
+            name: 'Entrenamiento del Maestro Roshi 🐢',
             day_of_week: [1, 4],
             created_at: new Date().toISOString()
           };
@@ -2118,7 +2118,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
           const r2: Routine = {
             id: generateUUID(),
             user_id: profile.id,
-            name: 'CÃ¡mara de Gravedad: Fuerza Saiyan ðŸ¦¾',
+            name: 'Cámara de Gravedad: Fuerza Saiyan 🦾',
             day_of_week: [2, 5],
             created_at: new Date().toISOString()
           };
@@ -2146,7 +2146,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
         const r3: Routine = {
           id: generateUUID(),
           user_id: profile.id,
-          name: 'Mi Entrenamiento Ki ðŸŒŸ',
+          name: 'Mi Entrenamiento Ki 🌟',
           day_of_week: [1, 3, 5],
           created_at: new Date().toISOString()
         };
@@ -2172,7 +2172,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
             Forja tu Destino
           </h1>
           <p style={{ fontSize: '12px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '2px', margin: 0 }}>
-            IniciaciÃ³n en la CÃ¡mara de Gravedad
+            Iniciación en la Cámara de Gravedad
           </p>
           <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginTop: '16px' }}>
             {[1, 2, 3, 4].map(step => (
@@ -2247,7 +2247,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                       style={{ width: '100%', maxWidth: '200px', height: '200px', objectFit: 'cover', borderRadius: '12px', border: '2px solid var(--accent-primary)', transform: 'scaleX(-1)' }}
                     />
                     <div style={{ display: 'flex', gap: '8px', width: '100%', maxWidth: '200px' }}>
-                      <button type="button" onClick={capturePhoto} className="btn-primary" style={{ flex: 1, padding: '8px', fontSize: '11px' }}>Capturar ðŸ“¸</button>
+                      <button type="button" onClick={capturePhoto} className="btn-primary" style={{ flex: 1, padding: '8px', fontSize: '11px' }}>Capturar 📸</button>
                       <button type="button" onClick={stopCamera} className="btn-secondary" style={{ flex: 1, padding: '8px', fontSize: '11px', borderColor: '#ef4444', color: '#ef4444' }}>Cancelar</button>
                     </div>
                   </div>
@@ -2282,7 +2282,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                       </button>
                       <button type="button" onClick={startCamera} className="btn-secondary" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px', fontSize: '12px', borderRadius: '10px' }}>
                         <Camera size={12} color="var(--accent-primary)" />
-                        <span>CÃ¡mara</span>
+                        <span>Cámara</span>
                       </button>
                     </div>
                   </div>
@@ -2299,14 +2299,14 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                 >
                   <option value="Tortuga">Escuela Tortuga (Maestro Roshi)</option>
                   <option value="Saiyan">Raza Saiyan (Guerrero del Espacio)</option>
-                  <option value="Hibrido">HÃ­brido Saiyan (Potencial Ilimitado)</option>
-                  <option value="Namek">Raza Namekiana (RegeneraciÃ³n)</option>
-                  <option value="TerrÃ­cola">TerrÃ­cola (Guerrero de la Tierra)</option>
+                  <option value="Hibrido">Híbrido Saiyan (Potencial Ilimitado)</option>
+                  <option value="Namek">Raza Namekiana (Regeneración)</option>
+                  <option value="Terrícola">Terrícola (Guerrero de la Tierra)</option>
                 </select>
               </div>
 
               <div className="form-group">
-                <label className="form-label" style={{ fontSize: '13px', fontWeight: 'bold' }}>TÃ©cnica Especial</label>
+                <label className="form-label" style={{ fontSize: '13px', fontWeight: 'bold' }}>Técnica Especial</label>
                 <input 
                   type="text"
                   placeholder="Ej: Kamehameha..."
@@ -2322,7 +2322,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
           {onboardingStep === 2 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div style={{ textAlign: 'center', marginBottom: '8px' }}>
-                <h2 style={{ fontSize: '18px', fontWeight: 'bold', margin: '0 0 6px 0', color: 'var(--text-primary)' }}>2. FisonomÃ­a Ki</h2>
+                <h2 style={{ fontSize: '18px', fontWeight: 'bold', margin: '0 0 6px 0', color: 'var(--text-primary)' }}>2. Fisonomía Ki</h2>
                 <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0 }}>Registra tu peso y estatura. Calcularemos tu nivel de masa para ajustar tus aumentos de Ki.</p>
               </div>
 
@@ -2351,9 +2351,9 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
 
               {onboardingWeight > 0 && onboardingHeight > 0 && (
                 <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '16px', backgroundColor: 'rgba(255,255,255,0.01)', border: '1px dashed var(--border-color)', borderRadius: '12px', marginTop: '12px' }}>
-                  <span style={{ fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 700 }}>Ãndice de Masa Corporal (IMC)</span>
+                  <span style={{ fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 700 }}>Índice de Masa Corporal (IMC)</span>
                   <span style={{ fontSize: '28px', fontWeight: '950', color: imcColor, margin: '6px 0', fontFamily: 'Outfit' }}>{imc.toFixed(1)}</span>
-                  <span style={{ fontSize: '13px', fontWeight: 'bold', color: imcColor }}>CategorÃ­a: {imcCategory}</span>
+                  <span style={{ fontSize: '13px', fontWeight: 'bold', color: imcColor }}>Categoría: {imcCategory}</span>
                 </div>
               )}
             </div>
@@ -2363,7 +2363,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div style={{ textAlign: 'center', marginBottom: '8px' }}>
                 <h2 style={{ fontSize: '18px', fontWeight: 'bold', margin: '0 0 6px 0', color: 'var(--text-primary)' }}>3. Meta Semanal</h2>
-                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0 }}>Â¿CuÃ¡ntas veces expandirÃ¡s tu dominio en el gimnasio a la semana? Esto definirÃ¡ tu meta de Ki.</p>
+                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0 }}>¿Cuántas veces expandirás tu dominio en el gimnasio a la semana? Esto definirá tu meta de Ki.</p>
               </div>
 
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'center', padding: '12px 0' }}>
@@ -2398,7 +2398,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                 })}
               </div>
               <p style={{ fontSize: '12px', color: 'var(--text-secondary)', textAlign: 'center', fontStyle: 'italic', margin: 0 }}>
-                Recomendado: 3 a 5 dÃ­as para un aumento de nivel de Ki Ã³ptimo.
+                Recomendado: 3 a 5 días para un aumento de nivel de Ki óptimo.
               </p>
             </div>
           )}
@@ -2407,7 +2407,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div style={{ textAlign: 'center', marginBottom: '8px' }}>
                 <h2 style={{ fontSize: '18px', fontWeight: 'bold', margin: '0 0 6px 0', color: 'var(--text-primary)' }}>4. Inicia tu Entrenamiento</h2>
-                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0 }}>Elige una plantilla inicial o comienza desde cero. PodrÃ¡s personalizarla despuÃ©s en la secciÃ³n de Rutinas.</p>
+                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0 }}>Elige una plantilla inicial o comienza desde cero. Podrás personalizarla después en la sección de Rutinas.</p>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -2427,7 +2427,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                     transition: 'var(--transition-smooth)'
                   }}
                 >
-                  <span style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--text-primary)' }}>Entrenamiento del Maestro Roshi ðŸ¢ (Torso)</span>
+                  <span style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--text-primary)' }}>Entrenamiento del Maestro Roshi 🐢 (Torso)</span>
                   <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Ideal para principiantes. 2 ejercicios fundamentales (Banca y Remo) programados para Lunes y Jueves.</span>
                 </button>
 
@@ -2447,8 +2447,8 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                     transition: 'var(--transition-smooth)'
                   }}
                 >
-                  <span style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--text-primary)' }}>CÃ¡mara de Gravedad: Fuerza Saiyan ðŸ¦¾ (Fuerza)</span>
-                  <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Enfoque en piernas e hipertrofia de brazos (Sentadillas y Curl de BÃ­ceps). Programada para Martes y Viernes.</span>
+                  <span style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--text-primary)' }}>Cámara de Gravedad: Fuerza Saiyan 🦾 (Fuerza)</span>
+                  <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Enfoque en piernas e hipertrofia de brazos (Sentadillas y Curl de Bíceps). Programada para Martes y Viernes.</span>
                 </button>
 
                 <button
@@ -2467,8 +2467,8 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                     transition: 'var(--transition-smooth)'
                   }}
                 >
-                  <span style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--text-primary)' }}>Crear Personalizada ðŸŒ€ (Comenzar VacÃ­a)</span>
-                  <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Crea una rutina en blanco ("Mi Entrenamiento Ki") para diseÃ±ar tus propias batallas desde cero.</span>
+                  <span style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--text-primary)' }}>Crear Personalizada 🌀 (Comenzar Vacía)</span>
+                  <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Crea una rutina en blanco ("Mi Entrenamiento Ki") para diseñar tus propias batallas desde cero.</span>
                 </button>
               </div>
             </div>
@@ -2482,7 +2482,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                 className="btn-secondary"
                 style={{ flex: 1, padding: '12px' }}
               >
-                AtrÃ¡s
+                Atrás
               </button>
             )}
             
@@ -2503,7 +2503,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                 className="btn-primary"
                 style={{ flex: 1, padding: '12px', backgroundColor: 'var(--accent-secondary)', borderColor: 'var(--accent-secondary)', fontWeight: 'bold' }}
               >
-                FINALIZAR FORJA âš¡
+                FINALIZAR FORJA ⚡
               </button>
             )}
           </footer>
@@ -2575,7 +2575,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
               }}
               title="Cambiar tema"
             >
-              <span>{theme === 'dark' ? 'â˜€ï¸' : 'ðŸŒ™'}</span>
+              <span>{theme === 'dark' ? '☀️' : '🌙'}</span>
               <span style={{ fontSize: '10px' }}>{theme === 'dark' ? 'CLARO' : 'OSCURO'}</span>
             </button>
 
@@ -2587,7 +2587,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
             />
             <div className="profile-details">
               <h3 className="profile-name" style={{ display: 'flex', alignItems: 'center', gap: '4px', margin: 0, fontSize: '15px' }}>
-                {profile.username} <span style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>âœï¸</span>
+                {profile.username} <span style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>✏️</span>
               </h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                 <div className="profile-level" style={{ fontSize: '12px' }}>
@@ -2597,7 +2597,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                 {(profile.clan || profile.cursed_technique) && (
                   <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
                     {profile.clan ? `Clan ${profile.clan}` : ''} 
-                    {profile.clan && profile.cursed_technique ? ' â€¢ ' : ''}
+                    {profile.clan && profile.cursed_technique ? ' • ' : ''}
                     {profile.cursed_technique ? `${profile.cursed_technique}` : ''}
                   </span>
                 )}
@@ -2630,10 +2630,10 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
               DESTELLO NEGRO
             </h1>
             <p style={{ color: '#fff', fontSize: '16px', fontWeight: 'bold', textShadow: '0 0 8px #a855f7', textTransform: 'uppercase' }}>
-              Â¡BLACK FLASH! âš¡
+              ¡BLACK FLASH! ⚡
             </p>
             <p style={{ color: 'var(--text-secondary)', fontSize: '12px', marginTop: '8px' }}>
-              Rompiste tu rÃ©cord personal. Â¡Tu energÃ­a maldita se desborda!
+              Rompiste tu récord personal. ¡Tu energía maldita se desborda!
             </p>
           </div>
         )}
@@ -2644,7 +2644,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
             <div className="lvl-badge-container">
               <Award size={52} />
             </div>
-            <h1 className="lvl-title">Â¡RANGO Z SUPERADO!</h1>
+            <h1 className="lvl-title">¡RANGO Z SUPERADO!</h1>
             <p className="lvl-text">
               Has incrementado tu nivel de Ki en <span style={{ color: 'var(--accent-secondary)', fontWeight: 'bold' }}>+{levelUpInfo.xpEarned} XP</span>.
             </p>
@@ -2654,14 +2654,14 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
               <span className="lvl-new" style={{ fontSize: '18px', fontWeight: '800', color: 'var(--accent-tertiary)' }}>{getDBZLevelTitle(levelUpInfo.newLevel)}</span>
             </div>
             <p className="lvl-text" style={{ fontSize: '11px', fontStyle: 'italic', color: 'var(--text-tertiary)' }}>
-              "Â¡Supera tus lÃ­mites! Â¡Un verdadero Saiyan no tiene lÃ­mites!" ðŸ’¥ðŸ‰
+              "¡Supera tus límites! ¡Un verdadero Saiyan no tiene límites!" 💥🐉
             </p>
             <button 
               onClick={() => setLevelUpInfo(null)}
               className="btn-primary"
               style={{ width: '100%', maxWidth: '240px' }}
             >
-              Continuar MisiÃ³n
+              Continuar Misión
             </button>
           </div>
         )}
@@ -2716,7 +2716,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                 <div className="active-exercise-meta">
                   <span className="exercise-tag">{currentActiveExercise.category}</span>
                   <span className="exercise-index-label">
-                    MisiÃ³n {activeExerciseIndex + 1} de {activeExercises.length}
+                    Misión {activeExerciseIndex + 1} de {activeExercises.length}
                   </span>
                 </div>
                 <h3 className="active-exercise-name">{currentActiveExercise.name}</h3>
@@ -2724,13 +2724,13 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                 {/* Exercise image/illustration */}
                 <div className="exercise-image-fallback" style={{ height: '240px', marginTop: '4px', marginBottom: '12px' }}>
                   {renderExerciseMedia(currentActiveExercise)}
-                  <div className="exercise-image-fallback-text">VisualizaciÃ³n</div>
+                  <div className="exercise-image-fallback-text">Visualización</div>
                 </div>
 
                 {/* Collapsible Last Session Stats */}
                 <details className="exercise-tips-details group" open style={{ marginTop: '8px', borderLeftColor: 'var(--accent-tertiary)' }}>
                   <summary className="exercise-tips-summary" style={{ color: 'var(--accent-tertiary)' }}>
-                    <span>â®ï¸ Ãšltima SesiÃ³n Realizada</span>
+                    <span>⏮️ Última Sesión Realizada</span>
                     <ChevronDown size={14} style={{ marginLeft: 'auto' }} className="group-open:rotate-180 transition-transform" />
                   </summary>
                   <div style={{ padding: '8px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -2757,7 +2757,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                       ))
                     ) : (
                       <div style={{ fontSize: '11px', color: 'var(--text-tertiary)', fontStyle: 'italic', textAlign: 'center', padding: '4px 0' }}>
-                        No hay registros de sesiones previas para este ejercicio. Â¡Esta es tu primera sesiÃ³n!
+                        No hay registros de sesiones previas para este ejercicio. ¡Esta es tu primera sesión!
                       </div>
                     )}
                   </div>
@@ -2767,7 +2767,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                 <details className="exercise-tips-details group">
                   <summary className="exercise-tips-summary">
                     <BookOpen size={14} />
-                    <span>Instrucciones y TÃ©cnica de Combate</span>
+                    <span>Instrucciones y Técnica de Combate</span>
                     <ChevronDown size={14} style={{ marginLeft: 'auto' }} className="group-open:rotate-180 transition-transform" />
                   </summary>
                   <div style={{ padding: '8px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -2778,7 +2778,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                       <>
                         {currentActiveExercise.posicion_inicial && currentActiveExercise.posicion_inicial.length > 0 && (
                           <div>
-                            <h4 style={{ color: 'var(--accent-primary)', fontSize: '12px', fontWeight: 'bold', margin: '4px 0', textTransform: 'uppercase' }}>ðŸ¥‹ PosiciÃ³n Inicial</h4>
+                            <h4 style={{ color: 'var(--accent-primary)', fontSize: '12px', fontWeight: 'bold', margin: '4px 0', textTransform: 'uppercase' }}>🥋 Posición Inicial</h4>
                             <ul className="exercise-tips-list" style={{ paddingLeft: '16px', margin: 0 }}>
                               {currentActiveExercise.posicion_inicial.map((step, i) => (
                                 <li key={i} style={{ marginBottom: '2px', fontSize: '12px' }}>{step}</li>
@@ -2788,7 +2788,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                         )}
                         {currentActiveExercise.ejecucion && currentActiveExercise.ejecucion.length > 0 && (
                           <div>
-                            <h4 style={{ color: 'var(--accent-primary)', fontSize: '12px', fontWeight: 'bold', margin: '4px 0', textTransform: 'uppercase' }}>âš”ï¸ EjecuciÃ³n</h4>
+                            <h4 style={{ color: 'var(--accent-primary)', fontSize: '12px', fontWeight: 'bold', margin: '4px 0', textTransform: 'uppercase' }}>⚔️ Ejecución</h4>
                             <ul className="exercise-tips-list" style={{ paddingLeft: '16px', margin: 0 }}>
                               {currentActiveExercise.ejecucion.map((step, i) => (
                                 <li key={i} style={{ marginBottom: '2px', fontSize: '12px' }}>{step}</li>
@@ -2798,7 +2798,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                         )}
                         {currentActiveExercise.consejos && currentActiveExercise.consejos.length > 0 && (
                           <div>
-                            <h4 style={{ color: 'var(--accent-primary)', fontSize: '12px', fontWeight: 'bold', margin: '4px 0', textTransform: 'uppercase' }}>ðŸ’¡ Consejos y Tips</h4>
+                            <h4 style={{ color: 'var(--accent-primary)', fontSize: '12px', fontWeight: 'bold', margin: '4px 0', textTransform: 'uppercase' }}>💡 Consejos y Tips</h4>
                             <ul className="exercise-tips-list" style={{ paddingLeft: '16px', margin: 0 }}>
                               {currentActiveExercise.consejos.map((tip, i) => (
                                 <li key={i} style={{ marginBottom: '2px', fontSize: '12px' }}>{tip}</li>
@@ -2808,7 +2808,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                         )}
                         {currentActiveExercise.variantes && currentActiveExercise.variantes.length > 0 && (
                           <div>
-                            <h4 style={{ color: 'var(--accent-primary)', fontSize: '12px', fontWeight: 'bold', margin: '4px 0', textTransform: 'uppercase' }}>ðŸŒ€ Variantes</h4>
+                            <h4 style={{ color: 'var(--accent-primary)', fontSize: '12px', fontWeight: 'bold', margin: '4px 0', textTransform: 'uppercase' }}>🌀 Variantes</h4>
                             <ul className="exercise-tips-list" style={{ paddingLeft: '16px', margin: 0 }}>
                               {currentActiveExercise.variantes.map((variant, i) => (
                                 <li key={i} style={{ marginBottom: '2px', fontSize: '12px' }}>{variant}</li>
@@ -3026,7 +3026,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                   }}
                 >
                   <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--accent-primary)', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '16px' }}>
-                    âš¡ Intervalo de Recarga âš¡
+                    ⚡ Intervalo de Recarga ⚡
                   </span>
                   
                   {/* Big SVG Countdown Wheel */}
@@ -3185,10 +3185,10 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                 </span>
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                   <span style={{ fontSize: '9px', color: 'var(--accent-primary)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px' }}>
-                    CronÃ³metro
+                    Cronómetro
                   </span>
                   <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>
-                    {isCardioOrStretch ? 'Cardio activo âš¡' : 'MisiÃ³n en curso'}
+                    {isCardioOrStretch ? 'Cardio activo ⚡' : 'Misión en curso'}
                   </span>
                 </div>
               </div>
@@ -3290,17 +3290,17 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
               {/* Battle Statistics Grid (New) */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
                 <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '12px', position: 'relative', overflow: 'hidden' }}>
-                  <span style={{ fontSize: '18px', color: 'var(--accent-primary)', marginBottom: '4px' }}>ðŸ‹ï¸â€â™‚ï¸</span>
+                  <span style={{ fontSize: '18px', color: 'var(--accent-primary)', marginBottom: '4px' }}>🏋️‍♂️</span>
                   <span style={{ fontSize: '15px', fontWeight: '900', color: 'var(--text-primary)', fontFamily: 'Outfit' }}>{totalTonnage.toFixed(1)} T</span>
                   <span style={{ fontSize: '9px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px' }}>Tonelaje</span>
                 </div>
                 <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '12px', position: 'relative', overflow: 'hidden' }}>
-                  <span style={{ fontSize: '18px', color: 'var(--accent-primary)', marginBottom: '4px' }}>ðŸ”</span>
+                  <span style={{ fontSize: '18px', color: 'var(--accent-primary)', marginBottom: '4px' }}>🔁</span>
                   <span style={{ fontSize: '15px', fontWeight: '900', color: 'var(--text-primary)', fontFamily: 'Outfit' }}>{totalSets}</span>
                   <span style={{ fontSize: '9px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px' }}>Series</span>
                 </div>
                 <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '12px', position: 'relative', overflow: 'hidden' }}>
-                  <span style={{ fontSize: '18px', color: 'var(--accent-primary)', marginBottom: '4px' }}>ðŸ†</span>
+                  <span style={{ fontSize: '18px', color: 'var(--accent-primary)', marginBottom: '4px' }}>🏆</span>
                   <span style={{ fontSize: '15px', fontWeight: '900', color: 'var(--text-primary)', fontFamily: 'Outfit' }}>{totalWorkouts}</span>
                   <span style={{ fontSize: '9px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px' }}>Rituales</span>
                 </div>
@@ -3331,11 +3331,11 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
               <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <h3 className="card-title" style={{ margin: 0 }}>
-                    <span style={{ color: 'var(--accent-secondary)', marginRight: '6px' }}>ðŸ”¥</span>
+                    <span style={{ color: 'var(--accent-secondary)', marginRight: '6px' }}>🔥</span>
                     <span>Objetivo Semanal</span>
                   </h3>
                   <span style={{ fontSize: '13px', fontWeight: '800', color: 'var(--accent-secondary)' }}>
-                    {calendarDays.filter(day => day.hasTrained).length} / {weeklyGoalDays} dÃ­as
+                    {calendarDays.filter(day => day.hasTrained).length} / {weeklyGoalDays} días
                   </span>
                 </div>
                 
@@ -3353,8 +3353,8 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                 
                 <p style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: 0 }}>
                   {calendarDays.filter(day => day.hasTrained).length >= weeklyGoalDays 
-                    ? 'Â¡Logro desbloqueado! Has superado tu meta semanal de Ki ðŸŒŸ' 
-                    : `Entrena ${Math.max(1, weeklyGoalDays - calendarDays.filter(day => day.hasTrained).length)} dÃ­a(s) mÃ¡s para alcanzar tu meta de Ki de esta semana.`}
+                    ? '¡Logro desbloqueado! Has superado tu meta semanal de Ki 🌟' 
+                    : `Entrena ${Math.max(1, weeklyGoalDays - calendarDays.filter(day => day.hasTrained).length)} día(s) más para alcanzar tu meta de Ki de esta semana.`}
                 </p>
               </section>
 
@@ -3362,7 +3362,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
               <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 <h3 className="card-title" style={{ margin: 0 }}>
                   <Dumbbell size={15} style={{ color: 'var(--accent-secondary)' }} />
-                  <span>Misiones del DÃ­a</span>
+                  <span>Misiones del Día</span>
                 </h3>
                 
                 {(() => {
@@ -3372,13 +3372,13 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                   if (routines.length === 0) {
                     return (
                       <div className="no-routines-container" style={{ textAlign: 'center', padding: '12px 0' }}>
-                        <p className="no-routines-text" style={{ marginBottom: '12px' }}>AÃºn no tienes misiones o rutinas de Ki asignadas.</p>
+                        <p className="no-routines-text" style={{ marginBottom: '12px' }}>Aún no tienes misiones o rutinas de Ki asignadas.</p>
                         <button 
                           onClick={() => setActiveTab('rutinas')}
                           className="btn-primary"
                           style={{ width: '100%', padding: '14px', borderRadius: '30px', fontWeight: '900', fontSize: '14px', textTransform: 'uppercase', letterSpacing: '1px' }}
                         >
-                          Crear Primera Rutina ðŸ› ï¸
+                          Crear Primera Rutina 🛠️
                         </button>
                       </div>
                     );
@@ -3410,7 +3410,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                             cursor: 'pointer'
                           }}
                         >
-                          <span>INICIAR RITUAL ðŸ¦¾</span>
+                          <span>INICIAR RITUAL 🦾</span>
                           <span style={{ fontSize: '11px', opacity: 0.9, fontWeight: '700', textTransform: 'none', letterSpacing: 'normal' }}>
                             {todayRoutine.name} ({routineExercises.filter((re) => re.routine_id === todayRoutine.id).length} ej.)
                           </span>
@@ -3439,7 +3439,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                           gap: '8px'
                         }}
                       >
-                        <span>Iniciar Entrenamiento âš¡</span>
+                        <span>Iniciar Entrenamiento ⚡</span>
                         <ChevronDown size={16} style={{ transform: showCTARoutineDropdown ? 'rotate(180deg)' : 'rotate(0)', transition: 'var(--transition-smooth)' }} />
                       </button>
 
@@ -3502,8 +3502,8 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
               <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <h3 className="card-title" style={{ margin: 0 }}>
-                    <span style={{ marginRight: '6px' }}>ðŸ’§</span>
-                    <span>HidrataciÃ³n del Guerrero</span>
+                    <span style={{ marginRight: '6px' }}>💧</span>
+                    <span>Hidratación del Guerrero</span>
                   </h3>
                   <span style={{ fontSize: '13px', fontWeight: '800', color: '#38bdf8' }}>
                     {waterIntake * 250} ml / 2000 ml
@@ -3538,7 +3538,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                         }}
                         title={`Vaso ${idx + 1}`}
                       >
-                        {isFilled ? 'ðŸ’§' : 'ðŸ¥›'}
+                        {isFilled ? '💧' : '🥛'}
                       </div>
                     );
                   })}
@@ -3555,7 +3555,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                     className="btn-primary"
                     style={{ flex: 1, padding: '10px', fontSize: '12px', backgroundColor: '#1c4595', borderColor: '#38bdf8', color: '#fff', borderRadius: '12px', cursor: 'pointer' }}
                   >
-                    +250ml ðŸ’§
+                    +250ml 💧
                   </button>
                   <button 
                     onClick={() => {
@@ -3568,13 +3568,13 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                     style={{ flex: 1, padding: '10px', fontSize: '12px', borderColor: 'rgba(255,255,255,0.1)', color: 'var(--text-secondary)', borderRadius: '12px', cursor: 'pointer' }}
                     disabled={waterIntake === 0}
                   >
-                    Remover ðŸ¥›
+                    Remover 🥛
                   </button>
                 </div>
                 
                 {waterIntake >= 8 && (
                   <p style={{ fontSize: '11px', color: '#10b981', margin: 0, textAlign: 'center', fontWeight: 'bold' }}>
-                    Â¡Ki Hidratado al 100%! Has alcanzado tu meta de agua hoy ðŸŒŠ
+                    ¡Ki Hidratado al 100%! Has alcanzado tu meta de agua hoy 🌊
                   </p>
                 )}
               </section>
@@ -3584,9 +3584,9 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <BookOpen size={16} className="text-purple-400" />
-                    <span style={{ fontWeight: '700', fontSize: '13px', color: 'var(--text-primary)' }}>Glosario de TÃ©cnicas</span>
+                    <span style={{ fontWeight: '700', fontSize: '13px', color: 'var(--text-primary)' }}>Glosario de Técnicas</span>
                   </div>
-                  <span style={{ fontSize: '12px', color: 'var(--accent-primary)', fontWeight: 'bold' }}>Ver CatÃ¡logo â†’</span>
+                  <span style={{ fontSize: '12px', color: 'var(--accent-primary)', fontWeight: 'bold' }}>Ver Catálogo →</span>
                 </div>
               </section>
 
@@ -3602,7 +3602,6 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
               exercises={exercises}
               workouts={workouts}
               workoutSets={workoutSets}
-              weeklyGoalDays={weeklyGoalDays}
               onStartWorkout={startWorkout}
               onOpenRoutineCreator={(dayVal) => {
                 setAssigningRoutineDayValue(dayVal ?? null);
@@ -3654,7 +3653,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                       <div className="routine-row-info">
                         <h4 className="routine-row-title">{routine.name}</h4>
                         <p className="routine-row-sub">
-                          {exercisesCount} {exercisesCount === 1 ? 'ejercicio' : 'ejercicios'} â€¢ DÃ­as: {getDaysLabels(routine.day_of_week)}
+                          {exercisesCount} {exercisesCount === 1 ? 'ejercicio' : 'ejercicios'} • Días: {getDaysLabels(routine.day_of_week)}
                         </p>
                       </div>
                       
@@ -3696,7 +3695,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                         </button>
                         <button
                           onClick={async () => {
-                            if (confirm('Â¿Seguro que deseas eliminar esta rutina?')) {
+                            if (confirm('¿Seguro que deseas eliminar esta rutina?')) {
                               await saveRecord('routines', routine, 'DELETE');
                               const associations = routineExercises.filter(re => re.routine_id === routine.id);
                               for (const assoc of associations) {
@@ -3747,7 +3746,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                       </div>
                       <h2 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface">Gestor de Rutinas</h2>
                     </div>
-                    <p className="font-body-md text-body-md text-on-surface-variant">Forja un nuevo programa de entrenamiento. Ajusta tus parÃ¡metros de Ki.</p>
+                    <p className="font-body-md text-body-md text-on-surface-variant">Forja un nuevo programa de entrenamiento. Ajusta tus parámetros de Ki.</p>
                   </section>
 
                   {/* Configuration Form */}
@@ -3762,7 +3761,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                         <input 
                           className="w-full h-14 bg-obsidian-zero border border-border-subtle rounded-lg px-4 pr-12 text-on-surface font-body-lg text-body-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-all placeholder:text-on-surface-variant/40" 
                           id="routine-name" 
-                          placeholder="Ej. Domain Expansion: NÃºcleo Absoluto" 
+                          placeholder="Ej. Domain Expansion: Núcleo Absoluto" 
                           type="text"
                           value={newRoutineName}
                           onChange={(e) => {
@@ -3779,7 +3778,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                             isNameManuallyEdited.current = false;
                           }}
                           className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary transition-colors p-2" 
-                          title="Generar nombre mÃ­stico"
+                          title="Generar nombre místico"
                         >
                           <span className="material-symbols-outlined text-xl">auto_awesome</span>
                         </button>
@@ -3789,12 +3788,12 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                     {/* Day Selector */}
                     <div className="flex flex-col gap-sm z-10">
                       <div className="flex justify-between items-end">
-                        <label className="font-label-md text-label-md text-primary uppercase tracking-wider">DÃ­as de ManifestaciÃ³n</label>
+                        <label className="font-label-md text-label-md text-primary uppercase tracking-wider">Días de Manifestación</label>
                         <span className="font-label-md text-label-md text-on-surface-variant">
-                          {newRoutineDays.length} DÃ­a{newRoutineDays.length !== 1 ? 's' : ''}
+                          {newRoutineDays.length} Día{newRoutineDays.length !== 1 ? 's' : ''}
                         </span>
                       </div>
-                      <div className="flex gap-2 justify-between w-full" role="group" aria-label="DÃ­as de entrenamiento">
+                      <div className="flex gap-2 justify-between w-full" role="group" aria-label="Días de entrenamiento">
                         {WEEKDAYS.map((day) => {
                           const isSelected = newRoutineDays.includes(day.value);
                           return (
@@ -3826,13 +3825,13 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                   <section className="flex flex-col gap-md">
                     <div className="flex flex-col gap-sm">
                       <h4 className="font-label-md text-label-md text-primary uppercase tracking-wider" style={{ fontSize: '13px', fontWeight: 'bold' }}>
-                        TÃ©cnicas Seleccionadas ({newRoutineSelectedExercises.length})
+                        Técnicas Seleccionadas ({newRoutineSelectedExercises.length})
                       </h4>
                       {newRoutineSelectedExercises.length === 0 ? (
                         <div className="py-6 flex flex-col items-center justify-center text-center gap-2 border border-dashed border-border-subtle rounded-xl bg-obsidian-zero">
                           <span className="material-symbols-outlined text-on-surface-variant/30 text-4xl">do_not_disturb_off</span>
                           <p className="text-on-surface-variant font-label-md" style={{ fontSize: '12px' }}>
-                            No hay tÃ©cnicas seleccionadas. Usa el buscador de abajo para aÃ±adir tÃ©cnicas.
+                            No hay técnicas seleccionadas. Usa el buscador de abajo para añadir técnicas.
                           </p>
                         </div>
                       ) : (
@@ -3859,7 +3858,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                                         {config.name}
                                       </h4>
                                       <p className="font-label-md text-label-md text-on-surface-variant mt-0.5" style={{ fontSize: '12px' }}>
-                                        {config.sets} sets Ã— {config.reps} {config.is_time_based ? 'segundos' : 'reps'} â€¢ {config.rest}s desc
+                                        {config.sets} sets × {config.reps} {config.is_time_based ? 'segundos' : 'reps'} • {config.rest}s desc
                                       </p>
                                     </div>
                                   </div>
@@ -3874,7 +3873,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                                       className="px-2 py-1 text-[11px] rounded bg-white/5 border border-white/10 text-on-surface-variant hover:text-primary hover:bg-white/10 transition-all font-semibold"
                                       style={{ display: 'flex', alignItems: 'center', gap: '3px' }}
                                     >
-                                      <span>{config.is_time_based ? 'â±ï¸ Tiempo' : 'ðŸ”¢ Reps'}</span>
+                                      <span>{config.is_time_based ? '⏱️ Tiempo' : '🔢 Reps'}</span>
                                     </button>
                                     <button 
                                       type="button"
@@ -4034,7 +4033,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                   {/* Add Exercises Panel (Search-to-add flat list) */}
                   <section className="flex flex-col gap-md">
                     <label className="font-label-md text-label-md text-primary uppercase tracking-wider" style={{ fontSize: '13px', fontWeight: 'bold' }}>
-                      AÃ±adir TÃ©cnicas
+                      Añadir Técnicas
                     </label>
 
                     {/* Muscle group filter chips */}
@@ -4069,7 +4068,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                     <div className="search-wrapper" style={{ margin: '4px 0', position: 'relative' }}>
                       <input 
                         type="text"
-                        placeholder="Buscar tÃ©cnica por nombre..."
+                        placeholder="Buscar técnica por nombre..."
                         value={routineExerciseSearch}
                         onChange={(e) => setRoutineExerciseSearch(e.target.value)}
                         className="search-input w-full bg-obsidian-zero border border-border-subtle rounded-lg px-4 py-3 text-on-surface font-body-md"
@@ -4091,7 +4090,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                             if (newRoutineCategoryFilter === 'Piernas') {
                               matchesCat = ex.category === 'Piernas' || ex.category === 'Pantorrillas';
                             } else if (newRoutineCategoryFilter === 'Brazos') {
-                              matchesCat = ex.category === 'BÃ­ceps' || ex.category === 'TrÃ­ceps' || ex.category === 'Antebrazos';
+                              matchesCat = ex.category === 'Bíceps' || ex.category === 'Tríceps' || ex.category === 'Antebrazos';
                             } else {
                               matchesCat = ex.category.toLowerCase() === newRoutineCategoryFilter.toLowerCase();
                             }
@@ -4107,7 +4106,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                         if (routineExerciseSearch.trim() === '' && !newRoutineCategoryFilter) {
                           return (
                             <span style={{ fontSize: '12px', color: 'var(--text-tertiary)', fontStyle: 'italic', textAlign: 'center', padding: '12px' }}>
-                              Escribe en el buscador o selecciona una categorÃ­a para encontrar tÃ©cnicas...
+                              Escribe en el buscador o selecciona una categoría para encontrar técnicas...
                             </span>
                           );
                         }
@@ -4115,7 +4114,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                         if (availableMatching.length === 0) {
                           return (
                             <span style={{ fontSize: '12px', color: 'var(--text-tertiary)', fontStyle: 'italic', textAlign: 'center', padding: '12px' }}>
-                              No se encontraron tÃ©cnicas disponibles con los filtros actuales.
+                              No se encontraron técnicas disponibles con los filtros actuales.
                             </span>
                           );
                         }
@@ -4180,7 +4179,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                     >
                       <div className="absolute inset-0 bg-white/20 w-full translate-x-[-100%] skew-x-[-15deg] group-hover:animate-[shimmer_1s_infinite]" aria-hidden="true"></div>
                       <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>vpn_key</span>
-                      {editingRoutineId ? 'Actualizar Programa Z âš¡' : 'Guardar Programa'}
+                      {editingRoutineId ? 'Actualizar Programa Z ⚡' : 'Guardar Programa'}
                     </button>
                   </div>
                 </main>
@@ -4190,7 +4189,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
           </div>
         )}
 
-        {/* TAB: ESTADÃSTICAS */}
+        {/* TAB: ESTADÍSTICAS */}
         {activeTab === 'progreso' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             
@@ -4200,7 +4199,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                 <p className="stat-value">{workouts.length}</p>
               </div>
               <div className="stat-box">
-                <span className="stat-label">EnergÃ­a Maldita</span>
+                <span className="stat-label">Energía Maldita</span>
                 <p className="stat-value">{profile?.experience_points || 0}</p>
               </div>
             </div>
@@ -4208,12 +4207,12 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
             <section className="card">
               <h3 className="card-title">
                 <TrendingUp size={15} className="text-purple-400" />
-                <span>Destellos Negros âš¡ (1RM Estimados)</span>
+                <span>Destellos Negros ⚡ (1RM Estimados)</span>
               </h3>
               
               {Object.keys(personalRecords).length === 0 ? (
                 <p className="no-routines-text" style={{ textAlign: 'center', padding: '16px 0', fontSize: '12px' }}>
-                  AÃºn no has ejecutado ningÃºn Destello Negro.
+                  Aún no has ejecutado ningún Destello Negro.
                 </p>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -4280,7 +4279,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
               className="btn-danger-outline" 
               style={{ width: '100%', marginTop: '8px', padding: '12px', fontSize: '12px', fontWeight: 'bold' }}
               onClick={async () => {
-                if (confirm('Â¿Seguro que deseas restablecer el templo? Esto eliminarÃ¡ todo tu historial de hechicerÃ­a y cargarÃ¡ los datos por defecto.')) {
+                if (confirm('¿Seguro que deseas restablecer el templo? Esto eliminará todo tu historial de hechicería y cargará los datos por defecto.')) {
                   await clearAllTables();
                   localStorage.removeItem('onboarding_completed');
                   localStorage.removeItem('weekly_goal_days');
@@ -4323,7 +4322,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                 </span>
               </div>
               <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>
-                Configura tu avatar Z y selecciona tu tÃ©cnica especial.
+                Configura tu avatar Z y selecciona tu técnica especial.
               </p>
             </section>
 
@@ -4373,7 +4372,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                       className="btn-primary"
                       style={{ flex: 1, padding: '10px 14px', fontSize: '12px' }}
                     >
-                      Capturar ðŸ“¸
+                      Capturar 📸
                     </button>
                     <button
                       type="button"
@@ -4424,7 +4423,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
               )}
             </section>
 
-            {/* ConfiguraciÃ³n de Datos */}
+            {/* Configuración de Datos */}
             <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <h3 className="card-title">
                 <User size={15} style={{ color: 'var(--accent-secondary)' }} />
@@ -4460,10 +4459,10 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                     cursor: 'pointer'
                   }}
                 >
-                  <option value="none">TerrÃ­cola (Guerrero de la Tierra)</option>
+                  <option value="none">Terrícola (Guerrero de la Tierra)</option>
                   <option value="Saiyan">Raza Saiyan (Guerrero del Espacio)</option>
-                  <option value="Hibrido">HÃ­brido Saiyan (Potencial Ilimitado)</option>
-                  <option value="Namek">Raza Namekiana (RegeneraciÃ³n)</option>
+                  <option value="Hibrido">Híbrido Saiyan (Potencial Ilimitado)</option>
+                  <option value="Namek">Raza Namekiana (Regeneración)</option>
                   <option value="Ginyu">Fuerza Especial Ginyu</option>
                   <option value="Tortuga">Escuela Tortuga (Maestro Roshi)</option>
                   <option value="Grulla">Escuela Grulla (Maestro Shen)</option>
@@ -4471,7 +4470,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
               </div>
 
               <div className="form-group">
-                <label className="form-label" style={{ fontSize: '13px', fontWeight: 'bold' }}>TÃ©cnica Especial / Habilidad</label>
+                <label className="form-label" style={{ fontSize: '13px', fontWeight: 'bold' }}>Técnica Especial / Habilidad</label>
                 <input 
                   type="text"
                   placeholder="Ej: Kamehameha, Destello Final..."
@@ -4481,7 +4480,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                   style={{ fontSize: '13px' }}
                 />
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '8px' }}>
-                  {['Kamehameha ðŸ‘', 'Destello Final âš¡', 'Genkidama ðŸŒŸ', 'Kienzan ðŸŒ€', 'Kaio-ken ðŸ”´', 'PuÃ±o DragÃ³n ðŸ‰'].map(t => (
+                  {['Kamehameha 👐', 'Destello Final ⚡', 'Genkidama 🌟', 'Kienzan 🌀', 'Kaio-ken 🔴', 'Puño Dragón 🐉'].map(t => (
                     <button
                        key={t}
                        type="button"
@@ -4503,11 +4502,11 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
               </div>
             </section>
 
-            {/* ComposiciÃ³n Corporal (moved from Hoy) (SPEC_011) */}
+            {/* Composición Corporal (moved from Hoy) (SPEC_011) */}
             <section className="card">
               <h3 className="card-title">
-                <span style={{ marginRight: '6px' }}>â¤ï¸</span>
-                <span>ComposiciÃ³n Corporal</span>
+                <span style={{ marginRight: '6px' }}>❤️</span>
+                <span>Composición Corporal</span>
               </h3>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0' }}>
                 <div style={{ display: 'flex', gap: '20px' }}>
@@ -4555,15 +4554,15 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
               </div>
             </section>
 
-            {/* Marcas & Destellos RÃ©cords (moved from Hoy) (SPEC_011) */}
+            {/* Marcas & Destellos Récords (moved from Hoy) (SPEC_011) */}
             <section className="card">
               <h3 className="card-title">
                 <TrendingUp size={15} className="text-purple-400" />
-                <span>Marcas & Destellos RÃ©cords</span>
+                <span>Marcas & Destellos Récords</span>
               </h3>
               {Object.keys(personalRecords).length === 0 ? (
                 <p className="no-routines-text" style={{ textAlign: 'center', padding: '8px 0', fontSize: '12px' }}>
-                  AÃºn no has registrado rÃ©cords personales (Zenkai Boosts).
+                  Aún no has registrado récords personales (Zenkai Boosts).
                 </p>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '180px', overflowY: 'auto', paddingRight: '4px' }}>
@@ -4574,10 +4573,10 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                       <div key={exId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 8px', backgroundColor: 'rgba(255,255,255,0.01)', borderBottom: '1px solid rgba(255,255,255,0.03)', borderRadius: '6px' }}>
                         <div>
                           <h4 style={{ margin: 0, fontSize: '12px', color: 'var(--text-primary)', fontWeight: 600 }}>{ex.name}</h4>
-                          <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>1RM: {record.oneRM.toFixed(1)} kg â€¢ {record.weight}kg x {record.reps}r</span>
+                          <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>1RM: {record.oneRM.toFixed(1)} kg • {record.weight}kg x {record.reps}r</span>
                         </div>
                         <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--accent-secondary)' }}>
-                          ðŸ”¥ PR
+                          🔥 PR
                         </span>
                       </div>
                     );
@@ -4590,7 +4589,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
             {!session ? (
               <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 <h4 style={{ fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--accent-primary)', margin: 0, letterSpacing: '0.5px' }}>
-                  â˜ï¸ Alianza con la Nube (Iniciar SesiÃ³n)
+                  ☁️ Alianza con la Nube (Iniciar Sesión)
                 </h4>
                 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -4601,7 +4600,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                       className={`btn-secondary ${authMode === 'login' ? 'completed' : ''}`}
                       style={{ flex: 1, padding: '10px', fontSize: '12px', border: authMode === 'login' ? '1.5px solid var(--accent-primary)' : '1px solid var(--border-color)', backgroundColor: authMode === 'login' ? 'rgba(168, 85, 247, 0.05)' : 'transparent' }}
                     >
-                      Iniciar SesiÃ³n
+                      Iniciar Sesión
                     </button>
                     <button
                       type="button"
@@ -4640,10 +4639,10 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <label style={{ fontSize: '12px', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontWeight: 'bold' }}>ContraseÃ±a</label>
+                    <label style={{ fontSize: '12px', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontWeight: 'bold' }}>Contraseña</label>
                     <input
                       type="password"
-                      placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+                      placeholder="••••••••"
                       value={authPassword}
                       onChange={(e) => setAuthPassword(e.target.value)}
                       className="form-input"
@@ -4658,7 +4657,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                     className="btn-primary"
                     style={{ padding: '12px', fontSize: '12px', marginTop: '6px' }}
                   >
-                    {authLoading ? 'Procesando...' : authMode === 'login' ? 'Entrar âš¡' : 'Registrarse âš”ï¸'}
+                    {authLoading ? 'Procesando...' : authMode === 'login' ? 'Entrar ⚡' : 'Registrarse ⚔️'}
                   </button>
 
                   <button
@@ -4688,13 +4687,13 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                 </div>
               </section>
             ) : (
-              /* Deshacer VÃ­nculo / Estado de ConexiÃ³n */
+              /* Deshacer Vínculo / Estado de Conexión */
               <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: '12px', border: '1px solid #ef4444' }}>
                 <h4 style={{ fontSize: '13px', fontWeight: 'bold', color: '#ef4444', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span>ðŸ’¥ Estado del VÃ­nculo Z</span>
+                  <span>💥 Estado del Vínculo Z</span>
                 </h4>
                 <p style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                  Conectado como: <strong>{session.user.email}</strong>. Al deshacer el vÃ­nculo, se cerrarÃ¡ tu sesiÃ³n actual y se limpiarÃ¡ el registro local de este dispositivo.
+                  Conectado como: <strong>{session.user.email}</strong>. Al deshacer el vínculo, se cerrará tu sesión actual y se limpiará el registro local de este dispositivo.
                 </p>
                 <button
                   type="button"
@@ -4712,7 +4711,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                     cursor: 'pointer'
                   }}
                 >
-                  Deshacer VÃ­nculo Z (Cerrar SesiÃ³n)
+                  Deshacer Vínculo Z (Cerrar Sesión)
                 </button>
               </section>
             )}
@@ -4810,7 +4809,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
         </button>
       </nav>
 
-      {/* GLOSARIO DE TÃ‰CNICAS (MODAL DE DOMINIO EXPANSIÃ“N) */}
+      {/* GLOSARIO DE TÉCNICAS (MODAL DE DOMINIO EXPANSIÓN) */}
       {showGlossary && (
         <div 
           className="overlay-screen animate-slide"
@@ -4824,7 +4823,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
           }}
         >
           <header className="overlay-header">
-            <h3 className="overlay-header-title">Glosario de TÃ©cnicas</h3>
+            <h3 className="overlay-header-title">Glosario de Técnicas</h3>
             <button 
               onClick={() => setShowGlossary(false)}
               className="btn-secondary"
@@ -4876,7 +4875,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                     <label className="form-label">Nombre del Ejercicio</label>
                     <input 
                       type="text"
-                      placeholder="Ej: Curl de bÃ­ceps con barra"
+                      placeholder="Ej: Curl de bíceps con barra"
                       value={newExerciseName}
                       onChange={(e) => setNewExerciseName(e.target.value)}
                       className="form-input"
@@ -4886,7 +4885,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
 
                   {/* Category */}
                   <div className="form-group">
-                    <label className="form-label">CategorÃ­a</label>
+                    <label className="form-label">Categoría</label>
                     <select
                       value={newExerciseCategory}
                       onChange={(e) => setNewExerciseCategory(e.target.value)}
@@ -4947,7 +4946,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                           style={{ display: 'none' }}
                         />
                         <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                          {newExerciseMediaFile ? `ðŸ“‚ ${newExerciseMediaFile.name}` : 'Selecciona una foto, video o GIF'}
+                          {newExerciseMediaFile ? `📂 ${newExerciseMediaFile.name}` : 'Selecciona una foto, video o GIF'}
                         </span>
                       </div>
                     ) : (
@@ -4964,9 +4963,9 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
 
                   {/* Technique Tips */}
                   <div className="form-group">
-                    <label className="form-label">Tips de tÃ©cnica (uno por lÃ­nea)</label>
+                    <label className="form-label">Tips de técnica (uno por línea)</label>
                     <textarea
-                      placeholder="Ej: MantÃ©n los codos pegados al cuerpo&#10;Contrae el abdomen durante el levantamiento"
+                      placeholder="Ej: Mantén los codos pegados al cuerpo&#10;Contrae el abdomen durante el levantamiento"
                       value={newExerciseTipsText}
                       onChange={(e) => setNewExerciseTipsText(e.target.value)}
                       className="form-input"
@@ -5021,7 +5020,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
         </div>
       )}
 
-      {/* GLOSARIO DE TÃ‰CNICAS (MODAL DE DOMINIO EXPANSIÃ“N) */}
+      {/* GLOSARIO DE TÉCNICAS (MODAL DE DOMINIO EXPANSIÓN) */}
       {selectedExerciseForGlosario && (
         <div 
           className="overlay-screen animate-slide"
@@ -5035,7 +5034,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
         >
           <header className="overlay-header" style={{ borderBottom: '1px solid var(--border-color)', backgroundColor: 'transparent', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
-              <span className="overlay-header-title-sub" style={{ color: 'var(--accent-primary)', fontSize: '11px', display: 'block' }}>Glosario de TÃ©cnicas</span>
+              <span className="overlay-header-title-sub" style={{ color: 'var(--accent-primary)', fontSize: '11px', display: 'block' }}>Glosario de Técnicas</span>
               <h3 className="overlay-header-title" style={{ fontSize: '1.25rem', fontWeight: 800, marginTop: '2px', color: 'var(--text-primary)' }}>{selectedExerciseForGlosario.name}</h3>
             </div>
             <span className="badge" style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--accent-primary)', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '4px 8px', fontSize: '11px' }}>
@@ -5066,11 +5065,11 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
             {/* Structured Details */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               
-              {/* PosiciÃ³n Inicial */}
+              {/* Posición Inicial */}
               {selectedExerciseForGlosario.posicion_inicial && selectedExerciseForGlosario.posicion_inicial.length > 0 && (
                 <div style={{ padding: '14px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)', backgroundColor: 'rgba(255, 255, 255, 0.02)' }}>
                   <h4 style={{ color: 'var(--accent-primary)', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px', margin: 0 }}>
-                    <span>ðŸ¥‹</span> PosiciÃ³n Inicial
+                    <span>🥋</span> Posición Inicial
                   </h4>
                   <ul style={{ paddingLeft: '18px', margin: 0, marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '13px', color: 'var(--text-secondary)' }}>
                     {selectedExerciseForGlosario.posicion_inicial.map((step, i) => (
@@ -5080,11 +5079,11 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                 </div>
               )}
 
-              {/* EjecuciÃ³n */}
+              {/* Ejecución */}
               {selectedExerciseForGlosario.ejecucion && selectedExerciseForGlosario.ejecucion.length > 0 && (
                 <div style={{ padding: '14px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)', backgroundColor: 'rgba(255, 255, 255, 0.02)' }}>
                   <h4 style={{ color: 'var(--accent-primary)', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px', margin: 0 }}>
-                    <span>âš”ï¸</span> EjecuciÃ³n
+                    <span>⚔️</span> Ejecución
                   </h4>
                   <ul style={{ paddingLeft: '18px', margin: 0, marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '13px', color: 'var(--text-secondary)' }}>
                     {selectedExerciseForGlosario.ejecucion.map((step, i) => (
@@ -5098,7 +5097,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
               {selectedExerciseForGlosario.consejos && selectedExerciseForGlosario.consejos.length > 0 && (
                 <div style={{ padding: '14px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)', backgroundColor: 'rgba(255, 255, 255, 0.02)' }}>
                   <h4 style={{ color: 'var(--accent-primary)', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px', margin: 0 }}>
-                    <span>ðŸ’¡</span> Tips e Indicaciones
+                    <span>💡</span> Tips e Indicaciones
                   </h4>
                   <ul style={{ paddingLeft: '18px', margin: 0, marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '13px', color: 'var(--text-secondary)' }}>
                     {selectedExerciseForGlosario.consejos.map((tip, i) => (
@@ -5112,7 +5111,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
               {selectedExerciseForGlosario.variantes && selectedExerciseForGlosario.variantes.length > 0 && (
                 <div style={{ padding: '14px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)', backgroundColor: 'rgba(255, 255, 255, 0.02)' }}>
                   <h4 style={{ color: 'var(--accent-primary)', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px', margin: 0 }}>
-                    <span>ðŸŒ€</span> Variantes
+                    <span>🌀</span> Variantes
                   </h4>
                   <ul style={{ paddingLeft: '18px', margin: 0, marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '13px', color: 'var(--text-secondary)' }}>
                     {selectedExerciseForGlosario.variantes.map((variant, i) => (
@@ -5125,7 +5124,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
             </div>
           </div>
 
-          {/* BotÃ³n flotante para cerrar */}
+          {/* Botón flotante para cerrar */}
           <div style={{ position: 'absolute', bottom: '20px', left: '0', right: '0', display: 'flex', justifyContent: 'center' }}>
             <button 
               onClick={() => setSelectedExerciseForGlosario(null)}
@@ -5140,13 +5139,13 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                 boxShadow: '0 4px 15px rgba(229, 9, 20, 0.4)'
               }}
             >
-              ðŸ”´ Cerrar Dominio
+              🔴 Cerrar Dominio
             </button>
           </div>
         </div>
       )}
 
-      {/* Sellar Pacto - SincronizaciÃ³n Detallada */}
+      {/* Sellar Pacto - Sincronización Detallada */}
       {showSyncOverlay && (
         <div
           className="overlay-screen animate-fade-in"
@@ -5194,7 +5193,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                 <Zap className="text-primary animate-pulse" size={28} />
               </div>
               <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-                {syncOverlayMode === 'download' ? 'Entrenamiento Z: Cargando' : 'Estableciendo VÃ­nculo Z'}
+                {syncOverlayMode === 'download' ? 'Entrenamiento Z: Cargando' : 'Estableciendo Vínculo Z'}
               </h3>
               <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px', margin: 0 }}>
                 {syncOverlayMode === 'download'
@@ -5212,7 +5211,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                   <User size={16} style={{ color: syncSteps.profile === 'syncing' ? 'var(--accent-primary)' : 'var(--text-secondary)' }} />
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
                     <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-primary)' }}>
-                      {syncOverlayMode === 'download' ? 'Reconociendo al ChamÃ¡n' : 'Identidad del ChamÃ¡n'}
+                      {syncOverlayMode === 'download' ? 'Reconociendo al Chamán' : 'Identidad del Chamán'}
                     </span>
                     <span style={{ fontSize: '10px', color: 'var(--text-tertiary)' }}>
                       {syncOverlayMode === 'download' ? 'Descargando nombre, clan, nivel y foto' : 'Subiendo nombre, clan, nivel y foto'}
@@ -5221,8 +5220,8 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                 </div>
                 {syncSteps.profile === 'pending' && <div style={{ width: '12px', height: '12px', borderRadius: '50%', border: '2.5px solid var(--border-color)', flexShrink: 0 }}></div>}
                 {syncSteps.profile === 'syncing' && <div style={{ width: '16px', height: '16px', borderRadius: '50%', border: '2px solid var(--accent-primary)', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite', flexShrink: 0 }}></div>}
-                {syncSteps.profile === 'completed' && <span style={{ fontSize: '16px', fontWeight: 'bold', color: 'var(--accent-primary)', flexShrink: 0 }}>âœ“</span>}
-                {syncSteps.profile === 'error' && <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#ef4444', flexShrink: 0 }}>âœ—</span>}
+                {syncSteps.profile === 'completed' && <span style={{ fontSize: '16px', fontWeight: 'bold', color: 'var(--accent-primary)', flexShrink: 0 }}>✓</span>}
+                {syncSteps.profile === 'error' && <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#ef4444', flexShrink: 0 }}>✗</span>}
               </div>
 
               {/* 2. Exercises */}
@@ -5231,7 +5230,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                   <Zap size={16} style={{ color: syncSteps.exercises === 'syncing' ? 'var(--accent-primary)' : 'var(--text-secondary)' }} />
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
                     <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-primary)' }}>
-                      {syncOverlayMode === 'download' ? 'Recuperando TÃ©cnicas' : 'TÃ©cnicas Guardadas'}
+                      {syncOverlayMode === 'download' ? 'Recuperando Técnicas' : 'Técnicas Guardadas'}
                     </span>
                     <span style={{ fontSize: '10px', color: 'var(--text-tertiary)' }}>
                       {syncOverlayMode === 'download' ? 'Cargando ejercicios personalizados' : 'Escaneando ejercicios personalizados'}
@@ -5240,8 +5239,8 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                 </div>
                 {syncSteps.exercises === 'pending' && <div style={{ width: '12px', height: '12px', borderRadius: '50%', border: '2.5px solid var(--border-color)', flexShrink: 0 }}></div>}
                 {syncSteps.exercises === 'syncing' && <div style={{ width: '16px', height: '16px', borderRadius: '50%', border: '2px solid var(--accent-primary)', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite', flexShrink: 0 }}></div>}
-                {syncSteps.exercises === 'completed' && <span style={{ fontSize: '16px', fontWeight: 'bold', color: 'var(--accent-primary)', flexShrink: 0 }}>âœ“</span>}
-                {syncSteps.exercises === 'error' && <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#ef4444', flexShrink: 0 }}>âœ—</span>}
+                {syncSteps.exercises === 'completed' && <span style={{ fontSize: '16px', fontWeight: 'bold', color: 'var(--accent-primary)', flexShrink: 0 }}>✓</span>}
+                {syncSteps.exercises === 'error' && <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#ef4444', flexShrink: 0 }}>✗</span>}
               </div>
 
               {/* 3. Routines */}
@@ -5259,8 +5258,8 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                 </div>
                 {syncSteps.routines === 'pending' && <div style={{ width: '12px', height: '12px', borderRadius: '50%', border: '2.5px solid var(--border-color)', flexShrink: 0 }}></div>}
                 {syncSteps.routines === 'syncing' && <div style={{ width: '16px', height: '16px', borderRadius: '50%', border: '2px solid var(--accent-primary)', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite', flexShrink: 0 }}></div>}
-                {syncSteps.routines === 'completed' && <span style={{ fontSize: '16px', fontWeight: 'bold', color: 'var(--accent-primary)', flexShrink: 0 }}>âœ“</span>}
-                {syncSteps.routines === 'error' && <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#ef4444', flexShrink: 0 }}>âœ—</span>}
+                {syncSteps.routines === 'completed' && <span style={{ fontSize: '16px', fontWeight: 'bold', color: 'var(--accent-primary)', flexShrink: 0 }}>✓</span>}
+                {syncSteps.routines === 'error' && <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#ef4444', flexShrink: 0 }}>✗</span>}
               </div>
 
               {/* 4. Workouts */}
@@ -5278,8 +5277,8 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                 </div>
                 {syncSteps.workouts === 'pending' && <div style={{ width: '12px', height: '12px', borderRadius: '50%', border: '2.5px solid var(--border-color)', flexShrink: 0 }}></div>}
                 {syncSteps.workouts === 'syncing' && <div style={{ width: '16px', height: '16px', borderRadius: '50%', border: '2px solid var(--accent-primary)', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite', flexShrink: 0 }}></div>}
-                {syncSteps.workouts === 'completed' && <span style={{ fontSize: '16px', fontWeight: 'bold', color: 'var(--accent-primary)', flexShrink: 0 }}>âœ“</span>}
-                {syncSteps.workouts === 'error' && <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#ef4444', flexShrink: 0 }}>âœ—</span>}
+                {syncSteps.workouts === 'completed' && <span style={{ fontSize: '16px', fontWeight: 'bold', color: 'var(--accent-primary)', flexShrink: 0 }}>✓</span>}
+                {syncSteps.workouts === 'error' && <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#ef4444', flexShrink: 0 }}>✗</span>}
               </div>
 
               {/* 5. Calendar */}
@@ -5297,13 +5296,13 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                 </div>
                 {syncSteps.calendar === 'pending' && <div style={{ width: '12px', height: '12px', borderRadius: '50%', border: '2.5px solid var(--border-color)', flexShrink: 0 }}></div>}
                 {syncSteps.calendar === 'syncing' && <div style={{ width: '16px', height: '16px', borderRadius: '50%', border: '2px solid var(--accent-primary)', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite', flexShrink: 0 }}></div>}
-                {syncSteps.calendar === 'completed' && <span style={{ fontSize: '16px', fontWeight: 'bold', color: 'var(--accent-primary)', flexShrink: 0 }}>âœ“</span>}
-                {syncSteps.calendar === 'error' && <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#ef4444', flexShrink: 0 }}>âœ—</span>}
+                {syncSteps.calendar === 'completed' && <span style={{ fontSize: '16px', fontWeight: 'bold', color: 'var(--accent-primary)', flexShrink: 0 }}>✓</span>}
+                {syncSteps.calendar === 'error' && <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#ef4444', flexShrink: 0 }}>✗</span>}
               </div>
 
             </div>
 
-            {/* Final action button â€” appears when done */}
+            {/* Final action button — appears when done */}
             {syncSteps.calendar === 'completed' && (
               <button 
                 onClick={() => {
@@ -5323,7 +5322,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                   cursor: 'pointer'
                 }}
               >
-                {syncOverlayMode === 'download' ? 'âš¡ Pacto Restaurado âš¡' : 'âš¡ Pacto Sellado âš¡'}
+                {syncOverlayMode === 'download' ? '⚡ Pacto Restaurado ⚡' : '⚡ Pacto Sellado ⚡'}
               </button>
             )}
           </div>
