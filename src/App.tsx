@@ -1395,8 +1395,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
       name: newExerciseName.trim(),
       category: newExerciseCategory,
       gif_url: gifUrl,
-      tips: newExerciseTipsText.split('
-').map(t => t.trim()).filter(Boolean),
+      tips: newExerciseTipsText.split('\n').map(t => t.trim()).filter(Boolean),
       is_custom: true,
       media_blob: mediaBlob
     };
@@ -3603,7 +3602,6 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
               exercises={exercises}
               workouts={workouts}
               workoutSets={workoutSets}
-              
               onStartWorkout={startWorkout}
               onOpenRoutineCreator={(dayVal) => {
                 setAssigningRoutineDayValue(dayVal ?? null);
@@ -5336,8 +5334,4 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
 }
 
 export default App;
-
-
-
-
 
