@@ -123,7 +123,7 @@ function App() {
   });
 
   
-const [showShenronModal, setShowShenronModal] = useState<boolean>(false);
+const [showShenronModal, setShowShenronModal] = useState<boolean>(false); // eslint-disable-line @typescript-eslint/no-unused-vars
 
   useEffect(() => {
     try {
@@ -200,7 +200,7 @@ const [showShenronModal, setShowShenronModal] = useState<boolean>(false);
   const [editClan, setEditClan] = useState('');
   const [editCursedTechnique, setEditCursedTechnique] = useState('');
   
-const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number | null>(null);
+const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number | null>(null); // eslint-disable-line @typescript-eslint/no-unused-vars
 
   // Health Metrics Local State (Persisted in localStorage)
   const [userWeight, setUserWeight] = useState<number>(() => parseFloat(localStorage.getItem('user_weight') || '78'));
@@ -3600,7 +3600,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
               exercises={exercises}
               workouts={workouts}
               workoutSets={workoutSets}
-              weeklyGoalDays={weeklyGoalDays}
+              
               onStartWorkout={startWorkout}
               onOpenRoutineCreator={(dayVal) => {
                 setAssigningRoutineDayValue(dayVal ?? null);
@@ -5333,4 +5333,6 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
 }
 
 export default App;
+
+
 
