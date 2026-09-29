@@ -3602,6 +3602,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
               exercises={exercises}
               workouts={workouts}
               workoutSets={workoutSets}
+              weeklyGoalDays={weeklyGoalDays}
               onStartWorkout={startWorkout}
               onOpenRoutineCreator={(dayVal) => {
                 setAssigningRoutineDayValue(dayVal ?? null);
