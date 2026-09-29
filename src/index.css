@@ -1,12 +1,12 @@
-
-/* ==========================================================================
+﻿
+/* ====
    CAPSULE CORP FITNESS TECH - BIMODAL DESIGN SYSTEM (V2.0 STITCH MCP)
-   ========================================================================== */
+   ==== */
 
 :root,
 :root[data-theme="dark"],
 .dark {
-  /* Dark Mode: Cámara del Tiempo / Espacio Profundo */
+  /* Dark Mode: CÃ¡mara del Tiempo / Espacio Profundo */
   --bg-primary: #10131e;
   --bg-secondary: #1c202e;
   --bg-tertiary: #24293a;
@@ -1502,13 +1502,13 @@ input[type="password"]::placeholder {
   }
 }
 
-/* Ponytail: Aumentar el tamaño de los textos que eran demasiado pequeños (menores a 12px) */
+/* Ponytail: Aumentar el tamaÃ±o de los textos que eran demasiado pequeÃ±os (menores a 12px) */
 *[style*="font-size: 8px"], *[style*="font-size:8px"] { font-size: 11px !important; }
 *[style*="font-size: 9px"], *[style*="font-size:9px"] { font-size: 12px !important; }
 *[style*="font-size: 10px"], *[style*="font-size:10px"] { font-size: 13px !important; }
 *[style*="font-size: 11px"], *[style*="font-size:11px"] { font-size: 14px !important; }
 
-/* Aumentar textos pequeños de clases globales */
+/* Aumentar textos pequeÃ±os de clases globales */
 .routine-row-sub,
 .profile-level,
 .exercise-tag,
@@ -1526,3 +1526,4 @@ input, button, select {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
