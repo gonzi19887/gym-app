@@ -123,7 +123,7 @@ function App() {
   });
 
   
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+// @ts-expect-error - used in JSX (onClaimShenron)
 const [showShenronModal, setShowShenronModal] = useState<boolean>(false);
 
   useEffect(() => {
@@ -201,7 +201,7 @@ const [showShenronModal, setShowShenronModal] = useState<boolean>(false);
   const [editClan, setEditClan] = useState('');
   const [editCursedTechnique, setEditCursedTechnique] = useState('');
   
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+// @ts-expect-error - used in JSX (onOpenRoutineCreator)
 const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number | null>(null);
 
   // Health Metrics Local State (Persisted in localStorage)
