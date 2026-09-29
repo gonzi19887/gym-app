@@ -123,7 +123,8 @@ function App() {
   });
 
   
-const [showShenronModal, setShowShenronModal] = useState<boolean>(false); // eslint-disable-line @typescript-eslint/no-unused-vars
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const [showShenronModal, setShowShenronModal] = useState<boolean>(false);
 
   useEffect(() => {
     try {
@@ -200,7 +201,8 @@ const [showShenronModal, setShowShenronModal] = useState<boolean>(false); // esl
   const [editClan, setEditClan] = useState('');
   const [editCursedTechnique, setEditCursedTechnique] = useState('');
   
-const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number | null>(null); // eslint-disable-line @typescript-eslint/no-unused-vars
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number | null>(null);
 
   // Health Metrics Local State (Persisted in localStorage)
   const [userWeight, setUserWeight] = useState<number>(() => parseFloat(localStorage.getItem('user_weight') || '78'));
@@ -1393,7 +1395,8 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
       name: newExerciseName.trim(),
       category: newExerciseCategory,
       gif_url: gifUrl,
-      tips: newExerciseTipsText.split('\n').map(t => t.trim()).filter(Boolean),
+      tips: newExerciseTipsText.split('
+').map(t => t.trim()).filter(Boolean),
       is_custom: true,
       media_blob: mediaBlob
     };
@@ -5333,6 +5336,8 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
 }
 
 export default App;
+
+
 
 
 
