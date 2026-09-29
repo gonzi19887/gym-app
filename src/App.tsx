@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+﻿import { useState, useEffect, useRef } from 'react';
 import { 
   Calendar, 
   TrendingUp, 
@@ -32,7 +32,12 @@ import {
   deleteRecord,
   clearAllTables,
   generateUUID,
-  queueSyncItem
+  queueSyncItem,
+  saveActiveWorkoutState,
+  getActiveWorkoutState,
+  clearActiveWorkoutState,
+  setAppSetting,
+  getAppSetting
 } from './db/localDb';
 import type {
   Profile, 
@@ -40,8 +45,11 @@ import type {
   Routine, 
   RoutineExercise, 
   Workout, 
-  WorkoutSet 
+  WorkoutSet
 } from './db/localDb';
+import { CalendarKi } from './components/CalendarKi';
+// import ShenronRewardModal from './components/ShenronRewardModal'; // Comentado temporalmente para evitar error TS6133
+
 import { seedDatabase } from './db/seed';
 import { supabase, isSupabaseConfigured } from './db/supabaseClient';
 import { syncLocalQueueToCloud, migrateGuestDataToUser, syncTableToCloud, pullTableFromCloud } from './db/sync';
@@ -69,13 +77,16 @@ const triggerVibration = (pattern: number | number[]) => {
   }
 };
 
-// Jujutsu Kaisen thematic rank calculation
-const getJJKGrade = (level: number): string => {
-  if (level === 1) return 'Chamán de 4.° Grado 🛡️';
-  if (level === 2) return 'Chamán de 3.° Grado ⚔️';
-  if (level === 3) return 'Chamán de 2.° Grado 🌀';
-  if (level === 4) return 'Chamán de 1.° Grado 🔴🔵';
-  return 'Chamán de Grado Especial 🔴🔵🟣';
+// Dragon Ball Z thematic level calculation
+const getDBZLevelTitle = (level: number): string => {
+  if (level <= 1) return 'Humano Normal (Krillin día 1) 🥋';
+  if (level === 2) return 'Guerrero Z (Saiyan Clase Baja) ⚡';
+  if (level === 3) return 'Guerrero Elite (Fuerza Especial) 🌀';
+  if (level === 4) return 'Super Saiyan (Poder Despertado) 🟡';
+  if (level === 5) return 'Super Saiyan 2 (Rayos Eléctricos) ⚡🟡';
+  if (level === 6) return 'Super Saiyan 3 (Poder Absoluto) 💥🟡';
+  if (level === 7) return 'Super Saiyan God (Fuego Divino) 🔴';
+  return 'Goku Ultra Instinto (Esquive Divino) ⚪';
 };
 
 const WEEKDAYS = [
@@ -88,19 +99,44 @@ const WEEKDAYS = [
   { label: 'D', value: 0, name: 'Domingo' }
 ];
 
-
-
 const REST_REMINDERS = [
-  "💧 Recuerda tomar un sorbo de agua para rehidratar tus reservas de energía maldita.",
-  "🧘 Estira suavemente los músculos trabajados para acelerar su recuperación.",
-  "💧 La hidratación adecuada optimiza tus reflejos y fuerza en el siguiente set.",
-  "🧘 Aprovecha para estirar tus articulaciones y relajar los hombros rígidos.",
-  "⚡ Mantén el foco en la respiración y canaliza tu energía maldita para el combate.",
-  "💧 Bebe un trago de agua: hidratar tus células previene la fatiga precoz.",
-  "🧘 Haz un estiramiento activo suave: mejora el flujo sanguíneo hacia el músculo."
+  "💧 Recuerda tomar un sorbo de agua para rehidratar tus reservas de Ki.",
+  "🧘 Estira suavemente los músculos trabajados para acelerar tu Zenkai Boost.",
+  "💧 La hidratación adecuada optimiza tus reflejos de combate en el siguiente set.",
+  "🧘 Relaja tus hombros rígidos como si entrenaras en la Cámara de Gravedad Aumentada.",
+  "⚡ Mantén el foco en la respiración y canaliza tu Ki para romper tus límites.",
+  "💧 Bebe un trago de agua: hidratar tus células previene la fatiga en combate.",
+  "🧘 Recupera tu aliento como un verdadero Guerrero Z listo para la siguiente batalla."
 ];
 
 function App() {
+
+  // Theme State (Persisted in localStorage with system fallback)
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    try {
+      const saved = localStorage.getItem('theme_preference');
+      if (saved === 'dark' || saved === 'light') return saved;
+      return window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+    } catch {
+      return 'dark';
+    }
+  });
+
+  
+// @ts-expect-error - used in JSX (onClaimShenron)
+const [showShenronModal, setShowShenronModal] = useState<boolean>(false);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('theme_preference', theme);
+      document.documentElement.setAttribute('data-theme', theme);
+      document.documentElement.classList.toggle('dark', theme === 'dark');
+      document.documentElement.classList.toggle('light', theme === 'light');
+    } catch (e) {
+      console.error(e);
+    }
+  }, [theme]);
+
   // Navigation & General Tabs
   const [activeTab, setActiveTab] = useState<'hoy' | 'calendario' | 'rutinas' | 'progreso' | 'perfil'>('hoy');
   
@@ -117,6 +153,7 @@ function App() {
   const [selectedExerciseForGlosario, setSelectedExerciseForGlosario] = useState<Exercise | null>(null);
   const [showGlossary, setShowGlossary] = useState(false);
   const [routineExerciseSearch, setRoutineExerciseSearch] = useState('');
+  const [newRoutineCategoryFilter, setNewRoutineCategoryFilter] = useState<string | null>(null);
   const [isTimerMinimized, setIsTimerMinimized] = useState(false);
 
   // Routine Creator Modal State
@@ -129,6 +166,7 @@ function App() {
     sets: number;
     reps: number;
     rest: number;
+    is_time_based?: boolean;
   }[]>([]);
 
 
@@ -148,6 +186,10 @@ function App() {
   const [exerciseTimeElapsed, setExerciseTimeElapsed] = useState(0);
   const [isExerciseTimerRunning, setIsExerciseTimerRunning] = useState(false);
 
+  // Background-resilient timer refs
+  const timerTargetTimeRef = useRef<number | null>(null);
+  const exerciseTimerStartTimeRef = useRef<number | null>(null);
+
   // Gamification & Level Up Overlay State
   const [levelUpInfo, setLevelUpInfo] = useState<{ oldLevel: number; newLevel: number; xpEarned: number } | null>(null);
   const [showBlackFlash, setShowBlackFlash] = useState(false); // Jujutsu personal record burst
@@ -158,7 +200,37 @@ function App() {
   const [editAvatarUrl, setEditAvatarUrl] = useState('');
   const [editClan, setEditClan] = useState('');
   const [editCursedTechnique, setEditCursedTechnique] = useState('');
-  const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number | null>(null);
+  
+// @ts-expect-error - used in JSX (onOpenRoutineCreator)
+const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number | null>(null);
+
+  // Health Metrics Local State (Persisted in localStorage)
+  const [userWeight, setUserWeight] = useState<number>(() => parseFloat(localStorage.getItem('user_weight') || '78'));
+  const [userFatPct, setUserFatPct] = useState<number>(() => parseFloat(localStorage.getItem('user_fat_pct') || '14'));
+  const [userHeight, setUserHeight] = useState<number>(() => parseFloat(localStorage.getItem('user_height') || '180'));
+
+  // SPEC_011: Onboarding, Weekly Goal, and Hydration State
+  const [onboardingCompleted, setOnboardingCompleted] = useState<boolean>(() => {
+    return localStorage.getItem('onboarding_completed') === 'true';
+  });
+  const [onboardingStep, setOnboardingStep] = useState<number>(1);
+  const [weeklyGoalDays, setWeeklyGoalDays] = useState<number>(() => {
+    return parseInt(localStorage.getItem('weekly_goal_days') || '3');
+  });
+  const [waterIntake, setWaterIntake] = useState<number>(() => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    return parseInt(localStorage.getItem(`water_intake_${todayStr}`) || '0');
+  });
+  const [showCTARoutineDropdown, setShowCTARoutineDropdown] = useState<boolean>(false);
+
+  const [onboardingUsername, setOnboardingUsername] = useState('');
+  const [onboardingAvatarUrl, setOnboardingAvatarUrl] = useState('');
+  const [onboardingClan, setOnboardingClan] = useState('Tortuga');
+  const [onboardingCursedTechnique, setOnboardingCursedTechnique] = useState('Kamehameha 👐');
+  const [onboardingWeight, setOnboardingWeight] = useState<number>(75);
+  const [onboardingHeight, setOnboardingHeight] = useState<number>(175);
+  const [onboardingGoalDays, setOnboardingGoalDays] = useState<number>(3);
+  const [onboardingRoutineTemplate, setOnboardingRoutineTemplate] = useState<string>('roshi');
 
   // Camera & Custom Photo State
   const [isCameraActive, setIsCameraActive] = useState(false);
@@ -219,74 +291,74 @@ function App() {
     
     if (primaryCat.includes('BICEPS') || primaryCat.includes('TRICEPS') || primaryCat.includes('ANTEBRAZOS') || primaryCat.includes('BRAZO') || primaryCat.includes('BRAZOS')) {
       const names = [
-        'Divergent Fist: Fuerza de Brazos 🤜🌀',
-        'Black Flash: Impacto de Brazos ⚡🤛',
-        'Boogie Woogie: Danza de Manos 👏✨',
-        'Fuerza de Toji: Brazos de Grado Especial 💪🔥'
+        'Puño Dragón: Fuerza de Saiyan 🤜🐉',
+        'Kamehameha: Poder de Brazos ⚡👐',
+        'Esferas del Dragón: Brazos Z 🌟🦾',
+        'Fuerza de Vegeta: Brazos de Orgullo Saiyan 💪🔥'
       ];
       return names[Math.floor(Math.random() * names.length)];
     }
     
     if (primaryCat.includes('PECHO')) {
       const names = [
-        'Cuerpo de Sukuna: Pecho Blindado 👹🛡️',
-        'Ritual de Sangre: Pecho de Acero 🩸🛡️',
-        'Escudo de Energía Maldita: Pectoral 🌀🛡️'
+        'Armadura Saiyan: Pecho Blindado 🛡️',
+        'Entrenamiento Z: Pecho de Acero 💥🛡️',
+        'Escudo de Ki: Pectoral Supremo 🌀🛡️'
       ];
       return names[Math.floor(Math.random() * names.length)];
     }
     
     if (primaryCat.includes('ESPALDA')) {
       const names = [
-        'Back of the Demon: Espalda Maldita 👺🗡️',
-        'Wings of the Curse: Dorsales de Grado Especial 🪽🌀',
-        'Restricción Celestial: Espalda de Acero 🦾'
+        'Espalda de Ozaru: Fuerza Desatada 🦍💥',
+        'Alas de Shenlong: Dorsales Supremos 🐉🌀',
+        'Gravedad 100x: Espalda de Acero 🦾🛸'
       ];
       return names[Math.floor(Math.random() * names.length)];
     }
     
     if (primaryCat.includes('PIERNA') || primaryCat.includes('PANTORRILLA') || primaryCat.includes('CADERA') || primaryCat.includes('PIERNAS')) {
       const names = [
-        'Desplazamiento Divino: Piernas de Gojo ⚡👣',
-        'Puntapié del Dios del Trueno: Piernas 👣⚡',
-        'Velocidad de Toji: Entrenamiento de Piernas 🐆🦿',
-        'Ritual del Viento: Piernas Malditas 🌀👣'
+        'Velocidad de la Luz: Piernas de Goku ⚡👣',
+        'Golpe de Destello: Piernas Z 👣⚡',
+        'Entrenamiento Piccolo: Piernas Pesadas 🦿',
+        'Zenkai Boost: Piernas de Saiyan 🌀👣'
       ];
       return names[Math.floor(Math.random() * names.length)];
     }
     
     if (primaryCat.includes('ABDOMEN') || primaryCat.includes('TRONCO') || primaryCat.includes('COLUMNA') || primaryCat.includes('ABS') || primaryCat.includes('ABDOMINAL')) {
       const names = [
-        'Domain Expansion: Núcleo Absoluto 🔮🧘',
-        'Estabilidad del Velo: Core Maldito 🛡️🌀',
-        'Fuerza Interior de Nanami: Abdomen 7:3 📐🌀'
+        'Cámara del Tiempo: Core Absoluto 🧘⌛',
+        'Estabilidad del Ki: Core Saiyan 🛡️🌀',
+        'Fuerza Interior de Gohan: Abdomen Feroz 📐🌀'
       ];
       return names[Math.floor(Math.random() * names.length)];
     }
     
     if (primaryCat.includes('HOMBRO') || primaryCat.includes('TRAPECIOS') || primaryCat.includes('HOMBROS')) {
       const names = [
-        'Soporte del Cielo: Hombros de Titanio 🦾🌌',
-        'Fuerza Escapular: Ritual de Hombros 🦾🌀',
-        'Hombros de Sukuna: Carga Maldita 👹🦾'
+        'Soporte Cósmico: Hombros de Titanio 🦾🌌',
+        'Fuerza de Broly: Deltoides Legendarios 🦾🌀',
+        'Hombros de Majin Buu: Carga Pesada 🦾'
       ];
       return names[Math.floor(Math.random() * names.length)];
     }
     
     if (primaryCat.includes('ESTIRAMIENTOS') || primaryCat.includes('CUELLO') || primaryCat.includes('ESTIRAMIENTO')) {
       const names = [
-        'Reverse Cursed Technique: Curación Inversa 🔮🩹',
-        'Ritual de Restauración Maldita 🧘🩹',
-        'Liberación del Límite de Energía 🌀🩹'
+        'Semilla del Ermitaño: Recuperación 🟢🩹',
+        'Meditación del Templo Sagrado 🧘🩹',
+        'Liberación del Límite del Ki 🌀🩹'
       ];
       return names[Math.floor(Math.random() * names.length)];
     }
     
     const combos = [
-      'Heavenly Restriction (Restricción Celestial) 🦾💀',
-      'Special Grade Ritual (Ritual de Grado Especial) 👹🔮',
-      'Cursed Energy Manifestation (Manifestación de Energía) 🌀⚡',
-      'Shaman Training (Entrenamiento de Chamán) 🛡️⚔️'
+      'Gravedad 400x: Guerrero Legendario 🦾🛸',
+      'Modo Dios Super Saiyan 🔴',
+      'Manifestación del Ultra Instinto ⚪⚡',
+      'Entrenamiento Z del Gran Kaio 🥋⚔️'
     ];
     return combos[Math.floor(Math.random() * combos.length)];
   };
@@ -299,9 +371,19 @@ function App() {
       setEditAvatarUrl(profile.avatar_url);
       setEditClan(profile.clan || 'none');
       setEditCursedTechnique(profile.cursed_technique || '');
+      setOnboardingUsername(profile.username || '');
+      setOnboardingAvatarUrl(profile.avatar_url || '');
+      setOnboardingClan(profile.clan || 'Tortuga');
+      setOnboardingCursedTechnique(profile.cursed_technique || 'Kamehameha 👐');
       lastProfileIdRef.current = profile.id;
     }
   }, [profile]);
+
+  useEffect(() => {
+    if (editAvatarUrl) {
+      setOnboardingAvatarUrl(editAvatarUrl);
+    }
+  }, [editAvatarUrl]);
 
   useEffect(() => {
     if (showRoutineCreator) {
@@ -387,12 +469,17 @@ function App() {
     return () => window.removeEventListener('online', handleOnline);
   }, [session]);
 
-  // Auto-sync when app becomes hidden (user switches apps, closes tab, etc.)
+  // Auto-sync when app becomes hidden — SPEC_007: only sync if queue has items
+  // This prevents the spurious sync popup when returning from a phone call / screen lock
   useEffect(() => {
-    const handleVisibilityChange = () => {
+    const handleVisibilityChange = async () => {
       if (document.visibilityState === 'hidden') {
         if (isSupabaseConfigured && session && navigator.onLine) {
-          syncLocalQueueToCloud();
+          // Check queue length before triggering sync to avoid empty-queue popups
+          const queue = await getAllRecords('sync_queue');
+          if (queue.length > 0) {
+            syncLocalQueueToCloud();
+          }
         }
       }
     };
@@ -442,7 +529,7 @@ function App() {
           options: {
             emailRedirectTo: window.location.origin,
             data: {
-              username: authUsername.trim() || 'Chamán Novato'
+              username: authUsername.trim() || 'Guerrero Z Novato'
             }
           }
         });
@@ -544,7 +631,7 @@ function App() {
           username: authUser?.user_metadata?.full_name || 
                     authUser?.user_metadata?.name || 
                     authUser?.user_metadata?.username || 
-                    (authUser?.email ? authUser.email.split('@')[0] : 'Yuji Itadori (Chamán Novato)'),
+                    (authUser?.email ? authUser.email.split('@')[0] : 'Son Goku (Guerrero Z Novato)'),
           avatar_url: authUser?.user_metadata?.avatar_url || 
                       authUser?.user_metadata?.picture || 
                       '',
@@ -556,6 +643,15 @@ function App() {
         };
         await saveRecord('profiles', currentProfile, 'CREATE');
       }
+    }
+    // SPEC_007: Local-first profile settings check
+    try {
+      const localUsername = await getAppSetting('profile_username');
+      const localAvatarUrl = await getAppSetting('profile_avatar_url');
+      if (localUsername) currentProfile.username = localUsername;
+      if (localAvatarUrl) currentProfile.avatar_url = localAvatarUrl;
+    } catch (err) {
+      console.warn('Could not restore local profile settings:', err);
     }
     setProfile(currentProfile);
     setEditUsername(currentProfile.username);
@@ -597,7 +693,7 @@ function App() {
         const r1: Routine = {
           id: 'routine-torso',
           user_id: currentProfile.id,
-          name: 'Destello Negro: Torso Superior ⚡',
+          name: 'Entrenamiento del Maestro Roshi 🐢',
           day_of_week: [1, 4], // Monday, Thursday
           created_at: new Date().toISOString()
         };
@@ -626,7 +722,7 @@ function App() {
         const r2: Routine = {
           id: 'routine-inferior',
           user_id: currentProfile.id,
-          name: 'Ritual de Fuerza: Inferior y Brazos 🌀',
+          name: 'Cámara de Gravedad: Fuerza Saiyan 🦾',
           day_of_week: [2, 5], // Tuesday, Friday
           created_at: new Date().toISOString()
         };
@@ -671,6 +767,59 @@ function App() {
     setRoutineExercises(loadedRoutineExs);
     setWorkouts(loadedWorkouts);
     setWorkoutSets(loadedSets);
+
+    // SPEC_007: Load persisted active workout session from IndexedDB if it exists
+    try {
+      const activeState = await getActiveWorkoutState();
+      if (activeState) {
+        console.log('Restoring active workout session from IndexedDB:', activeState);
+        const activeW: Workout = {
+          id: activeState.startedAt ? `${activeState.routineId}-active` : generateUUID(),
+          user_id: userId,
+          routine_id: activeState.routineId,
+          started_at: activeState.startedAt,
+          completed_at: '',
+          experience_earned: 0,
+          synced: false
+        };
+        
+        const flatSets: WorkoutSet[] = [];
+        Object.values(activeState.sets).forEach((exSets) => {
+          flatSets.push(...exSets);
+        });
+
+        if (flatSets.length === 0) {
+          const relExs = loadedRoutineExs
+            .filter((re) => re.routine_id === activeState.routineId)
+            .sort((a, b) => a.order_index - b.order_index);
+          
+          relExs.forEach((re) => {
+            for (let s = 1; s <= re.default_sets; s++) {
+              flatSets.push({
+                id: generateUUID(),
+                workout_id: activeW.id,
+                exercise_id: re.exercise_id,
+                set_number: s,
+                weight: 0,
+                reps: re.default_reps || 10,
+                rest_time: re.default_rest_time,
+                is_completed: false
+              });
+            }
+          });
+        }
+
+        const matchedRoutine = loadedRoutines.find((r) => r.id === activeState.routineId);
+        
+        setActiveWorkout(activeW);
+        if (matchedRoutine) setActiveRoutine(matchedRoutine);
+        setActiveExercises(activeState.exercises);
+        setActiveWorkoutSets(flatSets);
+        setActiveExerciseIndex(activeState.currentExerciseIndex);
+      }
+    } catch (err) {
+      console.warn('Could not restore active workout state:', err);
+    }
   };
 
   // Helper to determine if a URL represents a video format
@@ -867,7 +1016,11 @@ function App() {
         clan: editClan,
         cursed_technique: editCursedTechnique
       };
-      
+
+      // SPEC_007: Save to IndexedDB FIRST (immediate, local-first)
+      // This guarantees persistence even if Supabase sync fails or network is lost
+      await setAppSetting('profile_username', editUsername);
+      await setAppSetting('profile_avatar_url', finalAvatarUrl);
       await saveRecord('profiles', updated, 'UPDATE');
       setProfile(updated);
 
@@ -878,72 +1031,23 @@ function App() {
       }
       setIsCameraActive(false);
 
+      // SPEC_007: Sync only the profile — no need to run full 5-step overlay
+      // Supabase sync is secondary; local data is already saved above
       if (isSupabaseConfigured && session && navigator.onLine) {
+        setSyncOverlayMode('upload');
+        setSyncSteps({ profile: 'syncing', exercises: 'pending', routines: 'pending', workouts: 'pending', calendar: 'pending' });
         setShowSyncOverlay(true);
-        const sleep = (ms: number) => new Promise(res => setTimeout(res, ms));
-
-        // Step 1: Chamán Profile
-        setSyncSteps(prev => ({ ...prev, profile: 'syncing' }));
-        await sleep(500);
         try {
           await syncTableToCloud('profiles');
-          setSyncSteps(prev => ({ ...prev, profile: 'completed' }));
+          setSyncSteps(prev => ({ ...prev, profile: 'completed', exercises: 'completed', routines: 'completed', workouts: 'completed', calendar: 'completed' }));
         } catch (err) {
-          console.error(err);
+          console.error('Profile sync failed (data saved locally):', err);
           setSyncSteps(prev => ({ ...prev, profile: 'error' }));
         }
-
-        // Step 2: Exercises
-        setSyncSteps(prev => ({ ...prev, exercises: 'syncing' }));
-        await sleep(500);
-        try {
-          await syncTableToCloud('exercises');
-          setSyncSteps(prev => ({ ...prev, exercises: 'completed' }));
-        } catch (err) {
-          console.error(err);
-          setSyncSteps(prev => ({ ...prev, exercises: 'error' }));
-        }
-
-        // Step 3: Routines
-        setSyncSteps(prev => ({ ...prev, routines: 'syncing' }));
-        await sleep(500);
-        try {
-          await syncTableToCloud('routines');
-          await syncTableToCloud('routine_exercises');
-          setSyncSteps(prev => ({ ...prev, routines: 'completed' }));
-        } catch (err) {
-          console.error(err);
-          setSyncSteps(prev => ({ ...prev, routines: 'error' }));
-        }
-
-        // Step 4: Workouts / Combat Logs
-        setSyncSteps(prev => ({ ...prev, workouts: 'syncing' }));
-        await sleep(500);
-        try {
-          await syncTableToCloud('workouts');
-          await syncTableToCloud('workout_sets');
-          setSyncSteps(prev => ({ ...prev, workouts: 'completed' }));
-        } catch (err) {
-          console.error(err);
-          setSyncSteps(prev => ({ ...prev, workouts: 'error' }));
-        }
-
-        // Step 5: Calendar / Streak
-        setSyncSteps(prev => ({ ...prev, calendar: 'syncing' }));
-        await sleep(500);
-        try {
-          // Calendar is implicitly synced via profiles fields.
-          setSyncSteps(prev => ({ ...prev, calendar: 'completed' }));
-        } catch (err) {
-          console.error(err);
-          setSyncSteps(prev => ({ ...prev, calendar: 'error' }));
-        }
-
-        setPactStatus('¡Pacto sellado y sincronizado! ⚡');
+        setPactStatus('¡Perfil guardado y sincronizado! ✅');
         setIsSealingPact(false);
       } else {
-        setPactStatus('¡Pacto sellado localmente! ⚡');
-        alert('¡Perfil de hechicero guardado localmente! ✅');
+        setPactStatus('¡Perfil guardado localmente! ✅');
         setIsSealingPact(false);
         setActiveTab('hoy');
       }
@@ -1024,39 +1128,75 @@ function App() {
     loadData();
   }, [session]);
 
-  // Timer interval handling
+  // Keep rest timer ref in sync when timerRemaining is set from outside (like completing a set or adding 30s)
+  useEffect(() => {
+    if (isTimerRunning && timerRemaining > 0) {
+      const currentTarget = timerTargetTimeRef.current;
+      if (currentTarget === null) {
+        timerTargetTimeRef.current = Date.now() + timerRemaining * 1000;
+      } else {
+        const expectedRemaining = Math.max(0, Math.ceil((currentTarget - Date.now()) / 1000));
+        if (Math.abs(expectedRemaining - timerRemaining) > 1) {
+          timerTargetTimeRef.current = Date.now() + timerRemaining * 1000;
+        }
+      }
+    } else if (!isTimerRunning || timerRemaining <= 0) {
+      timerTargetTimeRef.current = null;
+    }
+  }, [timerRemaining, isTimerRunning]);
+
+  // Keep exercise stopwatch ref in sync when exerciseTimeElapsed changes from outside
+  useEffect(() => {
+    if (isExerciseTimerRunning) {
+      const start = exerciseTimerStartTimeRef.current;
+      if (start === null) {
+        exerciseTimerStartTimeRef.current = Date.now() - exerciseTimeElapsed * 1000;
+      } else {
+        const expectedElapsed = Math.floor((Date.now() - start) / 1000);
+        if (Math.abs(expectedElapsed - exerciseTimeElapsed) > 1) {
+          exerciseTimerStartTimeRef.current = Date.now() - exerciseTimeElapsed * 1000;
+        }
+      }
+    } else {
+      exerciseTimerStartTimeRef.current = null;
+    }
+  }, [exerciseTimeElapsed, isExerciseTimerRunning]);
+
+  // Timer interval handling using absolute target timestamps
   useEffect(() => {
     let interval: any = null;
     if (isTimerRunning && timerRemaining > 0) {
       interval = setInterval(() => {
-        setTimerRemaining((prev) => {
-          const next = prev - 1;
-          if (next <= 0) {
+        const target = timerTargetTimeRef.current;
+        if (target !== null) {
+          const remaining = Math.max(0, Math.ceil((target - Date.now()) / 1000));
+          setTimerRemaining(remaining);
+          if (remaining <= 0) {
+            timerTargetTimeRef.current = null;
+            setIsTimerRunning(false);
             clearInterval(interval);
-            setTimeout(() => {
-              setIsTimerRunning(false);
-              playBeep();
-              triggerVibration([100, 50, 100]);
-            }, 0);
-            return 0;
+            playBeep();
+            triggerVibration([100, 50, 100]);
           }
-          return next;
-        });
-      }, 1000);
+        }
+      }, 250);
     }
 
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isTimerRunning, timerRemaining]);
+  }, [isTimerRunning]);
 
   // Ponytail: Temporizador de tiempo transcurrido en el ejercicio actual
   useEffect(() => {
     let interval: any = null;
     if (isExerciseTimerRunning) {
       interval = setInterval(() => {
-        setExerciseTimeElapsed((prev) => prev + 1);
-      }, 1000);
+        const start = exerciseTimerStartTimeRef.current;
+        if (start !== null) {
+          setExerciseTimeElapsed(Math.floor((Date.now() - start) / 1000));
+        }
+      }, 500);
     }
     return () => {
       if (interval) clearInterval(interval);
@@ -1073,6 +1213,32 @@ function App() {
       setIsExerciseTimerRunning(false);
     }
   }, [activeExerciseIndex, activeExercises]);
+
+  // Page visibility change listener to force refresh timers immediately on app wake
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        if (isTimerRunning && timerTargetTimeRef.current !== null) {
+          const remaining = Math.max(0, Math.ceil((timerTargetTimeRef.current - Date.now()) / 1000));
+          setTimerRemaining(remaining);
+          if (remaining <= 0) {
+            timerTargetTimeRef.current = null;
+            setIsTimerRunning(false);
+            playBeep();
+            triggerVibration([100, 50, 100]);
+          }
+        }
+        if (isExerciseTimerRunning && exerciseTimerStartTimeRef.current !== null) {
+          setExerciseTimeElapsed(Math.floor((Date.now() - exerciseTimerStartTimeRef.current) / 1000));
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [isTimerRunning, isExerciseTimerRunning]);
 
   const formatExerciseTime = (totalSeconds: number) => {
     const mins = Math.floor(totalSeconds / 60);
@@ -1115,38 +1281,39 @@ function App() {
     return profileToUpdate;
   };
 
-  // Schedule/Unschedule Routine helper methods
-  const scheduleRoutine = async (routineId: string, dayValue: number) => {
-    const routine = routines.find(r => r.id === routineId);
-    if (!routine) return;
+  // Schedule/Unschedule Routine helper methods removidos para evitar error TS6133
+// (código comentado/borrado)
+// const scheduleRoutine = async (routineId: string, dayValue: number) => {
+//   const routine = routines.find(r => r.id === routineId);
+//   if (!routine) return;
+  
+//   const updatedDays = routine.day_of_week.includes(dayValue)
+//     ? routine.day_of_week
+//     : [...routine.day_of_week, dayValue];
     
-    const updatedDays = routine.day_of_week.includes(dayValue)
-      ? routine.day_of_week
-      : [...routine.day_of_week, dayValue];
-      
-    const updatedRoutine = {
-      ...routine,
-      day_of_week: updatedDays
-    };
+//   const updatedRoutine = {
+//     ...routine,
+//     day_of_week: updatedDays
+// };
     
-    await saveRecord('routines', updatedRoutine, 'UPDATE');
-    setRoutines(prev => prev.map(r => r.id === routineId ? updatedRoutine : r));
-  };
+//   await saveRecord('routines', updatedRoutine, 'UPDATE');
+//   setRoutines(prev => prev.map(r => r.id === routineId ? updatedRoutine : r));
+// };
 
-  const unscheduleRoutine = async (routineId: string, dayValue: number) => {
-    const routine = routines.find(r => r.id === routineId);
-    if (!routine) return;
+// const unscheduleRoutine = async (routineId: string, dayValue: number) => {
+//   const routine = routines.find(r => r.id === routineId);
+//   if (!routine) return;
     
-    const updatedDays = routine.day_of_week.filter(v => v !== dayValue);
+//   const updatedDays = routine.day_of_week.filter(v => v !== dayValue);
     
-    const updatedRoutine = {
-      ...routine,
-      day_of_week: updatedDays
-    };
+//   const updatedRoutine = {
+//     ...routine,
+//     day_of_week: updatedDays
+// };
     
-    await saveRecord('routines', updatedRoutine, 'UPDATE');
-    setRoutines(prev => prev.map(r => r.id === routineId ? updatedRoutine : r));
-  };
+//   await saveRecord('routines', updatedRoutine, 'UPDATE');
+//   setRoutines(prev => prev.map(r => r.id === routineId ? updatedRoutine : r));
+// };
 
   // Create / Edit Routine
   const handleCreateRoutine = async () => {
@@ -1191,7 +1358,8 @@ function App() {
         order_index: index,
         default_sets: config.sets,
         default_reps: config.reps,
-        default_rest_time: config.rest
+        default_rest_time: config.rest,
+        is_time_based: config.is_time_based || false
       };
       await saveRecord('routine_exercises', routineExercise, 'CREATE');
     }
@@ -1309,7 +1477,8 @@ function App() {
           weight: previousSet ? previousSet.weight : 0,
           reps: previousSet ? previousSet.reps : (re.default_reps || 10),
           rest_time: re.default_rest_time,
-          is_completed: false
+          is_completed: false,
+          is_time_based: re.is_time_based || false
         });
       }
     });
@@ -1322,6 +1491,16 @@ function App() {
     setTimerRemaining(0);
     setIsTimerRunning(false);
     setShowBlackFlash(false);
+
+    // SPEC_007: Persist workout start to IndexedDB for crash/interrupt recovery
+    saveActiveWorkoutState({
+      routineId: routine.id,
+      routineName: routine.name,
+      exercises: loadedExercises,
+      currentExerciseIndex: 0,
+      sets: {},
+      startedAt: newWorkout.started_at,
+    }).catch(err => console.warn('Could not persist workout state:', err));
   };
 
   // Toggle set completion and trigger timer / check Black Flash (PR)
@@ -1361,6 +1540,28 @@ function App() {
                 return currentSets;
               });
             }, 50);
+
+            // SPEC_007: Snapshot workout state to IndexedDB after each set
+            // Allows recovery if user gets a call, locks screen, or switches apps
+            setTimeout(() => {
+              setActiveWorkoutSets(currentSets => {
+                if (activeRoutine && activeExercises.length > 0) {
+                  const setsByExercise = activeExercises.reduce((acc, ex) => {
+                    acc[ex.id] = currentSets.filter(s => s.exercise_id === ex.id);
+                    return acc;
+                  }, {} as Record<string, WorkoutSet[]>);
+                  saveActiveWorkoutState({
+                    routineId: activeRoutine.id,
+                    routineName: activeRoutine.name,
+                    exercises: activeExercises,
+                    currentExerciseIndex: activeExerciseIndex,
+                    sets: setsByExercise,
+                    startedAt: activeWorkout?.started_at || new Date().toISOString(),
+                  }).catch(err => console.warn('Snapshot failed:', err));
+                }
+                return currentSets;
+              });
+            }, 100);
           }
           return updated;
         }
@@ -1371,14 +1572,30 @@ function App() {
 
   // Set weights / reps modification
   const handleSetChange = (setId: string, field: 'weight' | 'reps', value: number) => {
-    setActiveWorkoutSets((prev) =>
-      prev.map((set) => {
+    setActiveWorkoutSets((prev) => {
+      const changingSet = prev.find(s => s.id === setId);
+      if (!changingSet) return prev;
+
+      return prev.map((set) => {
         if (set.id === setId) {
           return { ...set, [field]: value };
         }
+
+        // SPEC_010: Carry-over of weight/reps from set 1 to subsequent sets
+        if (
+          changingSet.set_number === 1 && 
+          set.exercise_id === changingSet.exercise_id && 
+          set.set_number > 1 && 
+          !set.is_completed
+        ) {
+          if (set[field] === changingSet[field]) {
+            return { ...set, [field]: value };
+          }
+        }
+
         return set;
-      })
-    );
+      });
+    });
   };
 
   const cancelWorkout = () => {
@@ -1454,6 +1671,8 @@ function App() {
     setActiveExerciseIndex(0);
     setTimerRemaining(0);
     setIsTimerRunning(false);
+    // SPEC_007: Clear persisted workout state on successful completion
+    clearActiveWorkoutState().catch(err => console.warn('Could not clear workout state:', err));
   };
 
   const getPersonalRecords = () => {
@@ -1493,7 +1712,8 @@ function App() {
   const currentExerciseSets = activeWorkoutSets.filter((s) => s.exercise_id === currentActiveExercise?.id);
   const isCardioOrStretch = currentActiveExercise ? (
     currentActiveExercise.category.toLowerCase() === 'cardio' || 
-    currentActiveExercise.category.toLowerCase() === 'estiramientos'
+    currentActiveExercise.category.toLowerCase() === 'estiramientos' ||
+    currentExerciseSets.some(s => s.is_time_based)
   ) : false;
 
   const getLastSessionSets = () => {
@@ -1813,13 +2033,553 @@ function App() {
     );
   }
 
+  if (!onboardingCompleted && profile) {
+    const imc = onboardingWeight / Math.pow(onboardingHeight / 100, 2);
+    let imcCategory = 'Normal';
+    let imcColor = '#10b981'; // Green
+    if (imc < 18.5) {
+      imcCategory = 'Bajo peso';
+      imcColor = 'var(--accent-tertiary)'; // Yellow
+    } else if (imc >= 25 && imc < 30) {
+      imcCategory = 'Sobrepeso';
+      imcColor = 'var(--accent-secondary)'; // Orange
+    } else if (imc >= 30) {
+      imcCategory = 'Obesidad';
+      imcColor = '#ef4444'; // Red
+    }
+
+    const presetAvatars = [
+      { name: 'Goku', url: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="%23e76a24" stroke="%23fbbc42" stroke-width="3"/><text x="50" y="65" font-family="'Outfit', sans-serif" font-size="45" font-weight="900" fill="%2301080a" text-anchor="middle">悟</text></svg>` },
+      { name: 'Vegeta', url: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="%231c4595" stroke="%23fbbc42" stroke-width="3"/><text x="50" y="65" font-family="'Outfit', sans-serif" font-size="40" font-weight="900" fill="%23e7e5e8" text-anchor="middle">Z</text></svg>` },
+      { name: 'Roshi', url: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="%238b5cf6" stroke="%23fbbc42" stroke-width="3"/><text x="50" y="65" font-family="'Outfit', sans-serif" font-size="45" font-weight="900" fill="%23e7e5e8" text-anchor="middle">亀</text></svg>` },
+      { name: 'Piccolo', url: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="%2310b981" stroke="%23fbbc42" stroke-width="3"/><text x="50" y="65" font-family="'Outfit', sans-serif" font-size="45" font-weight="900" fill="%2301080a" text-anchor="middle">魔</text></svg>` },
+      { name: 'Kaio', url: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="%23ef4444" stroke="%23fbbc42" stroke-width="3"/><text x="50" y="65" font-family="'Outfit', sans-serif" font-size="45" font-weight="900" fill="%2301080a" text-anchor="middle">界</text></svg>` },
+      { name: 'Esfera', url: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="%23fbbc42" stroke="%23e76a24" stroke-width="3"/><polygon points="50,22 53,32 63,32 55,38 58,48 50,42 42,48 45,38 37,32 47,32" fill="%23e76a24"/><polygon points="30,50 33,60 43,60 35,66 38,76 30,70 22,76 25,66 17,60 27,60" fill="%23e76a24"/><polygon points="70,50 73,60 83,60 75,66 78,76 70,70 62,76 65,66 57,60 67,60" fill="%23e76a24"/><polygon points="50,60 53,70 63,70 55,76 58,86 50,80 42,86 45,76 37,70 47,70" fill="%23e76a24"/></svg>` },
+    ];
+
+    const handleFinishOnboarding = async () => {
+      const updatedProfile = {
+        ...profile,
+        username: onboardingUsername.trim() || 'Guerrero Z',
+        avatar_url: onboardingAvatarUrl || profile.avatar_url,
+        clan: onboardingClan,
+        cursed_technique: onboardingCursedTechnique
+      };
+      await setAppSetting('profile_username', updatedProfile.username);
+      await setAppSetting('profile_avatar_url', updatedProfile.avatar_url);
+      await saveRecord('profiles', updatedProfile, 'UPDATE');
+      setProfile(updatedProfile);
+
+      localStorage.setItem('user_weight', onboardingWeight.toString());
+      localStorage.setItem('user_height', onboardingHeight.toString());
+      localStorage.setItem('user_fat_pct', '14');
+      setUserWeight(onboardingWeight);
+      setUserHeight(onboardingHeight);
+      setUserFatPct(14);
+
+      localStorage.setItem('weekly_goal_days', onboardingGoalDays.toString());
+      setWeeklyGoalDays(onboardingGoalDays);
+
+      if (onboardingRoutineTemplate !== 'empty') {
+        const loadedExercises = await getAllRecords<Exercise>('exercises');
+        const pressBanca = loadedExercises.find(e => e.name.includes('Press de Banca'));
+        const remoBarra = loadedExercises.find(e => e.name.includes('Remo con Barra'));
+        const sentadilla = loadedExercises.find(e => e.name.includes('Sentadilla'));
+        const curlBiceps = loadedExercises.find(e => e.name.includes('Curl de Bíceps'));
+
+        if (onboardingRoutineTemplate === 'roshi' && pressBanca && remoBarra) {
+          const r1: Routine = {
+            id: generateUUID(),
+            user_id: profile.id,
+            name: 'Entrenamiento del Maestro Roshi 🐢',
+            day_of_week: [1, 4],
+            created_at: new Date().toISOString()
+          };
+          await saveRecord('routines', r1, 'CREATE');
+          await saveRecord('routine_exercises', {
+            id: generateUUID(),
+            routine_id: r1.id,
+            exercise_id: pressBanca.id,
+            order_index: 0,
+            default_sets: 4,
+            default_reps: 10,
+            default_rest_time: 90
+          }, 'CREATE');
+          await saveRecord('routine_exercises', {
+            id: generateUUID(),
+            routine_id: r1.id,
+            exercise_id: remoBarra.id,
+            order_index: 1,
+            default_sets: 4,
+            default_reps: 10,
+            default_rest_time: 90
+          }, 'CREATE');
+        } else if (onboardingRoutineTemplate === 'saiyan' && sentadilla && curlBiceps) {
+          const r2: Routine = {
+            id: generateUUID(),
+            user_id: profile.id,
+            name: 'Cámara de Gravedad: Fuerza Saiyan 🦾',
+            day_of_week: [2, 5],
+            created_at: new Date().toISOString()
+          };
+          await saveRecord('routines', r2, 'CREATE');
+          await saveRecord('routine_exercises', {
+            id: generateUUID(),
+            routine_id: r2.id,
+            exercise_id: sentadilla.id,
+            order_index: 0,
+            default_sets: 4,
+            default_reps: 8,
+            default_rest_time: 90
+          }, 'CREATE');
+          await saveRecord('routine_exercises', {
+            id: generateUUID(),
+            routine_id: r2.id,
+            exercise_id: curlBiceps.id,
+            order_index: 1,
+            default_sets: 3,
+            default_reps: 12,
+            default_rest_time: 60
+          }, 'CREATE');
+        }
+      } else {
+        const r3: Routine = {
+          id: generateUUID(),
+          user_id: profile.id,
+          name: 'Mi Entrenamiento Ki 🌟',
+          day_of_week: [1, 3, 5],
+          created_at: new Date().toISOString()
+        };
+        await saveRecord('routines', r3, 'CREATE');
+      }
+
+      let loadedRoutines = await getAllRecords<Routine>('routines');
+      loadedRoutines = loadedRoutines.filter(r => r.user_id === profile.id);
+      setRoutines(loadedRoutines);
+      let loadedRoutineExs = await getAllRecords<RoutineExercise>('routine_exercises');
+      const activeRoutineIds = new Set(loadedRoutines.map(r => r.id));
+      loadedRoutineExs = loadedRoutineExs.filter(re => activeRoutineIds.has(re.routine_id));
+      setRoutineExercises(loadedRoutineExs);
+
+      localStorage.setItem('onboarding_completed', 'true');
+      setOnboardingCompleted(true);
+    };
+
+    return (
+      <div className="app-container" style={{ display: 'flex', flexDirection: 'column', minHeight: '100svh', padding: '24px', justifyContent: 'flex-start', alignItems: 'center', backgroundColor: 'var(--bg-primary)', overflowY: 'auto' }}>
+        <header style={{ width: '100%', maxWidth: '480px', display: 'flex', flexDirection: 'column', gap: '8px', textAlign: 'center', margin: '20px 0' }}>
+          <h1 style={{ fontSize: '26px', fontFamily: 'var(--font-headline)', color: 'var(--accent-secondary)', fontWeight: 'bold', margin: 0, textTransform: 'uppercase', letterSpacing: '1px' }}>
+            Forja tu Destino
+          </h1>
+          <p style={{ fontSize: '12px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '2px', margin: 0 }}>
+            Iniciación en la Cámara de Gravedad
+          </p>
+          <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginTop: '16px' }}>
+            {[1, 2, 3, 4].map(step => (
+              <div 
+                key={step} 
+                style={{ 
+                  height: '6px', 
+                  flex: 1, 
+                  maxWidth: '60px', 
+                  borderRadius: '3px', 
+                  backgroundColor: step <= onboardingStep ? 'var(--accent-secondary)' : 'rgba(255, 255, 255, 0.1)',
+                  boxShadow: step <= onboardingStep ? '0 0 8px var(--accent-glow)' : 'none',
+                  transition: 'var(--transition-smooth)'
+                }}
+              />
+            ))}
+          </div>
+        </header>
+
+        <main className="card" style={{ width: '100%', maxWidth: '480px', display: 'flex', flexDirection: 'column', gap: '20px', padding: '24px', position: 'relative', overflow: 'hidden' }}>
+          {onboardingStep === 1 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ textAlign: 'center', marginBottom: '8px' }}>
+                <h2 style={{ fontSize: '18px', fontWeight: 'bold', margin: '0 0 6px 0', color: 'var(--text-primary)' }}>1. Forja tu Identidad</h2>
+                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0 }}>Define tu apodo y elige un avatar para tu ficha de guerrero Z.</p>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label" style={{ fontSize: '13px', fontWeight: 'bold' }}>Nombre del Guerrero</label>
+                <input 
+                  type="text"
+                  placeholder="Ej: Son Goku"
+                  value={onboardingUsername}
+                  onChange={(e) => setOnboardingUsername(e.target.value)}
+                  className="form-input"
+                  style={{ fontSize: '14px', padding: '12px' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+                <label className="form-label" style={{ fontSize: '13px', fontWeight: 'bold', alignSelf: 'flex-start' }}>Foto / Emblema de Ki</label>
+                <div style={{
+                  position: 'relative',
+                  width: '100px',
+                  height: '100px',
+                  borderRadius: '50%',
+                  overflow: 'hidden',
+                  border: '2px solid var(--accent-primary)',
+                  boxShadow: '0 0 20px var(--accent-glow)',
+                  backgroundColor: 'var(--bg-secondary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  {onboardingAvatarUrl ? (
+                    <img 
+                      src={onboardingAvatarUrl} 
+                      alt="Avatar" 
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                  ) : (
+                    <Dumbbell size={36} color="var(--accent-primary)" style={{ opacity: 0.8 }} />
+                  )}
+                </div>
+
+                {isCameraActive ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', width: '100%' }}>
+                    <video 
+                      ref={videoRef} 
+                      autoPlay 
+                      playsInline 
+                      style={{ width: '100%', maxWidth: '200px', height: '200px', objectFit: 'cover', borderRadius: '12px', border: '2px solid var(--accent-primary)', transform: 'scaleX(-1)' }}
+                    />
+                    <div style={{ display: 'flex', gap: '8px', width: '100%', maxWidth: '200px' }}>
+                      <button type="button" onClick={capturePhoto} className="btn-primary" style={{ flex: 1, padding: '8px', fontSize: '11px' }}>Capturar 📸</button>
+                      <button type="button" onClick={stopCamera} className="btn-secondary" style={{ flex: 1, padding: '8px', fontSize: '11px', borderColor: '#ef4444', color: '#ef4444' }}>Cancelar</button>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%' }}>
+                    <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', padding: '6px 2px', width: '100%', WebkitOverflowScrolling: 'touch' }}>
+                      {presetAvatars.map((p, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => setOnboardingAvatarUrl(p.url)}
+                          style={{
+                            flex: '0 0 54px',
+                            height: '54px',
+                            borderRadius: '50%',
+                            border: `2px solid ${onboardingAvatarUrl === p.url ? 'var(--accent-secondary)' : 'transparent'}`,
+                            padding: '2px',
+                            backgroundColor: 'transparent',
+                            cursor: 'pointer',
+                            transition: 'var(--transition-smooth)'
+                          }}
+                        >
+                          <img src={p.url} style={{ width: '100%', height: '100%', borderRadius: '50%' }} alt={p.name} />
+                        </button>
+                      ))}
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
+                      <button type="button" onClick={() => fileInputRef.current?.click()} className="btn-secondary" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px', fontSize: '12px', borderRadius: '10px' }}>
+                        <Upload size={12} color="var(--accent-primary)" />
+                        <span>Subir</span>
+                      </button>
+                      <button type="button" onClick={startCamera} className="btn-secondary" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '10px', fontSize: '12px', borderRadius: '10px' }}>
+                        <Camera size={12} color="var(--accent-primary)" />
+                        <span>Cámara</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="form-group">
+                <label className="form-label" style={{ fontSize: '13px', fontWeight: 'bold' }}>Raza / Escuela</label>
+                <select 
+                  value={onboardingClan}
+                  onChange={(e) => setOnboardingClan(e.target.value)}
+                  className="form-input"
+                  style={{ fontSize: '13px', width: '100%', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '10px' }}
+                >
+                  <option value="Tortuga">Escuela Tortuga (Maestro Roshi)</option>
+                  <option value="Saiyan">Raza Saiyan (Guerrero del Espacio)</option>
+                  <option value="Hibrido">Híbrido Saiyan (Potencial Ilimitado)</option>
+                  <option value="Namek">Raza Namekiana (Regeneración)</option>
+                  <option value="Terrícola">Terrícola (Guerrero de la Tierra)</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label" style={{ fontSize: '13px', fontWeight: 'bold' }}>Técnica Especial</label>
+                <input 
+                  type="text"
+                  placeholder="Ej: Kamehameha..."
+                  value={onboardingCursedTechnique}
+                  onChange={(e) => setOnboardingCursedTechnique(e.target.value)}
+                  className="form-input"
+                  style={{ fontSize: '13px' }}
+                />
+              </div>
+            </div>
+          )}
+
+          {onboardingStep === 2 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ textAlign: 'center', marginBottom: '8px' }}>
+                <h2 style={{ fontSize: '18px', fontWeight: 'bold', margin: '0 0 6px 0', color: 'var(--text-primary)' }}>2. Fisonomía Ki</h2>
+                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0 }}>Registra tu peso y estatura. Calcularemos tu nivel de masa para ajustar tus aumentos de Ki.</p>
+              </div>
+
+              <div style={{ display: 'flex', gap: '16px' }}>
+                <div className="form-group" style={{ flex: 1 }}>
+                  <label className="form-label" style={{ fontSize: '13px', fontWeight: 'bold' }}>Peso (kg)</label>
+                  <input 
+                    type="number"
+                    value={onboardingWeight || ''}
+                    onChange={(e) => setOnboardingWeight(parseFloat(e.target.value) || 0)}
+                    className="form-input"
+                    style={{ fontSize: '14px', padding: '12px' }}
+                  />
+                </div>
+                <div className="form-group" style={{ flex: 1 }}>
+                  <label className="form-label" style={{ fontSize: '13px', fontWeight: 'bold' }}>Estatura (cm)</label>
+                  <input 
+                    type="number"
+                    value={onboardingHeight || ''}
+                    onChange={(e) => setOnboardingHeight(parseFloat(e.target.value) || 0)}
+                    className="form-input"
+                    style={{ fontSize: '14px', padding: '12px' }}
+                  />
+                </div>
+              </div>
+
+              {onboardingWeight > 0 && onboardingHeight > 0 && (
+                <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '16px', backgroundColor: 'rgba(255,255,255,0.01)', border: '1px dashed var(--border-color)', borderRadius: '12px', marginTop: '12px' }}>
+                  <span style={{ fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 700 }}>Índice de Masa Corporal (IMC)</span>
+                  <span style={{ fontSize: '28px', fontWeight: '950', color: imcColor, margin: '6px 0', fontFamily: 'Outfit' }}>{imc.toFixed(1)}</span>
+                  <span style={{ fontSize: '13px', fontWeight: 'bold', color: imcColor }}>Categoría: {imcCategory}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {onboardingStep === 3 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ textAlign: 'center', marginBottom: '8px' }}>
+                <h2 style={{ fontSize: '18px', fontWeight: 'bold', margin: '0 0 6px 0', color: 'var(--text-primary)' }}>3. Meta Semanal</h2>
+                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0 }}>¿Cuántas veces expandirás tu dominio en el gimnasio a la semana? Esto definirá tu meta de Ki.</p>
+              </div>
+
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'center', padding: '12px 0' }}>
+                {[1, 2, 3, 4, 5, 6, 7].map(num => {
+                  const isSelected = onboardingGoalDays === num;
+                  return (
+                    <button
+                      key={num}
+                      type="button"
+                      onClick={() => setOnboardingGoalDays(num)}
+                      style={{
+                        width: '54px',
+                        height: '54px',
+                        borderRadius: '50%',
+                        border: `2px solid ${isSelected ? 'var(--accent-secondary)' : 'var(--border-color)'}`,
+                        backgroundColor: isSelected ? 'rgba(231, 106, 36, 0.15)' : 'rgba(255,255,255,0.02)',
+                        boxShadow: isSelected ? '0 0 15px var(--accent-glow)' : 'none',
+                        color: isSelected ? 'var(--accent-secondary)' : 'var(--text-primary)',
+                        fontSize: '18px',
+                        fontWeight: '900',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'var(--transition-smooth)',
+                        fontFamily: 'Outfit'
+                      }}
+                    >
+                      {num}
+                    </button>
+                  );
+                })}
+              </div>
+              <p style={{ fontSize: '12px', color: 'var(--text-secondary)', textAlign: 'center', fontStyle: 'italic', margin: 0 }}>
+                Recomendado: 3 a 5 días para un aumento de nivel de Ki óptimo.
+              </p>
+            </div>
+          )}
+
+          {onboardingStep === 4 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ textAlign: 'center', marginBottom: '8px' }}>
+                <h2 style={{ fontSize: '18px', fontWeight: 'bold', margin: '0 0 6px 0', color: 'var(--text-primary)' }}>4. Inicia tu Entrenamiento</h2>
+                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0 }}>Elige una plantilla inicial o comienza desde cero. Podrás personalizarla después en la sección de Rutinas.</p>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <button
+                  type="button"
+                  onClick={() => setOnboardingRoutineTemplate('roshi')}
+                  style={{
+                    padding: '16px',
+                    borderRadius: '12px',
+                    border: `1.5px solid ${onboardingRoutineTemplate === 'roshi' ? 'var(--accent-secondary)' : 'var(--border-color)'}`,
+                    backgroundColor: onboardingRoutineTemplate === 'roshi' ? 'rgba(231, 106, 36, 0.05)' : 'transparent',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '4px',
+                    transition: 'var(--transition-smooth)'
+                  }}
+                >
+                  <span style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--text-primary)' }}>Entrenamiento del Maestro Roshi 🐢 (Torso)</span>
+                  <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Ideal para principiantes. 2 ejercicios fundamentales (Banca y Remo) programados para Lunes y Jueves.</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setOnboardingRoutineTemplate('saiyan')}
+                  style={{
+                    padding: '16px',
+                    borderRadius: '12px',
+                    border: `1.5px solid ${onboardingRoutineTemplate === 'saiyan' ? 'var(--accent-secondary)' : 'var(--border-color)'}`,
+                    backgroundColor: onboardingRoutineTemplate === 'saiyan' ? 'rgba(231, 106, 36, 0.05)' : 'transparent',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '4px',
+                    transition: 'var(--transition-smooth)'
+                  }}
+                >
+                  <span style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--text-primary)' }}>Cámara de Gravedad: Fuerza Saiyan 🦾 (Fuerza)</span>
+                  <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Enfoque en piernas e hipertrofia de brazos (Sentadillas y Curl de Bíceps). Programada para Martes y Viernes.</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setOnboardingRoutineTemplate('empty')}
+                  style={{
+                    padding: '16px',
+                    borderRadius: '12px',
+                    border: `1.5px solid ${onboardingRoutineTemplate === 'empty' ? 'var(--accent-secondary)' : 'var(--border-color)'}`,
+                    backgroundColor: onboardingRoutineTemplate === 'empty' ? 'rgba(231, 106, 36, 0.05)' : 'transparent',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '4px',
+                    transition: 'var(--transition-smooth)'
+                  }}
+                >
+                  <span style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--text-primary)' }}>Crear Personalizada 🌀 (Comenzar Vacía)</span>
+                  <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Crea una rutina en blanco ("Mi Entrenamiento Ki") para diseñar tus propias batallas desde cero.</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          <footer style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
+            {onboardingStep > 1 && (
+              <button
+                type="button"
+                onClick={() => setOnboardingStep(prev => prev - 1)}
+                className="btn-secondary"
+                style={{ flex: 1, padding: '12px' }}
+              >
+                Atrás
+              </button>
+            )}
+            
+            {onboardingStep < 4 ? (
+              <button
+                type="button"
+                disabled={onboardingStep === 1 && !onboardingUsername.trim()}
+                onClick={() => setOnboardingStep(prev => prev + 1)}
+                className="btn-primary"
+                style={{ flex: onboardingStep === 1 ? 'none' : 1, width: onboardingStep === 1 ? '100%' : 'auto', padding: '12px' }}
+              >
+                Siguiente
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleFinishOnboarding}
+                className="btn-primary"
+                style={{ flex: 1, padding: '12px', backgroundColor: 'var(--accent-secondary)', borderColor: 'var(--accent-secondary)', fontWeight: 'bold' }}
+              >
+                FINALIZAR FORJA ⚡
+              </button>
+            )}
+          </footer>
+        </main>
+        
+        <input 
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileChange}
+          accept="image/*"
+          style={{ display: 'none' }}
+        />
+        <input 
+          type="file"
+          ref={cameraFallbackInputRef}
+          onChange={handleFileChange}
+          accept="image/*"
+          capture="user"
+          style={{ display: 'none' }}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="app-container">
       
       {/* Header Profile Summary */}
       {!activeWorkout && profile && levelInfo && (
         <header className="app-header">
-          <div className="profile-section" style={{ cursor: 'pointer' }} onClick={() => setActiveTab('perfil')} title="Ver perfil del hechicero">
+          {/* Capsule Corp Brand Logo (Stitch Spec) */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                backgroundColor: 'var(--accent-primary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: '900',
+                fontSize: '12px',
+                color: '#141722',
+                letterSpacing: '-1px',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.2)'
+              }}>
+                CC
+              </div>
+              <span style={{ fontFamily: 'Outfit, sans-serif', fontWeight: '800', fontSize: '12px', letterSpacing: '1px', textTransform: 'uppercase', color: 'var(--accent-primary)' }}>
+                Capsule Corp
+              </span>
+            </div>
+
+            {/* Theme Toggle Button */}
+            <button
+              onClick={() => setTheme(prev => prev === 'dark' ? 'light' : 'dark')}
+              style={{
+                background: 'var(--bg-tertiary)',
+                color: 'var(--text-primary)',
+                border: '1px solid var(--border-color)',
+                padding: '4px 10px',
+                borderRadius: '9999px',
+                fontSize: '11px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}
+              title="Cambiar tema"
+            >
+              <span>{theme === 'dark' ? '☀️' : '🌙'}</span>
+              <span style={{ fontSize: '10px' }}>{theme === 'dark' ? 'CLARO' : 'OSCURO'}</span>
+            </button>
+
+            <div className="profile-section" style={{ cursor: 'pointer' }} onClick={() => setActiveTab('perfil')} title="Ver perfil del hechicero">
             <img 
               src={profile.avatar_url} 
               alt="Avatar" 
@@ -1832,7 +2592,7 @@ function App() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                 <div className="profile-level" style={{ fontSize: '12px' }}>
                   <Award size={12} />
-                  <span>{getJJKGrade(levelInfo.level)}</span>
+                  <span>{getDBZLevelTitle(levelInfo.level)}</span>
                 </div>
                 {(profile.clan || profile.cursed_technique) && (
                   <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
@@ -1847,7 +2607,7 @@ function App() {
           
           <div className="streak-badge" style={{ borderColor: 'rgba(249, 115, 22, 0.3)', color: '#f97316', backgroundColor: 'rgba(249, 115, 22, 0.1)' }}>
             <Flame size={15} fill="currentColor" />
-            <span>Voto: {profile.current_streak} m</span>
+            <span>Zenkai: {profile.current_streak} d</span>
           </div>
         </header>
       )}
@@ -1884,17 +2644,17 @@ function App() {
             <div className="lvl-badge-container">
               <Award size={52} />
             </div>
-            <h1 className="lvl-title">¡ASCENSO DE HECHICERO!</h1>
+            <h1 className="lvl-title">¡RANGO Z SUPERADO!</h1>
             <p className="lvl-text">
-              Liberaste <span style={{ color: 'var(--accent-primary)', fontWeight: 'bold' }}>+{levelUpInfo.xpEarned} Energía Maldita (XP)</span> en combate.
+              Has incrementado tu nivel de Ki en <span style={{ color: 'var(--accent-secondary)', fontWeight: 'bold' }}>+{levelUpInfo.xpEarned} XP</span>.
             </p>
             <div className="lvl-comparison">
-              <span className="lvl-old">{getJJKGrade(levelUpInfo.oldLevel).split(' ')[1]} Grado</span>
+              <span className="lvl-old" style={{ fontSize: '14px' }}>{getDBZLevelTitle(levelUpInfo.oldLevel)}</span>
               <ChevronRight size={20} className="lvl-arrow" />
-              <span className="lvl-new" style={{ fontSize: '20px', fontWeight: '800' }}>{getJJKGrade(levelUpInfo.newLevel)}</span>
+              <span className="lvl-new" style={{ fontSize: '18px', fontWeight: '800', color: 'var(--accent-tertiary)' }}>{getDBZLevelTitle(levelUpInfo.newLevel)}</span>
             </div>
             <p className="lvl-text" style={{ fontSize: '11px', fontStyle: 'italic', color: 'var(--text-tertiary)' }}>
-              "¡Has expandido tu Dominio!" 🔮
+              "¡Supera tus límites! ¡Un verdadero Saiyan no tiene límites!" 💥🐉
             </p>
             <button 
               onClick={() => setLevelUpInfo(null)}
@@ -1912,7 +2672,7 @@ function App() {
             
             <header className="overlay-header">
               <div>
-                <span className="overlay-header-title-sub">Purificando Energía Maldita</span>
+                <span className="overlay-header-title-sub">Entrenamiento Z en Curso</span>
                 <h2 className="overlay-header-title" style={{ fontSize: '15px' }}>{activeRoutine?.name}</h2>
               </div>
               <div style={{ display: 'flex', gap: '8px' }}>
@@ -2007,14 +2767,64 @@ function App() {
                 <details className="exercise-tips-details group">
                   <summary className="exercise-tips-summary">
                     <BookOpen size={14} />
-                    <span>Técnica maldita de ejecución</span>
+                    <span>Instrucciones y Técnica de Combate</span>
                     <ChevronDown size={14} style={{ marginLeft: 'auto' }} className="group-open:rotate-180 transition-transform" />
                   </summary>
-                  <ul className="exercise-tips-list">
-                    {currentActiveExercise.tips.map((tip, tIdx) => (
-                      <li key={tIdx} style={{ marginBottom: '4px' }}>{tip}</li>
-                    ))}
-                  </ul>
+                  <div style={{ padding: '8px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {((currentActiveExercise.posicion_inicial && currentActiveExercise.posicion_inicial.length > 0) ||
+                      (currentActiveExercise.ejecucion && currentActiveExercise.ejecucion.length > 0) ||
+                      (currentActiveExercise.consejos && currentActiveExercise.consejos.length > 0) ||
+                      (currentActiveExercise.variantes && currentActiveExercise.variantes.length > 0)) ? (
+                      <>
+                        {currentActiveExercise.posicion_inicial && currentActiveExercise.posicion_inicial.length > 0 && (
+                          <div>
+                            <h4 style={{ color: 'var(--accent-primary)', fontSize: '12px', fontWeight: 'bold', margin: '4px 0', textTransform: 'uppercase' }}>🥋 Posición Inicial</h4>
+                            <ul className="exercise-tips-list" style={{ paddingLeft: '16px', margin: 0 }}>
+                              {currentActiveExercise.posicion_inicial.map((step, i) => (
+                                <li key={i} style={{ marginBottom: '2px', fontSize: '12px' }}>{step}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {currentActiveExercise.ejecucion && currentActiveExercise.ejecucion.length > 0 && (
+                          <div>
+                            <h4 style={{ color: 'var(--accent-primary)', fontSize: '12px', fontWeight: 'bold', margin: '4px 0', textTransform: 'uppercase' }}>⚔️ Ejecución</h4>
+                            <ul className="exercise-tips-list" style={{ paddingLeft: '16px', margin: 0 }}>
+                              {currentActiveExercise.ejecucion.map((step, i) => (
+                                <li key={i} style={{ marginBottom: '2px', fontSize: '12px' }}>{step}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {currentActiveExercise.consejos && currentActiveExercise.consejos.length > 0 && (
+                          <div>
+                            <h4 style={{ color: 'var(--accent-primary)', fontSize: '12px', fontWeight: 'bold', margin: '4px 0', textTransform: 'uppercase' }}>💡 Consejos y Tips</h4>
+                            <ul className="exercise-tips-list" style={{ paddingLeft: '16px', margin: 0 }}>
+                              {currentActiveExercise.consejos.map((tip, i) => (
+                                <li key={i} style={{ marginBottom: '2px', fontSize: '12px' }}>{tip}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {currentActiveExercise.variantes && currentActiveExercise.variantes.length > 0 && (
+                          <div>
+                            <h4 style={{ color: 'var(--accent-primary)', fontSize: '12px', fontWeight: 'bold', margin: '4px 0', textTransform: 'uppercase' }}>🌀 Variantes</h4>
+                            <ul className="exercise-tips-list" style={{ paddingLeft: '16px', margin: 0 }}>
+                              {currentActiveExercise.variantes.map((variant, i) => (
+                                <li key={i} style={{ marginBottom: '2px', fontSize: '12px' }}>{variant}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <ul className="exercise-tips-list" style={{ paddingLeft: '16px', margin: 0 }}>
+                        {currentActiveExercise.tips.map((tip, tIdx) => (
+                          <li key={tIdx} style={{ marginBottom: '4px', fontSize: '12px' }}>{tip}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
                 </details>
               </div>
 
@@ -2446,398 +3256,362 @@ function App() {
         )}
 
         {/* TAB: HOY */}
-        {activeTab === 'hoy' && profile && levelInfo && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            
-            {/* Level XP Card */}
-            <section className="card">
-              <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full bg-purple-500/10 blur-3xl pointer-events-none" />
-              <div className="level-xp-info">
-                <span style={{ fontWeight: '700', color: 'var(--text-secondary)' }}>Energía Maldita (XP)</span>
-                <span style={{ color: 'var(--accent-primary)', fontWeight: '700' }}>
-                  {levelInfo.progressXP} / {levelInfo.totalRequiredXP} EM
-                </span>
-              </div>
-              
-              <div className="progress-track">
-                <div 
-                  className="progress-fill" 
-                  style={{ width: `${levelInfo.percentage}%` }}
-                />
-              </div>
-              
-              <div className="level-range">
-                <span>{getJJKGrade(levelInfo.level).split(' ')[1]} Grado</span>
-                <span>{getJJKGrade(levelInfo.level + 1).split(' ')[1]} Grado</span>
-              </div>
-            </section>
+        {activeTab === 'hoy' && profile && levelInfo && (() => {
+          const totalTonnage = workoutSets.filter(s => s.is_completed).reduce((sum, s) => sum + ((s.weight || 0) * (s.reps || 0)), 0) / 1000;
+          const totalSets = workoutSets.filter(s => s.is_completed).length;
+          const totalWorkouts = workouts.length;
 
-            {/* Weekly Calendar Card */}
-            <section className="card">
-              <h3 className="card-title">
-                <Calendar size={15} className="text-purple-400" />
-                <span>Misiones Semanales</span>
-              </h3>
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               
-              <div className="calendar-grid">
-                {calendarDays.map((day, idx) => (
-                  <div key={idx} className="calendar-day">
-                    <span className="calendar-day-name">{day.name}</span>
-                    <div 
-                      className={`calendar-day-box ${day.hasTrained ? 'completed' : ''} ${day.isToday ? 'today' : ''}`}
-                    >
-                      {day.hasTrained ? <Check size={14} strokeWidth={3.5} /> : day.dayNum}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            {/* Today's Workout Selector Card */}
-            <section className="card">
-              <h3 className="card-title">
-                <Dumbbell size={15} className="text-purple-400" />
-                <span>Misiones del Día</span>
-              </h3>
-              
-              {routines.length === 0 ? (
-                <div className="no-routines-container">
-                  <p className="no-routines-text">Aún no tienes misiones o rutinas asignadas.</p>
-                  <button 
-                    onClick={() => setActiveTab('rutinas')}
-                    className="btn-primary"
-                  >
-                    Crear primera rutina
-                  </button>
+              {/* Level XP Card */}
+              <section className="card">
+                <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full bg-purple-500/10 blur-3xl pointer-events-none" />
+                <div className="level-xp-info">
+                  <span style={{ fontWeight: '700', color: 'var(--text-secondary)' }}>Nivel de Ki (XP)</span>
+                  <span style={{ color: 'var(--accent-secondary)', fontWeight: '700' }}>
+                    {levelInfo.progressXP} / {levelInfo.totalRequiredXP} XP
+                  </span>
                 </div>
-              ) : (
-                <div className="routine-list">
-                  <p className="no-routines-text" style={{ marginBottom: '8px' }}>Selecciona tu objetivo hoy:</p>
-                  {routines.map((routine) => {
-                    const todayDayIndex = new Date().getDay(); // Sun is 0, Mon is 1, etc.
-                    const isScheduledForToday = routine.day_of_week && routine.day_of_week.includes(todayDayIndex);
-                    
-                    return (
-                      <button
-                        key={routine.id}
-                        onClick={() => startWorkout(routine)}
-                        className="routine-item-btn"
-                        style={isScheduledForToday ? { borderColor: 'var(--accent-primary)', boxShadow: '0 0 10px rgba(168, 85, 247, 0.1)' } : {}}
+                
+                <div className="progress-track">
+                  <div 
+                    className="progress-fill" 
+                    style={{ width: `${levelInfo.percentage}%`, backgroundColor: 'var(--accent-secondary)' }}
+                  />
+                </div>
+                
+                <div className="level-range" style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                  <span>Nivel {levelInfo.level} ({getDBZLevelTitle(levelInfo.level).split(' (')[0]})</span>
+                  <span>Nivel {levelInfo.level + 1}</span>
+                </div>
+              </section>
+
+              {/* Battle Statistics Grid (New) */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+                <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '12px', position: 'relative', overflow: 'hidden' }}>
+                  <span style={{ fontSize: '18px', color: 'var(--accent-primary)', marginBottom: '4px' }}>🏋️‍♂️</span>
+                  <span style={{ fontSize: '15px', fontWeight: '900', color: 'var(--text-primary)', fontFamily: 'Outfit' }}>{totalTonnage.toFixed(1)} T</span>
+                  <span style={{ fontSize: '9px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px' }}>Tonelaje</span>
+                </div>
+                <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '12px', position: 'relative', overflow: 'hidden' }}>
+                  <span style={{ fontSize: '18px', color: 'var(--accent-primary)', marginBottom: '4px' }}>🔁</span>
+                  <span style={{ fontSize: '15px', fontWeight: '900', color: 'var(--text-primary)', fontFamily: 'Outfit' }}>{totalSets}</span>
+                  <span style={{ fontSize: '9px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px' }}>Series</span>
+                </div>
+                <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '12px', position: 'relative', overflow: 'hidden' }}>
+                  <span style={{ fontSize: '18px', color: 'var(--accent-primary)', marginBottom: '4px' }}>🏆</span>
+                  <span style={{ fontSize: '15px', fontWeight: '900', color: 'var(--text-primary)', fontFamily: 'Outfit' }}>{totalWorkouts}</span>
+                  <span style={{ fontSize: '9px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px' }}>Rituales</span>
+                </div>
+              </div>
+
+              {/* Weekly Calendar Card */}
+              <section className="card">
+                <h3 className="card-title">
+                  <Calendar size={15} className="text-purple-400" />
+                  <span>Misiones Semanales</span>
+                </h3>
+                
+                <div className="calendar-grid">
+                  {calendarDays.map((day, idx) => (
+                    <div key={idx} className="calendar-day">
+                      <span className="calendar-day-name">{day.name}</span>
+                      <div 
+                        className={`calendar-day-box ${day.hasTrained ? 'completed' : ''} ${day.isToday ? 'today' : ''}`}
                       >
-                        <div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <h4 className="routine-name">{routine.name}</h4>
-                            {isScheduledForToday && (
-                              <span className="exercise-tag" style={{ fontSize: '8px', padding: '2px 5px', color: 'var(--accent-tertiary)', backgroundColor: 'rgba(16, 185, 129, 0.1)', borderColor: 'rgba(16, 185, 129, 0.2)' }}>
-                                Programada hoy
-                              </span>
-                            )}
-                          </div>
-                          <span className="routine-meta">
-                            {routineExercises.filter((re) => re.routine_id === routine.id).length} ejercicios • Días: {getDaysLabels(routine.day_of_week)}
+                        {day.hasTrained ? <Check size={14} strokeWidth={3.5} /> : day.dayNum}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              {/* Weekly Goal Progress Card (SPEC_011) */}
+              <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h3 className="card-title" style={{ margin: 0 }}>
+                    <span style={{ color: 'var(--accent-secondary)', marginRight: '6px' }}>🔥</span>
+                    <span>Objetivo Semanal</span>
+                  </h3>
+                  <span style={{ fontSize: '13px', fontWeight: '800', color: 'var(--accent-secondary)' }}>
+                    {calendarDays.filter(day => day.hasTrained).length} / {weeklyGoalDays} días
+                  </span>
+                </div>
+                
+                <div className="progress-track" style={{ height: '8px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '4px', overflow: 'hidden' }}>
+                  <div 
+                    className="progress-fill" 
+                    style={{ 
+                      width: `${Math.min(100, (calendarDays.filter(day => day.hasTrained).length / weeklyGoalDays) * 100)}%`, 
+                      backgroundColor: calendarDays.filter(day => day.hasTrained).length >= weeklyGoalDays ? 'var(--accent-tertiary)' : 'var(--accent-secondary)',
+                      height: '100%',
+                      borderRadius: '4px'
+                    }}
+                  />
+                </div>
+                
+                <p style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: 0 }}>
+                  {calendarDays.filter(day => day.hasTrained).length >= weeklyGoalDays 
+                    ? '¡Logro desbloqueado! Has superado tu meta semanal de Ki 🌟' 
+                    : `Entrena ${Math.max(1, weeklyGoalDays - calendarDays.filter(day => day.hasTrained).length)} día(s) más para alcanzar tu meta de Ki de esta semana.`}
+                </p>
+              </section>
+
+              {/* Today's Workout Selector Card / Giant CTA (SPEC_011) */}
+              <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <h3 className="card-title" style={{ margin: 0 }}>
+                  <Dumbbell size={15} style={{ color: 'var(--accent-secondary)' }} />
+                  <span>Misiones del Día</span>
+                </h3>
+                
+                {(() => {
+                  const todayDayIndex = new Date().getDay();
+                  const todayRoutine = routines.find(r => r.day_of_week && r.day_of_week.includes(todayDayIndex));
+                  
+                  if (routines.length === 0) {
+                    return (
+                      <div className="no-routines-container" style={{ textAlign: 'center', padding: '12px 0' }}>
+                        <p className="no-routines-text" style={{ marginBottom: '12px' }}>Aún no tienes misiones o rutinas de Ki asignadas.</p>
+                        <button 
+                          onClick={() => setActiveTab('rutinas')}
+                          className="btn-primary"
+                          style={{ width: '100%', padding: '14px', borderRadius: '30px', fontWeight: '900', fontSize: '14px', textTransform: 'uppercase', letterSpacing: '1px' }}
+                        >
+                          Crear Primera Rutina 🛠️
+                        </button>
+                      </div>
+                    );
+                  }
+
+                  if (todayRoutine) {
+                    return (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <p className="no-routines-text" style={{ fontSize: '12px', margin: '0 0 4px 0', color: 'var(--text-secondary)' }}>Rutina programada para hoy:</p>
+                        <button
+                          onClick={() => startWorkout(todayRoutine)}
+                          className="btn-primary animate-pulse"
+                          style={{ 
+                            width: '100%', 
+                            padding: '18px 24px', 
+                            borderRadius: '24px', 
+                            fontWeight: '900', 
+                            fontSize: '15px', 
+                            textTransform: 'uppercase', 
+                            letterSpacing: '1.5px', 
+                            boxShadow: '0 0 25px var(--accent-glow)',
+                            background: 'linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%)',
+                            border: 'none',
+                            color: '#fff',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: '4px',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <span>INICIAR RITUAL 🦾</span>
+                          <span style={{ fontSize: '11px', opacity: 0.9, fontWeight: '700', textTransform: 'none', letterSpacing: 'normal' }}>
+                            {todayRoutine.name} ({routineExercises.filter((re) => re.routine_id === todayRoutine.id).length} ej.)
                           </span>
-                        </div>
-                        <ChevronRight size={16} style={{ color: 'var(--text-tertiary)' }} />
+                        </button>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', position: 'relative' }}>
+                      <p className="no-routines-text" style={{ fontSize: '12px', margin: '0 0 4px 0', color: 'var(--text-secondary)' }}>No tienes rutinas asignadas hoy. Elige tu objetivo:</p>
+                      <button
+                        onClick={() => setShowCTARoutineDropdown(prev => !prev)}
+                        className="btn-primary"
+                        style={{ 
+                          width: '100%', 
+                          padding: '16px', 
+                          borderRadius: '20px', 
+                          fontWeight: '800', 
+                          fontSize: '14px', 
+                          textTransform: 'uppercase', 
+                          letterSpacing: '1px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '8px'
+                        }}
+                      >
+                        <span>Iniciar Entrenamiento ⚡</span>
+                        <ChevronDown size={16} style={{ transform: showCTARoutineDropdown ? 'rotate(180deg)' : 'rotate(0)', transition: 'var(--transition-smooth)' }} />
                       </button>
+
+                      {showCTARoutineDropdown && (
+                        <div className="card animate-pop" style={{ 
+                          position: 'absolute',
+                          top: '100%',
+                          left: 0,
+                          right: 0,
+                          zIndex: 100,
+                          backgroundColor: 'var(--bg-secondary)',
+                          border: '1.5px solid var(--accent-secondary)',
+                          boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
+                          padding: '10px', 
+                          marginTop: '8px',
+                          borderRadius: '16px',
+                          maxHeight: '260px',
+                          overflowY: 'auto'
+                        }}>
+                          {routines.map(routine => (
+                            <button
+                              key={routine.id}
+                              onClick={() => {
+                                setShowCTARoutineDropdown(false);
+                                startWorkout(routine);
+                              }}
+                              className="routine-item-btn"
+                              style={{ 
+                                width: '100%', 
+                                padding: '12px', 
+                                display: 'flex', 
+                                justifyContent: 'space-between', 
+                                alignItems: 'center', 
+                                marginBottom: '6px', 
+                                backgroundColor: 'rgba(255,255,255,0.02)',
+                                border: '1px solid var(--border-color)',
+                                borderRadius: '10px',
+                                color: 'var(--text-primary)',
+                                textAlign: 'left',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              <div>
+                                <h4 className="routine-name" style={{ fontSize: '13px', margin: 0, fontWeight: '700' }}>{routine.name}</h4>
+                                <span className="routine-meta" style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                                  {routineExercises.filter((re) => re.routine_id === routine.id).length} ejercicios
+                                </span>
+                              </div>
+                              <ChevronRight size={14} style={{ color: 'var(--accent-secondary)' }} />
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+              </section>
+
+              {/* Hydration Widget (SPEC_011) */}
+              <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h3 className="card-title" style={{ margin: 0 }}>
+                    <span style={{ marginRight: '6px' }}>💧</span>
+                    <span>Hidratación del Guerrero</span>
+                  </h3>
+                  <span style={{ fontSize: '13px', fontWeight: '800', color: '#38bdf8' }}>
+                    {waterIntake * 250} ml / 2000 ml
+                  </span>
+                </div>
+                
+                <div style={{ display: 'flex', gap: '6px', justifyContent: 'space-between', padding: '4px 0' }}>
+                  {Array.from({ length: 8 }).map((_, idx) => {
+                    const isFilled = idx < waterIntake;
+                    return (
+                      <div 
+                        key={idx} 
+                        onClick={() => {
+                          const newVal = idx + 1;
+                          setWaterIntake(newVal);
+                          const todayStr = new Date().toISOString().split('T')[0];
+                          localStorage.setItem(`water_intake_${todayStr}`, newVal.toString());
+                        }}
+                        style={{
+                          flex: 1,
+                          height: '32px',
+                          borderRadius: '6px',
+                          border: `1.5px solid ${isFilled ? '#38bdf8' : 'rgba(255,255,255,0.1)'}`,
+                          backgroundColor: isFilled ? 'rgba(56, 189, 248, 0.2)' : 'transparent',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '15px',
+                          cursor: 'pointer',
+                          transition: 'var(--transition-smooth)',
+                          transform: isFilled ? 'scale(1.05)' : 'scale(1)'
+                        }}
+                        title={`Vaso ${idx + 1}`}
+                      >
+                        {isFilled ? '💧' : '🥛'}
+                      </div>
                     );
                   })}
                 </div>
-              )}
-            </section>
 
-            {/* Glossary Trigger Card */}
-            <section className="card" style={{ cursor: 'pointer', marginTop: '4px' }} onClick={() => setShowGlossary(true)}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <BookOpen size={16} className="text-purple-400" />
-                  <span style={{ fontWeight: '700', fontSize: '13px', color: 'var(--text-primary)' }}>Glosario de Técnicas</span>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button 
+                    onClick={() => {
+                      const newVal = Math.min(12, waterIntake + 1);
+                      setWaterIntake(newVal);
+                      const todayStr = new Date().toISOString().split('T')[0];
+                      localStorage.setItem(`water_intake_${todayStr}`, newVal.toString());
+                    }}
+                    className="btn-primary"
+                    style={{ flex: 1, padding: '10px', fontSize: '12px', backgroundColor: '#1c4595', borderColor: '#38bdf8', color: '#fff', borderRadius: '12px', cursor: 'pointer' }}
+                  >
+                    +250ml 💧
+                  </button>
+                  <button 
+                    onClick={() => {
+                      const newVal = Math.max(0, waterIntake - 1);
+                      setWaterIntake(newVal);
+                      const todayStr = new Date().toISOString().split('T')[0];
+                      localStorage.setItem(`water_intake_${todayStr}`, newVal.toString());
+                    }}
+                    className="btn-secondary"
+                    style={{ flex: 1, padding: '10px', fontSize: '12px', borderColor: 'rgba(255,255,255,0.1)', color: 'var(--text-secondary)', borderRadius: '12px', cursor: 'pointer' }}
+                    disabled={waterIntake === 0}
+                  >
+                    Remover 🥛
+                  </button>
                 </div>
-                <span style={{ fontSize: '12px', color: 'var(--accent-primary)', fontWeight: 'bold' }}>Ver Catálogo →</span>
-              </div>
-            </section>
+                
+                {waterIntake >= 8 && (
+                  <p style={{ fontSize: '11px', color: '#10b981', margin: 0, textAlign: 'center', fontWeight: 'bold' }}>
+                    ¡Ki Hidratado al 100%! Has alcanzado tu meta de agua hoy 🌊
+                  </p>
+                )}
+              </section>
 
-          </div>
-        )}
+              {/* Glossary Trigger Card */}
+              <section className="card" style={{ cursor: 'pointer', marginTop: '4px' }} onClick={() => setShowGlossary(true)}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <BookOpen size={16} className="text-purple-400" />
+                    <span style={{ fontWeight: '700', fontSize: '13px', color: 'var(--text-primary)' }}>Glosario de Técnicas</span>
+                  </div>
+                  <span style={{ fontSize: '12px', color: 'var(--accent-primary)', fontWeight: 'bold' }}>Ver Catálogo →</span>
+                </div>
+              </section>
+
+            </div>
+          );
+        })()}
 
         {/* TAB: CALENDARIO */}
         {activeTab === 'calendario' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            
-            {/* Header Description */}
-            <section className="card" style={{ position: 'relative', overflow: 'hidden' }}>
-              <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full bg-purple-500/10 blur-3xl pointer-events-none" />
-              <h2 className="lvl-title" style={{ fontSize: '20px', display: 'flex', alignItems: 'center', gap: '8px', margin: '0 0 6px 0' }}>
-                <Calendar size={20} className="text-purple-400" />
-                <span>Expansión de Dominio Semanal</span>
-              </h2>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '12px', lineHeight: '1.4' }}>
-                Planifica tu semana de entrenamiento asignando tus rituales a los días correspondientes. Las misiones programadas aparecerán en tu pantalla de inicio.
-              </p>
-            </section>
-
-            {/* Week Planner List */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {calendarDays.map((day) => {
-                const dayRoutines = routines.filter(r => r.day_of_week && r.day_of_week.includes(day.value));
-                
-                return (
-                  <section 
-                    key={day.value} 
-                    className="card"
-                    style={{
-                      borderColor: day.isToday ? 'var(--accent-primary)' : 'var(--border-color)',
-                      boxShadow: day.isToday ? '0 0 15px rgba(168, 85, 247, 0.15)' : 'none',
-                      backgroundColor: day.isToday ? 'rgba(20, 20, 25, 0.95)' : 'var(--bg-card)',
-                      transition: 'var(--transition-smooth)'
-                    }}
-                  >
-                    {/* Day Header */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <div 
-                          className={`calendar-day-box ${day.hasTrained ? 'completed' : ''} ${day.isToday ? 'today' : ''}`}
-                          style={{ width: '36px', height: '36px', fontSize: '12px', flexShrink: 0 }}
-                        >
-                          {day.hasTrained ? <Check size={14} strokeWidth={3.5} /> : day.dayNum}
-                        </div>
-                        <div>
-                          <h4 style={{ margin: 0, fontSize: '15px', fontWeight: '700', color: day.isToday ? 'var(--accent-primary)' : 'var(--text-primary)' }}>
-                            {day.fullName}
-                            {day.isToday && (
-                              <span style={{ fontSize: '8px', padding: '2px 6px', backgroundColor: 'rgba(168, 85, 247, 0.15)', border: '1px solid var(--accent-primary)', borderRadius: '4px', marginLeft: '6px', verticalAlign: 'middle' }}>
-                                HOY
-                              </span>
-                            )}
-                          </h4>
-                          <span style={{ fontSize: '10px', color: 'var(--text-tertiary)' }}>{day.dateStr}</span>
-                        </div>
-                      </div>
-                      
-                      <button
-                        onClick={() => setAssigningRoutineDayValue(assigningRoutineDayValue === day.value ? null : day.value)}
-                        className="btn-secondary"
-                        style={{ padding: '6px 10px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }}
-                      >
-                        <Plus size={12} />
-                        <span>Programar</span>
-                      </button>
-                    </div>
-
-                    {/* Inline Routine Assign/Unassign Selector Dropdown */}
-                    {assigningRoutineDayValue === day.value && (
-                      <div style={{
-                        backgroundColor: 'var(--bg-primary)',
-                        border: '1px solid var(--border-color)',
-                        borderRadius: '8px',
-                        padding: '10px',
-                        marginBottom: '12px',
-                        animation: 'fadeIn 0.2s ease'
-                      }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                          <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--text-secondary)' }}>
-                            Programar rutina para {day.fullName}:
-                          </span>
-                          <button 
-                            onClick={() => setAssigningRoutineDayValue(null)}
-                            style={{ background: 'none', border: 'none', color: 'var(--accent-primary)', fontSize: '10px', cursor: 'pointer' }}
-                          >
-                            Cerrar
-                          </button>
-                        </div>
-                        
-                        {routines.length === 0 ? (
-                          <div style={{ textAlign: 'center', padding: '10px 0' }}>
-                            <p style={{ fontSize: '11px', color: 'var(--text-tertiary)', marginBottom: '8px' }}>No tienes rutinas de hechicería creadas.</p>
-                            <button 
-                              onClick={() => {
-                                setAssigningRoutineDayValue(null);
-                                setActiveTab('rutinas');
-                                setShowRoutineCreator(true);
-                              }}
-                              className="btn-primary"
-                              style={{ padding: '6px 12px', fontSize: '11px' }}
-                            >
-                              Crear nueva rutina
-                            </button>
-                          </div>
-                        ) : (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '180px', overflowY: 'auto' }}>
-                            {routines.map(r => {
-                              const isAlreadyScheduled = r.day_of_week && r.day_of_week.includes(day.value);
-                              return (
-                                <button
-                                  key={r.id}
-                                  onClick={() => {
-                                    if (isAlreadyScheduled) {
-                                      unscheduleRoutine(r.id, day.value);
-                                    } else {
-                                      scheduleRoutine(r.id, day.value);
-                                    }
-                                  }}
-                                  style={{
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center',
-                                    width: '100%',
-                                    padding: '8px 12px',
-                                    backgroundColor: isAlreadyScheduled ? 'rgba(168, 85, 247, 0.08)' : 'var(--bg-card)',
-                                    border: `1px solid ${isAlreadyScheduled ? 'var(--accent-primary)' : 'var(--border-color)'}`,
-                                    borderRadius: '6px',
-                                    color: 'var(--text-primary)',
-                                    cursor: 'pointer',
-                                    fontSize: '12px',
-                                    textAlign: 'left'
-                                  }}
-                                >
-                                  <span>{r.name}</span>
-                                  {isAlreadyScheduled ? (
-                                    <span style={{ color: 'var(--accent-primary)', fontWeight: '700', fontSize: '11px' }}>✓ Programada</span>
-                                  ) : (
-                                    <span style={{ color: 'var(--text-tertiary)', fontSize: '11px' }}>+ Asignar</span>
-                                  )}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Scheduled Routines Content */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      {dayRoutines.length > 0 ? (
-                        dayRoutines.map(routine => {
-                          const exercisesCount = routineExercises.filter(re => re.routine_id === routine.id).length;
-                          return (
-                            <div 
-                              key={routine.id}
-                              style={{
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                                padding: '10px 12px',
-                                backgroundColor: 'rgba(255, 255, 255, 0.01)',
-                                border: '1px solid var(--border-color)',
-                                borderRadius: '8px'
-                              }}
-                            >
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)' }}>
-                                  {routine.name}
-                                </span>
-                                <span style={{ fontSize: '10px', color: 'var(--text-tertiary)' }}>
-                                  {exercisesCount} {exercisesCount === 1 ? 'ejercicio' : 'ejercicios'}
-                                </span>
-                              </div>
-                              
-                              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                                {/* Start Workout Shortcut */}
-                                <button
-                                  onClick={() => startWorkout(routine)}
-                                  className="btn-primary"
-                                  style={{
-                                    padding: '5px 10px',
-                                    fontSize: '11px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '4px'
-                                  }}
-                                  title="Iniciar rutina ahora"
-                                >
-                                  <Play size={10} fill="currentColor" />
-                                  <span>Iniciar</span>
-                                </button>
-
-                                {/* Desprogramar Routine Button */}
-                                <button
-                                  onClick={() => unscheduleRoutine(routine.id, day.value)}
-                                  className="btn-secondary"
-                                  style={{
-                                    padding: '5px 8px',
-                                    borderColor: 'rgba(239, 68, 68, 0.2)',
-                                    color: '#ef4444',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center'
-                                  }}
-                                  title="Quitar programación"
-                                >
-                                  <Trash2 size={12} />
-                                </button>
-                              </div>
-                            </div>
-                          );
-                        })
-                      ) : (
-                        <div style={{
-                          padding: '12px',
-                          textAlign: 'center',
-                          backgroundColor: 'rgba(255, 255, 255, 0.01)',
-                          border: '1px dashed var(--border-color)',
-                          borderRadius: '8px',
-                          color: 'var(--text-tertiary)',
-                          fontSize: '11px'
-                        }}>
-                          🧘 Meditación y control de Energía Maldita (Descanso)
-                        </div>
-                      )}
-
-                      {/* Training Log / Completed Workouts for this Day */}
-                      {day.trainedWorkouts && day.trainedWorkouts.length > 0 && (
-                        <div style={{ 
-                          marginTop: '6px', 
-                          borderTop: '1px dashed var(--border-color)', 
-                          paddingTop: '8px',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: '6px'
-                        }}>
-                          <span style={{ fontSize: '9px', fontWeight: '800', color: 'var(--accent-tertiary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                            Misiones del Día Completadas:
-                          </span>
-                          {day.trainedWorkouts.map((workout: any) => {
-                            const matchingRoutine = routines.find(r => r.id === workout.routine_id);
-                            const matchingSets = workoutSets.filter(s => s.workout_id === workout.id && s.is_completed);
-                            const durationMinutes = Math.round(
-                              (new Date(workout.completed_at).getTime() - new Date(workout.started_at).getTime()) / 60000
-                            );
-                            
-                            return (
-                              <div 
-                                key={workout.id}
-                                style={{
-                                  display: 'flex',
-                                  justifyContent: 'space-between',
-                                  alignItems: 'center',
-                                  fontSize: '11px',
-                                  backgroundColor: 'rgba(16, 185, 129, 0.03)',
-                                  border: '1px solid rgba(16, 185, 129, 0.1)',
-                                  padding: '6px 10px',
-                                  borderRadius: '6px',
-                                  color: 'var(--text-primary)'
-                                }}
-                              >
-                                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                  💥 {matchingRoutine ? matchingRoutine.name : 'Entrenamiento Libre'} 
-                                  <span style={{ color: 'var(--text-tertiary)', fontSize: '10px' }}>
-                                    ({durationMinutes > 0 ? `${durationMinutes} min` : '<1 min'}, {matchingSets.length} sets)
-                                  </span>
-                                </span>
-                                <span style={{ color: 'var(--accent-primary)', fontWeight: 'bold' }}>
-                                  +{workout.experience_earned} EM
-                                </span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  </section>
-                );
-              })}
-            </div>
-          </div>
-        )}
+            <CalendarKi
+              routines={routines}
+              routineExercises={routineExercises}
+              exercises={exercises}
+              workouts={workouts}
+              workoutSets={workoutSets}
+              onStartWorkout={startWorkout}
+              onOpenRoutineCreator={(dayVal) => {
+                setAssigningRoutineDayValue(dayVal ?? null);
+                setActiveTab('rutinas');
+                setShowRoutineCreator(true);
+              }}
+              onClaimShenron={() => setShowShenronModal(true)}
+              theme={theme}
+            />
+          )}
 
         {/* TAB: RUTINAS */}
         {activeTab === 'rutinas' && (
@@ -2903,7 +3677,8 @@ function App() {
                                 name: ex ? ex.name : 'Ejercicio desconocido',
                                 sets: re.default_sets,
                                 reps: re.default_reps,
-                                rest: re.default_rest_time
+                                rest: re.default_rest_time,
+                                is_time_based: re.is_time_based || false
                               };
                             });
                             setEditingRoutineId(routine.id);
@@ -2971,7 +3746,7 @@ function App() {
                       </div>
                       <h2 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface">Gestor de Rutinas</h2>
                     </div>
-                    <p className="font-body-md text-body-md text-on-surface-variant">Forja un nuevo circuito de entrenamiento. Ajusta los parámetros de tu energía maldita.</p>
+                    <p className="font-body-md text-body-md text-on-surface-variant">Forja un nuevo programa de entrenamiento. Ajusta tus parámetros de Ki.</p>
                   </section>
 
                   {/* Configuration Form */}
@@ -3083,11 +3858,23 @@ function App() {
                                         {config.name}
                                       </h4>
                                       <p className="font-label-md text-label-md text-on-surface-variant mt-0.5" style={{ fontSize: '12px' }}>
-                                        {config.sets} sets × {config.reps} reps • {config.rest}s desc
+                                        {config.sets} sets × {config.reps} {config.is_time_based ? 'segundos' : 'reps'} • {config.rest}s desc
                                       </p>
                                     </div>
                                   </div>
                                   <div className="flex items-center gap-2">
+                                    <button 
+                                      type="button"
+                                      onClick={() => {
+                                        setNewRoutineSelectedExercises(prev => 
+                                          prev.map(item => item.id === config.id ? { ...item, is_time_based: !item.is_time_based } : item)
+                                        );
+                                      }}
+                                      className="px-2 py-1 text-[11px] rounded bg-white/5 border border-white/10 text-on-surface-variant hover:text-primary hover:bg-white/10 transition-all font-semibold"
+                                      style={{ display: 'flex', alignItems: 'center', gap: '3px' }}
+                                    >
+                                      <span>{config.is_time_based ? '⏱️ Tiempo' : '🔢 Reps'}</span>
+                                    </button>
                                     <button 
                                       type="button"
                                       onClick={() => {
@@ -3105,7 +3892,7 @@ function App() {
                                 <div className="grid grid-cols-3 gap-2 pt-2 border-t border-white/5">
                                   <div>
                                     <label className="text-[11px] text-on-surface-variant/80 uppercase block mb-1" style={{ fontSize: '12px' }}>Series</label>
-                                    <div className="flex items-center bg-surface-container-high border border-border-subtle rounded overflow-hidden h-8">
+                                    <div className="stepper-container bg-surface-container-high">
                                       <button
                                         type="button"
                                         onClick={() => {
@@ -3114,8 +3901,7 @@ function App() {
                                             prev.map(item => item.id === config.id ? { ...item, sets: val } : item)
                                           );
                                         }}
-                                        className="px-3 text-xs text-on-surface-variant hover:text-primary h-full hover:bg-white/5 transition-colors font-bold"
-                                        style={{ fontSize: '12px' }}
+                                        className="stepper-btn-minus"
                                       >
                                         -
                                       </button>
@@ -3131,8 +3917,7 @@ function App() {
                                             prev.map(item => item.id === config.id ? { ...item, sets: val } : item)
                                           );
                                         }}
-                                        className="w-full bg-transparent border-none text-xs text-on-surface text-center focus:outline-none p-0 h-full [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                        style={{ fontSize: '12px' }}
+                                        className="set-input-stepped font-bold"
                                       />
                                       <button
                                         type="button"
@@ -3142,16 +3927,17 @@ function App() {
                                             prev.map(item => item.id === config.id ? { ...item, sets: val } : item)
                                           );
                                         }}
-                                        className="px-3 text-xs text-on-surface-variant hover:text-primary h-full hover:bg-white/5 transition-colors font-bold"
-                                        style={{ fontSize: '12px' }}
+                                        className="stepper-btn-plus"
                                       >
                                         +
                                       </button>
                                     </div>
                                   </div>
                                   <div>
-                                    <label className="text-[11px] text-on-surface-variant/80 uppercase block mb-1" style={{ fontSize: '12px' }}>Reps</label>
-                                    <div className="flex items-center bg-surface-container-high border border-border-subtle rounded overflow-hidden h-8">
+                                    <label className="text-[11px] text-on-surface-variant/80 uppercase block mb-1" style={{ fontSize: '12px' }}>
+                                      {config.is_time_based ? 'Segundos' : 'Reps'}
+                                    </label>
+                                    <div className="stepper-container bg-surface-container-high">
                                       <button
                                         type="button"
                                         onClick={() => {
@@ -3160,8 +3946,7 @@ function App() {
                                             prev.map(item => item.id === config.id ? { ...item, reps: val } : item)
                                           );
                                         }}
-                                        className="px-3 text-xs text-on-surface-variant hover:text-primary h-full hover:bg-white/5 transition-colors font-bold"
-                                        style={{ fontSize: '12px' }}
+                                        className="stepper-btn-minus"
                                       >
                                         -
                                       </button>
@@ -3177,8 +3962,7 @@ function App() {
                                             prev.map(item => item.id === config.id ? { ...item, reps: val } : item)
                                           );
                                         }}
-                                        className="w-full bg-transparent border-none text-xs text-on-surface text-center focus:outline-none p-0 h-full [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                        style={{ fontSize: '12px' }}
+                                        className="set-input-stepped font-bold"
                                       />
                                       <button
                                         type="button"
@@ -3188,8 +3972,7 @@ function App() {
                                             prev.map(item => item.id === config.id ? { ...item, reps: val } : item)
                                           );
                                         }}
-                                        className="px-3 text-xs text-on-surface-variant hover:text-primary h-full hover:bg-white/5 transition-colors font-bold"
-                                        style={{ fontSize: '12px' }}
+                                        className="stepper-btn-plus"
                                       >
                                         +
                                       </button>
@@ -3197,7 +3980,7 @@ function App() {
                                   </div>
                                   <div>
                                     <label className="text-[11px] text-on-surface-variant/80 uppercase block mb-1" style={{ fontSize: '12px' }}>Descanso (s)</label>
-                                    <div className="flex items-center bg-surface-container-high border border-border-subtle rounded overflow-hidden h-8">
+                                    <div className="stepper-container bg-surface-container-high">
                                       <button
                                         type="button"
                                         onClick={() => {
@@ -3206,8 +3989,7 @@ function App() {
                                             prev.map(item => item.id === config.id ? { ...item, rest: val } : item)
                                           );
                                         }}
-                                        className="px-3 text-xs text-on-surface-variant hover:text-primary h-full hover:bg-white/5 transition-colors font-bold"
-                                        style={{ fontSize: '12px' }}
+                                        className="stepper-btn-minus"
                                       >
                                         -
                                       </button>
@@ -3223,8 +4005,7 @@ function App() {
                                             prev.map(item => item.id === config.id ? { ...item, rest: val } : item)
                                           );
                                         }}
-                                        className="w-full bg-transparent border-none text-xs text-on-surface text-center focus:outline-none p-0 h-full [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                        style={{ fontSize: '12px' }}
+                                        className="set-input-stepped font-bold"
                                       />
                                       <button
                                         type="button"
@@ -3234,8 +4015,7 @@ function App() {
                                             prev.map(item => item.id === config.id ? { ...item, rest: val } : item)
                                           );
                                         }}
-                                        className="px-3 text-xs text-on-surface-variant hover:text-primary h-full hover:bg-white/5 transition-colors font-bold"
-                                        style={{ fontSize: '12px' }}
+                                        className="stepper-btn-plus"
                                       >
                                         +
                                       </button>
@@ -3255,10 +4035,40 @@ function App() {
                     <label className="font-label-md text-label-md text-primary uppercase tracking-wider" style={{ fontSize: '13px', fontWeight: 'bold' }}>
                       Añadir Técnicas
                     </label>
+
+                    {/* Muscle group filter chips */}
+                    <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', padding: '4px 0', margin: '4px 0', scrollbarWidth: 'none' }} className="no-scrollbar">
+                      {['Pecho', 'Espalda', 'Piernas', 'Hombros', 'Brazos', 'Abdomen', 'Cardio'].map((cat) => {
+                        const isSelected = newRoutineCategoryFilter === cat;
+                        return (
+                          <button
+                            key={cat}
+                            type="button"
+                            onClick={() => setNewRoutineCategoryFilter(isSelected ? null : cat)}
+                            style={{
+                              padding: '6px 14px',
+                              fontSize: '12px',
+                              fontWeight: '600',
+                              whiteSpace: 'nowrap',
+                              borderRadius: '20px',
+                              border: '1px solid',
+                              borderColor: isSelected ? 'var(--accent-secondary)' : 'var(--border-color)',
+                              backgroundColor: isSelected ? 'rgba(231, 106, 36, 0.15)' : 'var(--bg-secondary)',
+                              color: isSelected ? 'var(--accent-secondary)' : 'var(--text-secondary)',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s ease'
+                            }}
+                          >
+                            {cat}
+                          </button>
+                        );
+                      })}
+                    </div>
+
                     <div className="search-wrapper" style={{ margin: '4px 0', position: 'relative' }}>
                       <input 
                         type="text"
-                        placeholder="Buscar técnica para agregar..."
+                        placeholder="Buscar técnica por nombre..."
                         value={routineExerciseSearch}
                         onChange={(e) => setRoutineExerciseSearch(e.target.value)}
                         className="search-input w-full bg-obsidian-zero border border-border-subtle rounded-lg px-4 py-3 text-on-surface font-body-md"
@@ -3267,23 +4077,36 @@ function App() {
                       <Search size={16} className="search-icon" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
                     </div>
 
-                    <div className="flex flex-col gap-2 max-h-80 overflow-y-auto pr-1">
+                    <div className="flex flex-col gap-3 max-h-96 overflow-y-auto pr-1">
                       {(() => {
-                        const matchingExercises = exercises.filter(ex => 
-                          ex.name.toLowerCase().includes(routineExerciseSearch.toLowerCase()) ||
-                          (ex.name_en && ex.name_en.toLowerCase().includes(routineExerciseSearch.toLowerCase())) ||
-                          ex.category.toLowerCase().includes(routineExerciseSearch.toLowerCase())
-                        );
+                        const matchingExercises = exercises.filter(ex => {
+                          const text = routineExerciseSearch.trim().toLowerCase();
+                          const matchesText = text === '' ||
+                            ex.name.toLowerCase().includes(text) ||
+                            (ex.name_en && ex.name_en.toLowerCase().includes(text));
 
-                        // Only display available exercises (not already in newRoutineSelectedExercises)
+                          let matchesCat = true;
+                          if (newRoutineCategoryFilter) {
+                            if (newRoutineCategoryFilter === 'Piernas') {
+                              matchesCat = ex.category === 'Piernas' || ex.category === 'Pantorrillas';
+                            } else if (newRoutineCategoryFilter === 'Brazos') {
+                              matchesCat = ex.category === 'Bíceps' || ex.category === 'Tríceps' || ex.category === 'Antebrazos';
+                            } else {
+                              matchesCat = ex.category.toLowerCase() === newRoutineCategoryFilter.toLowerCase();
+                            }
+                          }
+
+                          return matchesText && matchesCat;
+                        });
+
                         const availableMatching = matchingExercises.filter(ex => 
                           !newRoutineSelectedExercises.some(item => item.id === ex.id)
                         ).slice(0, 20);
 
-                        if (routineExerciseSearch.trim() === '') {
+                        if (routineExerciseSearch.trim() === '' && !newRoutineCategoryFilter) {
                           return (
                             <span style={{ fontSize: '12px', color: 'var(--text-tertiary)', fontStyle: 'italic', textAlign: 'center', padding: '12px' }}>
-                              Escribe en el buscador de arriba para encontrar y añadir técnicas...
+                              Escribe en el buscador o selecciona una categoría para encontrar técnicas...
                             </span>
                           );
                         }
@@ -3291,7 +4114,7 @@ function App() {
                         if (availableMatching.length === 0) {
                           return (
                             <span style={{ fontSize: '12px', color: 'var(--text-tertiary)', fontStyle: 'italic', textAlign: 'center', padding: '12px' }}>
-                              No se encontraron técnicas disponibles.
+                              No se encontraron técnicas disponibles con los filtros actuales.
                             </span>
                           );
                         }
@@ -3303,19 +4126,21 @@ function App() {
                               display: 'flex', 
                               alignItems: 'center', 
                               justifyContent: 'space-between', 
-                              padding: '10px 12px', 
-                              borderRadius: '8px', 
+                              padding: '12px', 
+                              borderRadius: '12px', 
                               border: '1px solid var(--border-color)', 
-                              backgroundColor: 'var(--bg-secondary)'
+                              backgroundColor: 'var(--bg-secondary)',
+                              minHeight: '120px',
+                              gap: '16px'
                             }}
                           >
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded overflow-hidden bg-obsidian-zero border border-white/5 flex-shrink-0">
+                            <div className="flex items-center gap-4" style={{ flex: 1 }}>
+                              <div style={{ width: '96px', height: '96px', borderRadius: '8px', overflow: 'hidden', backgroundColor: 'var(--bg-primary)', border: '1px solid rgba(255,255,255,0.05)', flexShrink: 0 }}>
                                 {renderExerciseMedia(ex, { style: { width: '100%', height: '100%', objectFit: 'cover' } })}
                               </div>
-                              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{ex.name}</span>
-                                <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{ex.category}</span>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>{ex.name}</span>
+                                <span style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'inline-block', backgroundColor: 'rgba(255,255,255,0.03)', padding: '2px 8px', borderRadius: '4px', alignSelf: 'flex-start' }}>{ex.category}</span>
                               </div>
                             </div>
                             <button
@@ -3323,13 +4148,20 @@ function App() {
                               onClick={() => {
                                 setNewRoutineSelectedExercises(prev => [
                                   ...prev,
-                                  { id: ex.id, name: ex.name, sets: 4, reps: 10, rest: 60 }
+                                  { 
+                                    id: ex.id, 
+                                    name: ex.name, 
+                                    sets: 4, 
+                                    reps: ex.category === 'Cardio' ? 30 : 10, 
+                                    rest: 60,
+                                    is_time_based: ex.category === 'Cardio'
+                                  }
                                 ]);
                               }}
                               className="btn-primary"
-                              style={{ padding: '6px 12px', fontSize: '12px', minWidth: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+                              style={{ padding: '8px 16px', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', height: '40px', borderRadius: '20px' }}
                             >
-                              <Plus size={14} />
+                              <Plus size={16} />
                               <span>Agregar</span>
                             </button>
                           </div>
@@ -3347,7 +4179,7 @@ function App() {
                     >
                       <div className="absolute inset-0 bg-white/20 w-full translate-x-[-100%] skew-x-[-15deg] group-hover:animate-[shimmer_1s_infinite]" aria-hidden="true"></div>
                       <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>vpn_key</span>
-                      {editingRoutineId ? 'Actualizar Ritual ⚡' : 'Sellar Ritual'}
+                      {editingRoutineId ? 'Actualizar Programa Z ⚡' : 'Guardar Programa'}
                     </button>
                   </div>
                 </main>
@@ -3449,6 +4281,11 @@ function App() {
               onClick={async () => {
                 if (confirm('¿Seguro que deseas restablecer el templo? Esto eliminará todo tu historial de hechicería y cargará los datos por defecto.')) {
                   await clearAllTables();
+                  localStorage.removeItem('onboarding_completed');
+                  localStorage.removeItem('weekly_goal_days');
+                  localStorage.removeItem('user_weight');
+                  localStorage.removeItem('user_height');
+                  localStorage.removeItem('user_fat_pct');
                   location.reload();
                 }
               }}
@@ -3485,7 +4322,7 @@ function App() {
                 </span>
               </div>
               <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>
-                Configura tu avatar chamánico y afilia tu técnica maldita.
+                Configura tu avatar Z y selecciona tu técnica especial.
               </p>
             </section>
 
@@ -3589,15 +4426,15 @@ function App() {
             {/* Configuración de Datos */}
             <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <h3 className="card-title">
-                <User size={15} className="text-purple-400" />
-                <span>Datos del Chamán</span>
+                <User size={15} style={{ color: 'var(--accent-secondary)' }} />
+                <span>Datos del Guerrero Z</span>
               </h3>
 
               <div className="form-group">
-                <label className="form-label" style={{ fontSize: '13px', fontWeight: 'bold' }}>Nombre del Chamán</label>
+                <label className="form-label" style={{ fontSize: '13px', fontWeight: 'bold' }}>Nombre del Guerrero</label>
                 <input 
                   type="text"
-                  placeholder="Ej: Yuji Itadori"
+                  placeholder="Ej: Son Goku"
                   value={editUsername}
                   onChange={(e) => setEditUsername(e.target.value)}
                   className="form-input"
@@ -3606,7 +4443,7 @@ function App() {
               </div>
 
               <div className="form-group">
-                <label className="form-label" style={{ fontSize: '13px', fontWeight: 'bold' }}>Linaje / Clan</label>
+                <label className="form-label" style={{ fontSize: '13px', fontWeight: 'bold' }}>Raza / Escuela</label>
                 <select 
                   value={editClan}
                   onChange={(e) => setEditClan(e.target.value)}
@@ -3622,40 +4459,40 @@ function App() {
                     cursor: 'pointer'
                   }}
                 >
-                  <option value="none">Sin Afiliación (Hechicero de 1ra Generación)</option>
-                  <option value="Gojo">Clan Gojo (Los Seis Ojos)</option>
-                  <option value="Zen'in">Clan Zenin (Restricción Celestial)</option>
-                  <option value="Kamo">Clan Kamo (Manipulación de Sangre)</option>
-                  <option value="Itadori">Clan Itadori</option>
-                  <option value="Fushiguro">Clan Fushiguro</option>
-                  <option value="Inumaki">Clan Inumaki</option>
+                  <option value="none">Terrícola (Guerrero de la Tierra)</option>
+                  <option value="Saiyan">Raza Saiyan (Guerrero del Espacio)</option>
+                  <option value="Hibrido">Híbrido Saiyan (Potencial Ilimitado)</option>
+                  <option value="Namek">Raza Namekiana (Regeneración)</option>
+                  <option value="Ginyu">Fuerza Especial Ginyu</option>
+                  <option value="Tortuga">Escuela Tortuga (Maestro Roshi)</option>
+                  <option value="Grulla">Escuela Grulla (Maestro Shen)</option>
                 </select>
               </div>
 
               <div className="form-group">
-                <label className="form-label" style={{ fontSize: '13px', fontWeight: 'bold' }}>Técnica Ritual / Habilidad Especial</label>
+                <label className="form-label" style={{ fontSize: '13px', fontWeight: 'bold' }}>Técnica Especial / Habilidad</label>
                 <input 
                   type="text"
-                  placeholder="Ej: Destello Negro, Diez Sombras..."
+                  placeholder="Ej: Kamehameha, Destello Final..."
                   value={editCursedTechnique}
                   onChange={(e) => setEditCursedTechnique(e.target.value)}
                   className="form-input"
                   style={{ fontSize: '13px' }}
                 />
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '8px' }}>
-                  {['Destello Negro ⚡', 'Ilimitado ♾️', 'Diez Sombras 🐺', 'Discurso Maldito 🗣️', 'Restricción Celestial 🏋️', 'Manipulación de Sangre 🩸'].map(t => (
+                  {['Kamehameha 👐', 'Destello Final ⚡', 'Genkidama 🌟', 'Kienzan 🌀', 'Kaio-ken 🔴', 'Puño Dragón 🐉'].map(t => (
                     <button
-                      key={t}
-                      type="button"
-                      onClick={() => setEditCursedTechnique(t)}
-                      style={{
-                        padding: '6px 12px',
-                        fontSize: '12px',
-                        backgroundColor: editCursedTechnique === t ? 'rgba(184, 211, 0, 0.15)' : 'rgba(255,255,255,0.03)',
-                        border: `1px solid ${editCursedTechnique === t ? 'var(--accent-primary)' : 'var(--border-color)'}`,
-                        borderRadius: '16px',
-                        color: editCursedTechnique === t ? 'var(--accent-primary)' : 'var(--text-secondary)',
-                        cursor: 'pointer'
+                       key={t}
+                       type="button"
+                       onClick={() => setEditCursedTechnique(t)}
+                       style={{
+                         padding: '6px 12px',
+                         fontSize: '12px',
+                         backgroundColor: editCursedTechnique === t ? 'rgba(231, 106, 36, 0.15)' : 'rgba(255,255,255,0.03)',
+                         border: `1px solid ${editCursedTechnique === t ? 'var(--accent-secondary)' : 'var(--border-color)'}`,
+                         borderRadius: '16px',
+                         color: editCursedTechnique === t ? 'var(--accent-secondary)' : 'var(--text-secondary)',
+                         cursor: 'pointer'
                       }}
                     >
                       {t}
@@ -3663,6 +4500,89 @@ function App() {
                   ))}
                 </div>
               </div>
+            </section>
+
+            {/* Composición Corporal (moved from Hoy) (SPEC_011) */}
+            <section className="card">
+              <h3 className="card-title">
+                <span style={{ marginRight: '6px' }}>❤️</span>
+                <span>Composición Corporal</span>
+              </h3>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0' }}>
+                <div style={{ display: 'flex', gap: '20px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontSize: '9px', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase' }}>PESO</span>
+                    <span style={{ fontSize: '14px', fontWeight: '900', color: 'var(--text-primary)', fontFamily: 'Outfit' }}>{userWeight} kg</span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontSize: '9px', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase' }}>GRASA</span>
+                    <span style={{ fontSize: '14px', fontWeight: '900', color: 'var(--text-primary)', fontFamily: 'Outfit' }}>{userFatPct}%</span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontSize: '9px', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase' }}>IMC</span>
+                    <span style={{ fontSize: '14px', fontWeight: '900', color: 'var(--accent-primary)', fontFamily: 'Outfit' }}>{(userWeight / Math.pow(userHeight / 100, 2)).toFixed(1)}</span>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => {
+                    const w = prompt('Introduce tu peso actual (kg):', userWeight.toString());
+                    if (w !== null) {
+                      const parsedW = parseFloat(w) || userWeight;
+                      setUserWeight(parsedW);
+                      localStorage.setItem('user_weight', parsedW.toString());
+                      
+                      const f = prompt('Introduce tu porcentaje de grasa corporal (%):', userFatPct.toString());
+                      if (f !== null) {
+                        const parsedF = parseFloat(f) || userFatPct;
+                        setUserFatPct(parsedF);
+                        localStorage.setItem('user_fat_pct', parsedF.toString());
+                      }
+
+                      const h = prompt('Introduce tu altura actual (cm):', userHeight.toString());
+                      if (h !== null) {
+                        const parsedH = parseFloat(h) || userHeight;
+                        setUserHeight(parsedH);
+                        localStorage.setItem('user_height', parsedH.toString());
+                      }
+                    }
+                  }}
+                  className="btn-secondary"
+                  style={{ padding: '6px 12px', fontSize: '11px', borderRadius: '20px', borderColor: 'rgba(255,255,255,0.1)', cursor: 'pointer' }}
+                >
+                  Actualizar
+                </button>
+              </div>
+            </section>
+
+            {/* Marcas & Destellos Récords (moved from Hoy) (SPEC_011) */}
+            <section className="card">
+              <h3 className="card-title">
+                <TrendingUp size={15} className="text-purple-400" />
+                <span>Marcas & Destellos Récords</span>
+              </h3>
+              {Object.keys(personalRecords).length === 0 ? (
+                <p className="no-routines-text" style={{ textAlign: 'center', padding: '8px 0', fontSize: '12px' }}>
+                  Aún no has registrado récords personales (Zenkai Boosts).
+                </p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '180px', overflowY: 'auto', paddingRight: '4px' }}>
+                  {Object.entries(personalRecords).map(([exId, record]) => {
+                    const ex = exercises.find((e) => e.id === exId);
+                    if (!ex) return null;
+                    return (
+                      <div key={exId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 8px', backgroundColor: 'rgba(255,255,255,0.01)', borderBottom: '1px solid rgba(255,255,255,0.03)', borderRadius: '6px' }}>
+                        <div>
+                          <h4 style={{ margin: 0, fontSize: '12px', color: 'var(--text-primary)', fontWeight: 600 }}>{ex.name}</h4>
+                          <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>1RM: {record.oneRM.toFixed(1)} kg • {record.weight}kg x {record.reps}r</span>
+                        </div>
+                        <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--accent-secondary)' }}>
+                          🔥 PR
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </section>
 
             {/* Supabase Cloud Connection & Authentication */}
@@ -3767,13 +4687,13 @@ function App() {
                 </div>
               </section>
             ) : (
-              /* Romper Pacto / Estado de Alianza */
+              /* Deshacer Vínculo / Estado de Conexión */
               <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: '12px', border: '1px solid #ef4444' }}>
                 <h4 style={{ fontSize: '13px', fontWeight: 'bold', color: '#ef4444', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span>💀 Estado de Alianza</span>
+                  <span>💥 Estado del Vínculo Z</span>
                 </h4>
                 <p style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                  Conectado como: <strong>{session.user.email}</strong>. Al romper el pacto, se cerrará tu sesión actual y se limpiará el templo local de este dispositivo.
+                  Conectado como: <strong>{session.user.email}</strong>. Al deshacer el vínculo, se cerrará tu sesión actual y se limpiará el registro local de este dispositivo.
                 </p>
                 <button
                   type="button"
@@ -3791,7 +4711,7 @@ function App() {
                     cursor: 'pointer'
                   }}
                 >
-                  Romper Pacto (Cerrar Sesión)
+                  Deshacer Vínculo Z (Cerrar Sesión)
                 </button>
               </section>
             )}
@@ -3816,17 +4736,17 @@ function App() {
                   fontSize: '14px',
                   letterSpacing: '1px',
                   textTransform: 'uppercase',
-                  boxShadow: '0 0 20px rgba(184, 211, 0, 0.4)',
+                  boxShadow: '0 0 20px rgba(28, 69, 149, 0.4)',
                   border: 'none',
                   backgroundColor: 'var(--accent-primary)',
-                  color: '#000',
+                  color: '#fff',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: '8px'
                 }}
               >
-                <span>{pactStatus || 'Sellar Pacto'}</span>
+                <span>{pactStatus || 'Guardar Perfil'}</span>
                 <UserCheck size={16} strokeWidth={3} />
               </button>
             </div>
@@ -4262,8 +5182,8 @@ function App() {
                   width: '56px', 
                   height: '56px', 
                   borderRadius: '50%', 
-                  backgroundColor: 'rgba(184, 211, 0, 0.1)', 
-                  border: '1px solid rgba(184, 211, 0, 0.2)', 
+                  backgroundColor: 'rgba(28, 69, 149, 0.1)', 
+                  border: '1px solid rgba(28, 69, 149, 0.2)', 
                   display: 'flex', 
                   alignItems: 'center', 
                   justifyContent: 'center',
@@ -4273,12 +5193,12 @@ function App() {
                 <Zap className="text-primary animate-pulse" size={28} />
               </div>
               <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-                {syncOverlayMode === 'download' ? 'Despertando al Chamán' : 'Estableciendo Pacto Celestial'}
+                {syncOverlayMode === 'download' ? 'Entrenamiento Z: Cargando' : 'Estableciendo Vínculo Z'}
               </h3>
               <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px', margin: 0 }}>
                 {syncOverlayMode === 'download'
-                  ? 'Restaurando tu alma maldita desde la nube...'
-                  : 'Sincronizando tu alma maldita con la base de datos celestial...'}
+                  ? 'Restaurando tus datos Z desde la nube...'
+                  : 'Sincronizando tus datos Z con el planeta Kaito...'}
               </p>
             </div>
 
@@ -4414,3 +5334,4 @@ function App() {
 }
 
 export default App;
+

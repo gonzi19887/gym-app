@@ -55,3 +55,20 @@ Cuando el usuario completa un entrenamiento o modifica una rutina sin conexión 
    - Si ocurre un fallo de red o servidor temporal, la operación permanece en cola y se reintenta en la siguiente reconexión.
 5. **Sincronización Manual**:
    - En la pantalla de **Perfil**, el usuario puede visualizar si hay operaciones en cola (ej. `Tienes 3 entrenamientos pendientes de sincronizar`) y presionar el botón `Sincronizar ahora` para forzar la carga manual a la nube.
+6. **Mecanismo de Desconexión Rápida (Circuit Breaker)**:
+   - Para prevenir la degradación del rendimiento de IndexedDB, se implementó un límite máximo de **100 elementos** en la cola de sincronización. Si se supera este límite, la aplicación entra en estado preventivo, alertando al usuario sobre la necesidad de restaurar la conexión antes de continuar guardando entrenamientos adicionales.
+
+---
+
+## ⏰ 4. Resiliencia de Temporizadores en Segundo Plano
+
+Los navegadores web de los smartphones suspenden los hilos de ejecución de JavaScript (`setInterval`/`setTimeout`) en milisegundos tras bloquearse la pantalla o minimizarse la aplicación. Esto afectaba gravemente el seguimiento del descanso entre series y la duración del entrenamiento.
+
+### Soluciones Implementadas:
+1. **Lógica de Tiempo Absoluto Delta**:
+   - En lugar de restar `1` a un contador en cada ciclo de `setInterval`, almacenamos una marca de tiempo absoluta en el futuro (`timerTargetTimeRef` = `Date.now() + restDuration * 1000`).
+   - El intervalo simplemente calcula el tiempo restante en base a `Math.max(0, Math.ceil((targetTime - Date.now()) / 1000))`.
+2. **Sincronización con Page Visibility API**:
+   - Escuchamos el evento `visibilitychange` a través del navegador.
+   - En el momento en que la propiedad `document.visibilityState === 'visible'` (cuando el usuario desbloquea el teléfono o regresa a la aplicación), recalculamos de inmediato la diferencia de tiempo transcurrida.
+   - Si la marca de tiempo de destino ya pasó en segundo plano, se detiene el reloj de descanso y se reproduce instantáneamente el zumbido/alerta sonora para notificar al usuario.
