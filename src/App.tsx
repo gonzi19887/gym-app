@@ -1826,7 +1826,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                   style={{
                     flex: 1,
                     border: authMode === 'login' ? '1.5px solid var(--accent-primary)' : '1px solid var(--border-color)',
-                    backgroundColor: authMode === 'login' ? 'rgba(184, 211, 0, 0.05)' : 'transparent',
+                    backgroundColor: authMode === 'login' ? 'rgba(244, 162, 97, 0.08)' : 'transparent',
                     color: authMode === 'login' ? 'var(--accent-primary)' : 'var(--text-secondary)',
                     padding: '10px 0',
                     borderRadius: '10px',
@@ -1844,7 +1844,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                   style={{
                     flex: 1,
                     border: authMode === 'signup' ? '1.5px solid var(--accent-primary)' : '1px solid var(--border-color)',
-                    backgroundColor: authMode === 'signup' ? 'rgba(184, 211, 0, 0.05)' : 'transparent',
+                    backgroundColor: authMode === 'signup' ? 'rgba(244, 162, 97, 0.08)' : 'transparent',
                     color: authMode === 'signup' ? 'var(--accent-primary)' : 'var(--text-secondary)',
                     padding: '10px 0',
                     borderRadius: '10px',
@@ -3720,7 +3720,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
             {showRoutineCreator && (
               <div className="overlay-screen animate-slide overflow-y-auto pb-32">
                 <header className="overlay-header">
-                  <h3 className="overlay-header-title">{editingRoutineId ? 'Reconfigurar Dominio' : 'Forjar Dominio'}</h3>
+                  <h3 className="overlay-header-title">{editingRoutineId ? 'Reconfigurar Rutina' : 'Crear o Editar Rutina'}</h3>
                   <button 
                     onClick={() => {
                       setShowRoutineCreator(false);
@@ -3732,11 +3732,22 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                     }}
                     className="btn-secondary"
                     style={{ padding: '6px 12px', fontSize: '11px' }}
+                  >                    Volver
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNewRoutineName('');
+                      setNewRoutineDays([]);
+                      setNewRoutineSelectedExercises([]);
+                      setRoutineExerciseSearch('');
+                    }}
+                    className="btn-secondary"
+                    style={{ padding: '6px 12px', fontSize: '11px' }}
                   >
-                    Volver
+                    Limpiar
                   </button>
                 </header>
-
                 <main className="flex-1 w-full max-w-2xl mx-auto px-4 py-lg flex flex-col gap-xl">
                   {/* Header Section */}
                   <section className="flex flex-col gap-sm">
@@ -3744,9 +3755,9 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                       <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
                         <span className="material-symbols-outlined text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>edit_document</span>
                       </div>
-                      <h2 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface">Gestor de Rutinas</h2>
+                      <h2 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface">Forjar Rutina</h2>
                     </div>
-                    <p className="font-body-md text-body-md text-on-surface-variant">Forja un nuevo programa de entrenamiento. Ajusta tus parámetros de Ki.</p>
+                    <p className="font-body-md text-body-md text-on-surface-variant">Añade, ordena y configura las técnicas de tu rutina.</p>
                   </section>
 
                   {/* Configuration Form */}
@@ -3756,34 +3767,34 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                     
                     {/* Title Input */}
                     <div className="flex flex-col gap-xs z-10">
-                      <label className="font-label-md text-label-md text-primary uppercase tracking-wider" htmlFor="routine-name">Nombre del Dominio</label>
+                      <label className="font-label-md text-label-md text-primary uppercase tracking-wider" htmlFor="routine-name">Nombre de la Rutina</label>
                       <div className="relative" aria-live="polite">
                         <input 
-                          className="w-full h-14 bg-obsidian-zero border border-border-subtle rounded-lg px-4 pr-12 text-on-surface font-body-lg text-body-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-all placeholder:text-on-surface-variant/40" 
+                          className="w-full h-14 bg-obsidian-zero border border-border-subtle rounded-lg px-4 pr-4 text-on-surface font-body-lg text-body-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-all placeholder:text-on-surface-variant/40" 
                           id="routine-name" 
-                          placeholder="Ej. Domain Expansion: Núcleo Absoluto" 
+                          placeholder="Ej: Tormenta Solar" 
                           type="text"
                           value={newRoutineName}
                           onChange={(e) => {
                             setNewRoutineName(e.target.value);
                             isNameManuallyEdited.current = true;
                           }}
-                        />
-                        <button 
-                          type="button"
-                          onClick={() => {
-                            const selectedIds = newRoutineSelectedExercises.map(item => item.id);
-                            const suggested = generateJJKRoutineName(selectedIds);
-                            setNewRoutineName(suggested);
-                            isNameManuallyEdited.current = false;
-                          }}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary transition-colors p-2" 
-                          title="Generar nombre místico"
-                        >
-                          <span className="material-symbols-outlined text-xl">auto_awesome</span>
-                        </button>
-                      </div>
-                    </div>
+                        />                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const selectedIds = newRoutineSelectedExercises.map(item => item.id);
+                          const suggested = generateJJKRoutineName(selectedIds);
+                          setNewRoutineName(suggested);
+                          isNameManuallyEdited.current = false;
+                        }}
+                        className="btn-secondary w-full flex items-center justify-center gap-2"
+                        style={{ fontSize: '12px', padding: '9px 12px' }}
+                        title="Generar nombre místico"
+                      >
+                        <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>casino</span>
+                        Nombre místico aleatorio
+                      </button></div>
 
                     {/* Day Selector */}
                     <div className="flex flex-col gap-sm z-10">
@@ -3809,7 +3820,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                               }}
                               className={`w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center font-label-lg text-label-lg transition-transform active:scale-95 ${
                                 isSelected 
-                                  ? 'bg-primary text-on-primary shadow-[0_0_20px_rgba(184,211,0,0.15)] font-bold' 
+                                  ? 'bg-primary text-on-primary shadow-[0_0_20px_rgba(244,162,97,0.28)] font-bold' 
                                   : 'bg-obsidian-zero border border-border-subtle text-on-surface-variant hover:border-primary/50'
                               }`}
                             >
@@ -3856,11 +3867,14 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                                     <div className="flex flex-col">
                                       <h4 className="font-label-lg text-label-lg text-on-surface group-hover:text-primary transition-colors" style={{ fontSize: '13px', fontWeight: 'bold' }}>
                                         {config.name}
-                                      </h4>
-                                      <p className="font-label-md text-label-md text-on-surface-variant mt-0.5" style={{ fontSize: '12px' }}>
+                                      </h4>                                      <p className="font-label-md text-label-md text-on-surface-variant mt-0.5" style={{ fontSize: '12px' }}>
                                         {config.sets} sets × {config.reps} {config.is_time_based ? 'segundos' : 'reps'} • {config.rest}s desc
                                       </p>
-                                    </div>
+                                      {exerciseObj?.category && (
+                                        <span className="mt-1.5 inline-flex w-fit px-2 py-0.5 rounded-full border border-primary/30 bg-primary/10 text-primary uppercase tracking-wider" style={{ fontSize: '10px', fontWeight: 600 }}>
+                                          {exerciseObj.category}
+                                        </span>
+                                      )}</div>
                                   </div>
                                   <div className="flex items-center gap-2">
                                     <button 
@@ -4077,7 +4091,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                       <Search size={16} className="search-icon" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
                     </div>
 
-                    <div className="flex flex-col gap-3 max-h-96 overflow-y-auto pr-1">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-96 overflow-y-auto pr-1">
                       {(() => {
                         const matchingExercises = exercises.filter(ex => {
                           const text = routineExerciseSearch.trim().toLowerCase();
@@ -4175,11 +4189,11 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                     <button 
                       onClick={handleCreateRoutine}
                       disabled={!newRoutineName.trim() || newRoutineSelectedExercises.length === 0}
-                      className="w-full h-14 rounded-full bg-primary text-on-primary font-bold text-lg tracking-tight shadow-[0_0_30px_rgba(184,211,0,0.15)] hover:brightness-110 active:scale-95 transition-all flex justify-center items-center gap-2 relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-full h-14 rounded-full bg-primary text-on-primary font-bold text-lg tracking-tight shadow-[0_0_30px_rgba(244,162,97,0.28)] hover:brightness-110 active:scale-95 transition-all flex justify-center items-center gap-2 relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <div className="absolute inset-0 bg-white/20 w-full translate-x-[-100%] skew-x-[-15deg] group-hover:animate-[shimmer_1s_infinite]" aria-hidden="true"></div>
                       <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>vpn_key</span>
-                      {editingRoutineId ? 'Actualizar Programa Z ⚡' : 'Guardar Programa'}
+                      {editingRoutineId ? 'Actualizar Rutina de Ki ⚡' : 'Guardar Rutina de Ki'}
                     </button>
                   </div>
                 </main>
@@ -4309,8 +4323,8 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '8px',
-                backgroundColor: 'rgba(184, 211, 0, 0.1)',
-                border: '1px solid rgba(184, 211, 0, 0.2)',
+                backgroundColor: 'rgba(244, 162, 97, 0.12)',
+                border: '1px solid rgba(244, 162, 97, 0.35)',
                 padding: '4px 12px',
                 borderRadius: '9999px',
                 width: 'fit-content',
@@ -4339,7 +4353,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                 borderRadius: '50%',
                 overflow: 'hidden',
                 border: '2px solid var(--accent-primary)',
-                boxShadow: '0 0 25px rgba(184, 211, 0, 0.2)',
+                boxShadow: '0 0 25px rgba(244, 162, 97, 0.3)',
                 backgroundColor: 'var(--bg-secondary)',
                 marginTop: '12px',
                 display: 'flex',
