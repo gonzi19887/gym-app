@@ -26,10 +26,11 @@
   --accent-alert: #e76f51; /* Terracotta Red PR */
 
   --border-color: rgba(255, 255, 255, 0.08);
-  --border-color-glow: rgba(244, 162, 97, 0.25);
-  --card-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-}
+  --border-color-glow: rgba(244, 162, 97, 0.25);  --card-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
 
+  /* Headline font (Outfit) - usado por var(--font-headline) */
+  --font-headline: 'Outfit', 'Inter', system-ui, sans-serif;
+}
 :root[data-theme="light"],
 .light {
   /* Light Mode: Laboratorio Zenith */
@@ -900,12 +901,34 @@ input[type="password"]::placeholder {
   transition: var(--transition-smooth);
   font-family: var(--font-sans);
 }
-
 .btn-secondary:hover {
   border-color: var(--text-secondary);
   color: var(--text-primary);
 }
 
+/* Botón secundario de contorno (usado en la lista de rutinas) */
+.btn-secondary-outline {
+  background: none;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 12px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: var(--transition-smooth);
+  font-family: var(--font-sans);
+}
+
+.btn-secondary-outline:hover {
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+  background-color: var(--bg-accent);
+}
 .btn-danger-outline {
   padding: 8px;
   border: 1px solid var(--border-color);
