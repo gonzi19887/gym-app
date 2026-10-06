@@ -77,6 +77,17 @@ const triggerVibration = (pattern: number | number[]) => {
   }
 };
 
+// 2026-10-06 (fix móvil): snapshot de cronómetros activos en localStorage.
+// Guarda timestamps de reloj-wall: si el navegador mata la pestaña (Brave la
+// descarta tras ~30s en background, o Android apaga la pantalla y mata el
+// proceso), al revivir la app el tiempo pasado en background se cuenta solo.
+type PersistedTimers = {
+  savedAt: number;
+  rest?: { running: boolean; targetTs?: number | null; remaining?: number };
+  exercise?: { running: boolean; startTs?: number | null };
+} | null;
+const TIMER_STALE_MS = 6 * 60 * 60 * 1000; // 6h: un snapshot más viejo se descarta
+
 // Dragon Ball Z thematic level calculation
 const getDBZLevelTitle = (level: number): string => {
   if (level <= 1) return 'Humano Normal (Krillin día 1) 🥋';
@@ -138,7 +149,17 @@ const [showShenronModal, setShowShenronModal] = useState<boolean>(false);
   }, [theme]);
 
   // Navigation & General Tabs
-  const [activeTab, setActiveTab] = useState<'hoy' | 'calendario' | 'rutinas' | 'progreso' | 'perfil'>('hoy');
+  const [activeTab, setActiveTab] = useState<'hoy' | 'calendario' | 'rutinas' | 'progreso' | 'perfil'>(() => {
+    // 2026-10-06 (fix móvil, Q3): restaurar la pestaña tras una recarga por
+    // descarte de la pestaña (si no, cada recarga te mandaba a "Hoy").
+    try {
+      const saved = localStorage.getItem('gymapp_active_tab');
+      if (saved === 'hoy' || saved === 'calendario' || saved === 'rutinas' || saved === 'progreso' || saved === 'perfil') {
+        return saved;
+      }
+    } catch { /* localStorage no disponible */ }
+    return 'hoy';
+  });
   
   // Database States
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -262,6 +283,11 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
   const [showSyncOverlay, setShowSyncOverlay] = useState(false);
   // 2026-10-05 (fix móvil): bloquea ejecuciones concurrentes de runLoginSync
   const isSyncRunningRef = useRef(false);
+  // 2026-10-06 (fix móvil): cronómetros persistidos que esperan a restaurarse
+  // cuando la sesión activa (SPEC_007) se recupera de IndexedDB
+  const [pendingTimers, setPendingTimers] = useState<PersistedTimers>(null);
+  const timersAppliedRef = useRef(false);
+  const hadRunningTimersRef = useRef(false);
   const [syncOverlayMode, setSyncOverlayMode] = useState<'upload' | 'download'>('upload');
   const [syncSteps, setSyncSteps] = useState<{[key: string]: 'pending' | 'syncing' | 'completed' | 'error'}>({
     profile: 'pending',
@@ -440,7 +466,9 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
       if (session) {
         setGuestMode(false);
         localStorage.removeItem('guestMode');
-        runLoginSync(session.user.id);
+        // 2026-10-06 (fix móvil): en una recarga (sesión ya existente) el sync va
+        // SILENCIOSO en segundo plano — el overlay solo en un login real.
+        runLoginSync(session.user.id, { silent: true });
       } else {
         loadData();
       }
@@ -823,6 +851,23 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
         setActiveExercises(activeState.exercises);
         setActiveWorkoutSets(flatSets);
         setActiveExerciseIndex(activeState.currentExerciseIndex);
+
+        // 2026-10-06 (fix móvil): recuperar el snapshot de cronómetros de esta
+        // sesión. Se aplica en el efecto [pendingTimers] declarado después del
+        // efecto que reinicia exerciseTimeElapsed, para pisar ese reseteo.
+        if (!timersAppliedRef.current) {
+          try {
+            const raw = localStorage.getItem('gymapp_active_timers');
+            if (raw) {
+              const parsed = JSON.parse(raw) as PersistedTimers;
+              if (parsed && typeof parsed.savedAt === 'number' && Date.now() - parsed.savedAt <= TIMER_STALE_MS) {
+                setPendingTimers(parsed);
+              } else {
+                localStorage.removeItem('gymapp_active_timers');
+              }
+            }
+          } catch { /* snapshot corrupto → ignorar */ }
+        }
       }
     } catch (err) {
       console.warn('Could not restore active workout state:', err);
@@ -934,13 +979,17 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
     calendar: 'pending' as const,
   });
 
-  const runLoginSync = async (userId: string) => {
+  const runLoginSync = async (userId: string, opts: { silent?: boolean } = {}) => {
+    // silent=true → sync en segundo plano SIN overlay. Se usa cuando la pestaña
+    // revivió tras ser descartada por el navegador (recarga): el usuario no pidió
+    // nada, no debe ver el modal. Overlay solo en login real (SIGNED_IN) o manual.
+    const silent = opts.silent === true;
     // 2026-10-05 (fix móvil): evita ejecuciones concurrentes — los eventos de auth
     // al despertar el móvil re-lanzaban el sync y el modal se repetía.
     if (isSyncRunningRef.current) return;
     isSyncRunningRef.current = true;
     // Si un paso se queda colgado (red lenta/offline), el overlay se cierra solo a los 15s.
-    const safetyClose = setTimeout(() => setShowSyncOverlay(false), 15000);
+    const safetyClose = silent ? undefined : setTimeout(() => setShowSyncOverlay(false), 15000);
 
     // Migrate any local guest data first (silent)
     try {
@@ -949,10 +998,12 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
       console.error('guest migration failed (continuing):', err);
     }
 
-    // Show the download overlay
-    setSyncOverlayMode('download');
-    setSyncSteps(resetSyncSteps());
-    setShowSyncOverlay(true);
+    // Show the download overlay (nunca en modo silencioso)
+    if (!silent) {
+      setSyncOverlayMode('download');
+      setSyncSteps(resetSyncSteps());
+      setShowSyncOverlay(true);
+    }
 
     const sleep = (ms: number) => new Promise(res => setTimeout(res, ms));
 
@@ -1020,8 +1071,10 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
     }
 
     // 2026-10-05 (fix móvil): auto-cierre — no obligar al usuario a tocar el botón.
-    clearTimeout(safetyClose);
-    setTimeout(() => setShowSyncOverlay(false), 700);
+    if (!silent) {
+      clearTimeout(safetyClose);
+      setTimeout(() => setShowSyncOverlay(false), 700);
+    }
     isSyncRunningRef.current = false;
   };
 
@@ -1269,6 +1322,80 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [isTimerRunning, isExerciseTimerRunning]);
+
+  // 2026-10-06 (fix móvil): persistir el estado de los cronómetros en cada cambio
+  // para que sobrevivan a la muerte de la pestaña (Brave la descarta tras ~30s en
+  // background; con la pantalla apagada Android puede matar el proceso PWA).
+  useEffect(() => {
+    const anyRunning = isTimerRunning || isExerciseTimerRunning;
+    try {
+      if (anyRunning) {
+        localStorage.setItem('gymapp_active_timers', JSON.stringify({
+          savedAt: Date.now(),
+          rest: {
+            running: isTimerRunning,
+            targetTs: timerTargetTimeRef.current,
+            remaining: timerRemaining,
+          },
+          exercise: {
+            running: isExerciseTimerRunning,
+            startTs: exerciseTimerStartTimeRef.current,
+          },
+        }));
+        hadRunningTimersRef.current = true;
+      } else if (hadRunningTimersRef.current) {
+        // ambos parados → no hay tiempos vivos que rescatar
+        localStorage.removeItem('gymapp_active_timers');
+        hadRunningTimersRef.current = false;
+      }
+      // sin cronómetros corriendo en esta ejecución: NO borrar la clave — puede
+      // contener el snapshot de la sesión anterior que aún no se ha restaurado.
+    } catch { /* localStorage no disponible */ }
+  }, [isTimerRunning, isExerciseTimerRunning, timerRemaining, exerciseTimeElapsed]);
+
+  // 2026-10-06 (fix móvil): restaurar cronómetros tras la recarga. Debe declararse
+  // DESPUÉS del efecto de activeExerciseIndex (línea ~1253) para que la
+  // restauración pise su setExerciseTimeElapsed(0) dentro del mismo commit.
+  useEffect(() => {
+    if (!pendingTimers) return;
+    timersAppliedRef.current = true;
+    const t = pendingTimers;
+    setPendingTimers(null);
+    if (typeof t.savedAt !== 'number' || Date.now() - t.savedAt > TIMER_STALE_MS) return;
+
+    if (t.rest?.running && typeof t.rest.targetTs === 'number') {
+      const remaining = Math.ceil((t.rest.targetTs - Date.now()) / 1000);
+      if (remaining > 0) {
+        // Descanso en curso → se reanuda con el tiempo real restante
+        // (el tiempo pasado en background ya está descontado por el timestamp).
+        timerTargetTimeRef.current = t.rest.targetTs;
+        setTimerRemaining(remaining);
+        setIsTimerRunning(true);
+      } else if (remaining > -60) {
+        // Q2-a: expiró mientras estaba fuera hace ≤60s → avisar como si lo hubieras
+        // visto sonar. Si expiró hace más → silencio (un beep minutos después molesta).
+        playBeep();
+        triggerVibration([100, 50, 100]);
+      }
+    } else if (!t.rest?.running && typeof t.rest?.remaining === 'number' && t.rest.remaining > 0) {
+      // Descanso pausado → se restaura pausado con sus segundos intactos
+      setTimerRemaining(t.rest.remaining);
+    }
+
+    if (t.exercise?.running && typeof t.exercise.startTs === 'number' && t.exercise.startTs !== null && t.exercise.startTs > 0) {
+      // Stopwatch del ejercicio → sigue contando desde su inicio real
+      exerciseTimerStartTimeRef.current = t.exercise.startTs;
+      setExerciseTimeElapsed(Math.floor((Date.now() - t.exercise.startTs) / 1000));
+      setIsExerciseTimerRunning(true);
+    }
+  }, [pendingTimers]);
+
+  // 2026-10-06 (fix móvil, Q3): persistir la pestaña activa en cada cambio
+  useEffect(() => {
+    try {
+      localStorage.setItem('gymapp_active_tab', activeTab);
+    } catch { /* localStorage no disponible */ }
+  }, [activeTab]);
 
   const formatExerciseTime = (totalSeconds: number) => {
     const mins = Math.floor(totalSeconds / 60);
