@@ -1551,3 +1551,24 @@ input, button, select {
   to { transform: rotate(360deg); }
 }
 
+/* ============================================================
+   Tailwind compilado en build (2026-10-05).
+   Antes: Play CDN (cdn.tailwindcss.com) que fallaba en móvil y
+   dejaba "Crear o Editar Rutina" sin maquetar (pantalla del bug).
+   Las directivas van AL FINAL para replicar el orden de cascada
+   que tenía el CDN (inyectado después de estas reglas).
+   ============================================================ */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Fade del overlay de sync — la clase .animate-fade-in se usaba en
+   App.tsx pero no existía su keyframes (era un no-op). */
+.animate-fade-in {
+  animation: fade-in 0.25s ease-out both;
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+

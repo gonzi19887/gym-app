@@ -260,6 +260,8 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
   const [isSealingPact, setIsSealingPact] = useState(false);
   const [pactStatus, setPactStatus] = useState<string | null>(null);
   const [showSyncOverlay, setShowSyncOverlay] = useState(false);
+  // 2026-10-05 (fix móvil): bloquea ejecuciones concurrentes de runLoginSync
+  const isSyncRunningRef = useRef(false);
   const [syncOverlayMode, setSyncOverlayMode] = useState<'upload' | 'download'>('upload');
   const [syncSteps, setSyncSteps] = useState<{[key: string]: 'pending' | 'syncing' | 'completed' | 'error'}>({
     profile: 'pending',
@@ -449,7 +451,12 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
       if (session) {
         setGuestMode(false);
         localStorage.removeItem('guestMode');
-        runLoginSync(session.user.id);
+        // 2026-10-05 (fix móvil): el overlay de sync SOLO en un sign-in real.
+        // TOKEN_REFRESHED / INITIAL_SESSION / USER_UPDATED se emiten cada vez que
+        // el móvil despierta de bloqueo de pantalla y reproducían el modal.
+        if (_event === 'SIGNED_IN') {
+          runLoginSync(session.user.id);
+        }
       } else {
         loadData();
       }
@@ -928,8 +935,19 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
   });
 
   const runLoginSync = async (userId: string) => {
+    // 2026-10-05 (fix móvil): evita ejecuciones concurrentes — los eventos de auth
+    // al despertar el móvil re-lanzaban el sync y el modal se repetía.
+    if (isSyncRunningRef.current) return;
+    isSyncRunningRef.current = true;
+    // Si un paso se queda colgado (red lenta/offline), el overlay se cierra solo a los 15s.
+    const safetyClose = setTimeout(() => setShowSyncOverlay(false), 15000);
+
     // Migrate any local guest data first (silent)
-    await migrateGuestDataToUser(userId);
+    try {
+      await migrateGuestDataToUser(userId);
+    } catch (err) {
+      console.error('guest migration failed (continuing):', err);
+    }
 
     // Show the download overlay
     setSyncOverlayMode('download');
@@ -995,7 +1013,16 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
     }
 
     // Load local data into state — pass userId to avoid stale session closure
-    await loadData(userId);
+    try {
+      await loadData(userId);
+    } catch (err) {
+      console.error('loadData after sync failed:', err);
+    }
+
+    // 2026-10-05 (fix móvil): auto-cierre — no obligar al usuario a tocar el botón.
+    clearTimeout(safetyClose);
+    setTimeout(() => setShowSyncOverlay(false), 700);
+    isSyncRunningRef.current = false;
   };
 
   const handleSaveProfile = async () => {
@@ -1046,6 +1073,9 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
         }
         setPactStatus('¡Perfil guardado y sincronizado! ✅');
         setIsSealingPact(false);
+        // 2026-10-05 (fix móvil): auto-cierre también en el sync de perfil (si el
+        // paso falla, calendar queda 'pending' y el modal no tenía botón de salida).
+        setTimeout(() => setShowSyncOverlay(false), 900);
       } else {
         setPactStatus('¡Perfil guardado localmente! ✅');
         setIsSealingPact(false);
