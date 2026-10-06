@@ -34,7 +34,30 @@ export default defineConfig({
         ]
       },
       workbox: {
-        maximumFileSizeToCacheInBytes: 4194304 // 4 MB
+        maximumFileSizeToCacheInBytes: 4194304, // 4 MB
+        // 2026-10-05 (fix móvil): cachear fuentes de Google (Material Symbols +
+        // Inter/Outfit). Sin esto, con red mala los iconos salían como cajas vacías
+        // y la pantalla de rutinas perdía la tipografía.
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "google-fonts-stylesheets",
+              expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              cacheableResponse: { statuses: [0, 200] }
+            }
+          },
+          {
+            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "google-fonts-webfonts",
+              expiration: { maxEntries: 40, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              cacheableResponse: { statuses: [0, 200] }
+            }
+          }
+        ]
       }
     })
   ],
