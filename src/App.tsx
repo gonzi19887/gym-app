@@ -3395,7 +3395,11 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
               )
             )}
 
-            {/* Exercise Execution Timer Floating Bar (Ponytail) */}
+            {/* Exercise Execution Timer Floating Bar (Ponytail)
+                2026-10-07 Fase 5 SDD: colores fijos (= valores del tema oscuro).
+                El fondo del widget es siempre oscuro, pero con data-theme=light
+                los tokens eran oscuros sobre oscuro (~1.1:1, ilegible).
+                Fix puntual de ESTE widget; sin tocar tokens globales. */}
             <div 
               style={{
                 position: 'fixed',
@@ -3407,7 +3411,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                 backgroundColor: 'rgba(10, 10, 15, 0.95)',
                 backdropFilter: 'blur(12px)',
                 WebkitBackdropFilter: 'blur(12px)',
-                border: '1.5px solid var(--accent-secondary)',
+                border: '1.5px solid #2a9d8f',
                 borderRadius: '14px',
                 padding: '10px 16px',
                 display: 'flex',
@@ -3418,14 +3422,14 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{ fontSize: '18px', fontWeight: 900, color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums', letterSpacing: '0.5px' }}>
+                <span style={{ fontSize: '18px', fontWeight: 900, color: '#f0f2f5', fontVariantNumeric: 'tabular-nums', letterSpacing: '0.5px' }}>
                   {formatExerciseTime(exerciseTimeElapsed)}
                 </span>
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <span style={{ fontSize: '9px', color: 'var(--accent-primary)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px' }}>
+                  <span style={{ fontSize: '9px', color: '#f4a261', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px' }}>
                     Cronómetro
                   </span>
-                  <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>
+                  <span style={{ fontSize: '10px', color: '#9ca3af' }}>
                     {isCardioOrStretch ? 'Cardio activo ⚡' : 'Misión en curso'}
                   </span>
                 </div>
@@ -3437,7 +3441,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                   style={{
                     backgroundColor: isExerciseTimerRunning ? 'rgba(239, 68, 68, 0.15)' : 'rgba(255, 255, 255, 0.05)',
                     border: '1px solid var(--border-color)',
-                    color: isExerciseTimerRunning ? '#ef4444' : 'var(--text-primary)',
+                    color: isExerciseTimerRunning ? '#ef4444' : '#f0f2f5',
                     borderRadius: '8px',
                     padding: '6px 12px',
                     fontSize: '11px',
@@ -3457,7 +3461,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                   style={{
                     backgroundColor: 'rgba(255, 255, 255, 0.05)',
                     border: '1px solid var(--border-color)',
-                    color: 'var(--text-secondary)',
+                    color: '#9ca3af',
                     borderRadius: '8px',
                     padding: '6px 10px',
                     fontSize: '11px',
