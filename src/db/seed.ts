@@ -1,7 +1,20 @@
 import { addRecord, getAllRecords, deleteRecord } from './localDb';
 import type { Exercise } from './localDb';
-// @ts-ignore
 import scrapedExercises from './scraped_exercises_es.json';
+
+/** Campos del JSON scrapeado que usa el seed. */
+interface ScrapedExercise {
+  name_es?: string;
+  name_en?: string;
+  category?: string;
+  local_gif_path?: string;
+  gif_url?: string;
+  instructions_es?: string[];
+  posicion_inicial?: string[];
+  ejecucion?: string[];
+  consejos?: string[];
+  variantes?: string[];
+}
 
 export async function seedDatabase(): Promise<void> {
   try {
@@ -22,7 +35,7 @@ export async function seedDatabase(): Promise<void> {
       if (scrapedKeys.length > 0) {
         console.log(`Seeding database with ${scrapedKeys.length} scraped exercises...`);
         for (const [key, value] of Object.entries(scrapedExercises)) {
-          const val = value as any;
+          const val = value as ScrapedExercise;
 
           // Generate a deterministic UUID based on the exercise key to avoid duplicates and remain syncable
           let hash = 0;

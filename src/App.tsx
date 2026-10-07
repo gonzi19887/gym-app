@@ -52,12 +52,13 @@ import { CalendarKi } from './components/CalendarKi';
 
 import { seedDatabase } from './db/seed';
 import { supabase, isSupabaseConfigured } from './db/supabaseClient';
+import type { Session } from '@supabase/supabase-js';
 import { syncLocalQueueToCloud, migrateGuestDataToUser, syncTableToCloud, pullTableFromCloud } from './db/sync';
 
 // Web Audio API beep for rest timer completion
 const playBeep = () => {
   try {
-    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.connect(gain);
@@ -162,8 +163,7 @@ function App() {
   });
 
   
-// @ts-expect-error - used in JSX (onClaimShenron)
-const [showShenronModal, setShowShenronModal] = useState<boolean>(false);
+const [, setShowShenronModal] = useState<boolean>(false);
 
   useEffect(() => {
     try {
@@ -250,8 +250,7 @@ const [showShenronModal, setShowShenronModal] = useState<boolean>(false);
   const [editClan, setEditClan] = useState('');
   const [editCursedTechnique, setEditCursedTechnique] = useState('');
   
-// @ts-expect-error - used in JSX (onOpenRoutineCreator)
-const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number | null>(null);
+const [, setAssigningRoutineDayValue] = useState<number | null>(null);
 
   // Health Metrics Local State (Persisted in localStorage)
   const [userWeight, setUserWeight] = useState<number>(() => parseFloat(localStorage.getItem('user_weight') || '78'));
@@ -318,7 +317,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
   const [newExerciseTipsText, setNewExerciseTipsText] = useState('');
 
   // Supabase Auth State
-  const [session, setSession] = useState<any>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [authEmail, setAuthEmail] = useState('');
   const [authPassword, setAuthPassword] = useState('');
   const [authUsername, setAuthUsername] = useState('');
@@ -477,9 +476,9 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
   }, [newRoutineSelectedExercises, showRoutineCreator]);
 
   // Sync state helper to write locally and sync immediately if online
-  const saveRecord = async (
+  const saveRecord = async <T extends { id: string }>(
     tableName: 'profiles' | 'exercises' | 'routines' | 'routine_exercises' | 'workouts' | 'workout_sets',
-    record: any,
+    record: T,
     action: 'CREATE' | 'UPDATE' | 'DELETE' = 'CREATE'
   ) => {
     if (action === 'DELETE') {
@@ -498,9 +497,9 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
         if (navigator.onLine) {
           await syncLocalQueueToCloud();
         }
-      } catch (err: any) {
+      } catch (err) {
         console.error('Offline sync queue failure (circuit breaker):', err);
-        alert(err.message || 'La cola de sincronización está llena.');
+        alert(err instanceof Error && err.message ? err.message : 'La cola de sincronización está llena.');
       }
     }
   };
@@ -584,8 +583,8 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
         }
       });
       if (error) throw error;
-    } catch (err: any) {
-      alert(err.message || 'Error al iniciar sesión con Google');
+    } catch (err) {
+      alert(err instanceof Error && err.message ? err.message : 'Error al iniciar sesión con Google');
     } finally {
       setAuthLoading(false);
     }
@@ -627,8 +626,8 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
         if (error) throw error;
         setActiveTab('hoy');
       }
-    } catch (err: any) {
-      alert(err.message || 'Error al procesar solicitud');
+    } catch (err) {
+      alert(err instanceof Error && err.message ? err.message : 'Error al procesar solicitud');
     } finally {
       setAuthLoading(false);
     }
@@ -707,7 +706,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
           try {
             const { data: { user } } = await supabase.auth.getUser();
             authUser = user ?? undefined;
-          } catch (_) { /* ignore */ }
+          } catch { /* ignore */ }
         }
         currentProfile = {
           id: userId,
@@ -729,8 +728,8 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
     }
     // SPEC_007: Local-first profile settings check
     try {
-      const localUsername = await getAppSetting('profile_username');
-      const localAvatarUrl = await getAppSetting('profile_avatar_url');
+      const localUsername = await getAppSetting<string>('profile_username');
+      const localAvatarUrl = await getAppSetting<string>('profile_avatar_url');
       if (localUsername) currentProfile.username = localUsername;
       if (localAvatarUrl) currentProfile.avatar_url = localAvatarUrl;
     } catch (err) {
@@ -1184,10 +1183,10 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
       }
 
       setActiveTab('hoy');
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
       setPactStatus('Error al sellar pacto.');
-      alert('Error al sellar pacto: ' + (err.message || err));
+      alert('Error al sellar pacto: ' + (err instanceof Error && err.message ? err.message : String(err)));
     } finally {
       setIsSealingPact(false);
       setPactStatus(null);
@@ -1295,7 +1294,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
 
   // Timer interval handling using absolute target timestamps
   useEffect(() => {
-    let interval: any = null;
+    let interval: ReturnType<typeof setInterval> | null = null;
     if (isTimerRunning && timerRemaining > 0) {
       interval = setInterval(() => {
         const target = timerTargetTimeRef.current;
@@ -1305,7 +1304,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
           if (remaining <= 0) {
             timerTargetTimeRef.current = null;
             setIsTimerRunning(false);
-            clearInterval(interval);
+            clearInterval(interval ?? undefined);
             playBeep();
             triggerVibration([100, 50, 100]);
           }
@@ -1320,7 +1319,7 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
 
   // Ponytail: Temporizador de tiempo transcurrido en el ejercicio actual
   useEffect(() => {
-    let interval: any = null;
+    let interval: ReturnType<typeof setInterval> | null = null;
     if (isExerciseTimerRunning) {
       interval = setInterval(() => {
         const start = exerciseTimerStartTimeRef.current;

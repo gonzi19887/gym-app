@@ -73,6 +73,7 @@ export interface SyncQueueItem {
   id: string;
   action: 'CREATE' | 'UPDATE' | 'DELETE';
   tableName: 'profiles' | 'exercises' | 'routines' | 'routine_exercises' | 'workouts' | 'workout_sets';
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- el outbox sincroniza 6 tablas con formas distintas; tiparlo exige rehacer las mutaciones de sync.ts (coste > beneficio)
   payload: any;
   timestamp: string;
 }
@@ -82,9 +83,9 @@ export interface ActiveWorkoutState {
   id: 'current'; // singleton key
   routineId: string;
   routineName: string;
-  exercises: any[];       // full exercise list for the session
+  exercises: Exercise[];       // full exercise list for the session
   currentExerciseIndex: number;
-  sets: Record<string, any[]>; // exerciseId -> set data
+  sets: Record<string, WorkoutSet[]>; // exerciseId -> set data
   startedAt: string;
   savedAt: string;
 }
@@ -92,7 +93,7 @@ export interface ActiveWorkoutState {
 // Key-value store for local app settings (profile photo, username, etc.)
 export interface AppSetting {
   key: string;
-  value: any;
+  value: unknown;
 }
 
 const DB_NAME = 'GymAppDB';
@@ -293,7 +294,7 @@ export async function clearActiveWorkoutState(): Promise<void> {
 // ─── App Settings — local-first profile/photo (SPEC_007) ─────────────────────
 // Writes profile data to IndexedDB immediately. Supabase sync is async/secondary.
 
-export async function setAppSetting(key: string, value: any): Promise<void> {
+export async function setAppSetting(key: string, value: unknown): Promise<void> {
   const db = await initDB();
   return new Promise((resolve, reject) => {
     const tx = db.transaction('app_settings', 'readwrite');
@@ -303,12 +304,12 @@ export async function setAppSetting(key: string, value: any): Promise<void> {
   });
 }
 
-export async function getAppSetting<T = any>(key: string): Promise<T | null> {
+export async function getAppSetting<T = unknown>(key: string): Promise<T | null> {
   const db = await initDB();
   return new Promise((resolve, reject) => {
     const tx = db.transaction('app_settings', 'readonly');
     const req = tx.objectStore('app_settings').get(key);
-    req.onsuccess = () => resolve(req.result?.value ?? null);
+    req.onsuccess = () => resolve((req.result?.value ?? null) as T | null);
     req.onerror = () => reject(req.error);
   });
 }
