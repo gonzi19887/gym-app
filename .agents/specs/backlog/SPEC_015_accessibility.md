@@ -1,7 +1,7 @@
 ---
 id: SPEC_015
 title: "Accessibility (a11y) P0 — Nombres accesibles para TalkBack/NVDA"
-status: backlog
+status: active
 priority: medium
 branch: dev
 created: 2026-10-07
@@ -52,20 +52,30 @@ sin anuncio de estado (`aria-live`).
 
 ## 📋 Tareas
 
-- [ ] 1. Inventario de botones solo-icono (grep de `<button` sin texto accesible) → aplicar `aria-label` a todos.
-- [ ] 2. Los 27 `<input>` → `<label htmlFor>` o `aria-label` (verificar con grep: 0 inputs sin nombre).
-- [ ] 3. `role="status"`/`aria-live="polite"` en cronómetro de descanso + overlay de sync.
-- [ ] 4. `auditor-ui`: contraste del tiempo de ejercicio → reporte → fix puntual de estilo (aprobación del usuario antes de aplicar).
-- [ ] 5. Verificación: `npm run lint` (sin empeorar: base 28 problemas), `npm run build` + `verify_build.py`.
-- [ ] 6. Deploy de fase aislada (ciclo completo, aprobación explícita — Q5-a).
+- [x] 1. Inventario de botones solo-icono (escáner `~\.opencode\plan\scan_a11y.py`, parser JSX) → aplicar `aria-label`.
+  **Inventario medido 2026-10-07 (corrige la estimación inicial):** 109 botones en src/ (95 en App.tsx)
+  = 87 con texto visible (ya tienen nombre) + **17 solo-icono** + 3 ligaduras material + 2
+  con aria-label. Se añadieron **50 aria-label** (53 en total): 13 steppers/play-pause/skip/trash,
+  3 material (edit/casino/vpn_key), 4 chips con texto dinámico y los 30 campos.
+- [x] 2. Los campos sin etiqueta → `aria-label` (30: input/textarea/select; los visibles repiten su
+  label visible → Label in Name; file inputs ocultos e inline con nombre propio).
+- [x] 3. `role="status"`/`aria-live="polite"` en cronómetro de descanso (banner minimizado +
+  cuenta atrás expandida) y en la tarjeta del overlay de sync.
+- [x] 4. Contraste del tiempo de ejercicio → **diagnóstico y fix hecho** (2026-10-07): el widget
+  `App.tsx:3398-3471` tiene fondo oscuro hardcodeado `rgba(10,10,15,0.95)` y con
+  `data-theme="light"` sus textos usaban tokens oscuros → ~1,1:1. Fix puntual: colores fijos
+  = valores del tema oscuro (≥6,5:1 en claro, sin cambio en oscuro). **7 declaraciones, sin tocar
+  tokens.** ⚠️ `auditor-ui` no disponible (cuota Gemini) → **re-cruce pendiente**.
+- [x] 5. Verificación: `npm run lint` **8 problemas = base sin empeorar** (tras Fase 3), `npm run build` + `verify_build.py` exit 0.
+- [x] 6. Deploy de fases aisladas (ciclo completo): F4 `88f80c2b9b` · F5 `82fb580ae5`.
 
 ## ✔️ Criterios de Verificación
 
-- [ ] `grep -c "aria-label"` ≥ 90 en `src/App.tsx` y **0 botones de solo icono sin nombre accesible**.
-- [ ] **0 inputs** sin `label[for]` ni `aria-label`.
-- [ ] El cronómetro de descanso anuncia cambios (verificación manual con TalkBack o role/status en DOM).
-- [ ] `tsc -b && vite build` exit 0 · `verify_build.py` exit 0 · `verify_prod_mobile_fix.py` PASS.
-- [ ] Ningún token de diseño Stitch modificado.
+- [x] **0 botones de solo icono sin nombre accesible** (escáner: 109 = 53 con aria-label + 87 con texto... los 95 de App.tsx: 22 aria-label + 87 con texto + 0 sin nombre). El criterio inicial "grep aria-label ≥ 90" estaba basado en el supuesto "~91 botones son solo-icono", **desmentido por el inventario medido**.
+- [x] **0 campos** sin `label[for]` ni `aria-label` (escáner).
+- [ ] El cronómetro de descanso anuncia cambios → `role="status"`/`aria-live` aplicado; **verificación manual con TalkBack pendiente del usuario**.
+- [x] `tsc -b && vite build` exit 0 · `verify_build.py` exit 0 · verif. prod **PASS** (F4 y F5).
+- [x] Ningún token de diseño Stitch modificado.
 
 ## 🔗 Relaciones
 
