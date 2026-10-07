@@ -120,6 +120,34 @@ const REST_REMINDERS = [
   "🧘 Recupera tu aliento como un verdadero Guerrero Z listo para la siguiente batalla."
 ];
 
+// 2026-10-07 (SDD Fase 2): barra NO bloqueante de onboarding. Si hay un
+// entrenamiento activo, el wizard completo no debe tapar la sesión — se muestra
+// esta tira superior (alto de header) con los 4 círculos de paso; al tocarla se
+// abre el wizard a pantalla completa con su misma validación y estilo.
+function OnboardingMiniBar({ step, onOpen }: { step: number; onOpen: () => void }) {
+  return (
+    <button
+      type="button"
+      className="onboarding-minibar"
+      onClick={onOpen}
+      aria-label="Continuar la configuración inicial (no bloquea el entrenamiento)"
+    >
+      <span className="onboarding-minibar-label">Configuración inicial</span>
+      <span className="onboarding-minibar-dots" aria-hidden="true">
+        {[1, 2, 3, 4].map(s => (
+          <span
+            key={s}
+            className={`onboarding-dot ${s < step ? 'done' : ''} ${s === step ? 'current' : ''}`}
+          >
+            {s < step ? '✓' : ''}
+          </span>
+        ))}
+      </span>
+      <span className="onboarding-minibar-cta">Continuar →</span>
+    </button>
+  );
+}
+
 function App() {
 
   // Theme State (Persisted in localStorage with system fallback)
@@ -235,6 +263,26 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
     return localStorage.getItem('onboarding_completed') === 'true';
   });
   const [onboardingStep, setOnboardingStep] = useState<number>(1);
+  // 2026-10-07 (SDD Fase 2): el wizard a pantalla completa solo debe tapar si NO
+  // hay entreno activo; con entreno activo se abre desde la barra superior.
+  const [onboardingFromWorkout, setOnboardingFromWorkout] = useState(false);
+  // Respaldo del flag en IndexedDB: evita el flash del wizard mientras se lee.
+  const [onboardingChecked, setOnboardingChecked] = useState(false);
+  // 2026-10-07 (SDD Fase 2): si iOS/Safari purga localStorage (presión de
+  // almacenamiento o inactividad), el flag en app_settings restaura el estado.
+  useEffect(() => {
+    let cancelled = false;
+    getAppSetting<string>('onboarding_completed')
+      .then(v => {
+        if (!cancelled && v === 'true') {
+          localStorage.setItem('onboarding_completed', 'true');
+          setOnboardingCompleted(true);
+        }
+      })
+      .catch(() => { /* IDB no disponible → nos quedamos con localStorage */ })
+      .finally(() => { if (!cancelled) setOnboardingChecked(true); });
+    return () => { cancelled = true; };
+  }, []);
   const [weeklyGoalDays, setWeeklyGoalDays] = useState<number>(() => {
     return parseInt(localStorage.getItem('weekly_goal_days') || '3');
   });
@@ -2190,7 +2238,10 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
     );
   }
 
-  if (!onboardingCompleted && profile) {
+  // 2026-10-07 (SDD Fase 2): onboardingChecked evita que el wizard parpadee
+  // antes de leer el respaldo de IDB; con entreno activo (o si el usuario abrió
+  // el wizard desde la barra) el wizard solo se muestra a pantalla completa.
+  if (!onboardingCompleted && profile && onboardingChecked && (!activeWorkout || onboardingFromWorkout)) {
     const imc = onboardingWeight / Math.pow(onboardingHeight / 100, 2);
     let imcCategory = 'Normal';
     let imcColor = '#10b981'; // Green
@@ -2215,6 +2266,10 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
     ];
 
     const handleFinishOnboarding = async () => {
+      // 2026-10-07 (SDD Fase 2): el flag ANTES de cualquier await — si el SO
+      // mata la app durante el seed asincrónico, el wizard no vuelve a aparecer.
+      localStorage.setItem('onboarding_completed', 'true');
+      await setAppSetting('onboarding_completed', 'true');
       const updatedProfile = {
         ...profile,
         username: onboardingUsername.trim() || 'Guerrero Z',
@@ -2318,7 +2373,8 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
       loadedRoutineExs = loadedRoutineExs.filter(re => activeRoutineIds.has(re.routine_id));
       setRoutineExercises(loadedRoutineExs);
 
-      localStorage.setItem('onboarding_completed', 'true');
+      // 2026-10-07 (SDD Fase 2): el flag ya se escribió al inicio del handler;
+      // aquí solo se cierra el wizard tras completar el seed.
       setOnboardingCompleted(true);
     };
 
@@ -2632,6 +2688,16 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
           )}
 
           <footer style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
+            {activeWorkout && (
+              <button
+                type="button"
+                onClick={() => setOnboardingFromWorkout(false)}
+                className="btn-secondary"
+                style={{ flex: 1, padding: '12px' }}
+              >
+                Volver al entreno
+              </button>
+            )}
             {onboardingStep > 1 && (
               <button
                 type="button"
@@ -2649,7 +2715,11 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                 disabled={onboardingStep === 1 && !onboardingUsername.trim()}
                 onClick={() => setOnboardingStep(prev => prev + 1)}
                 className="btn-primary"
-                style={{ flex: onboardingStep === 1 ? 'none' : 1, width: onboardingStep === 1 ? '100%' : 'auto', padding: '12px' }}
+                style={{
+                  flex: (onboardingStep === 1 && !activeWorkout) ? 'none' : 1,
+                  width: (onboardingStep === 1 && !activeWorkout) ? '100%' : 'auto',
+                  padding: '12px'
+                }}
               >
                 Siguiente
               </button>
@@ -2744,15 +2814,15 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
             />
             <div className="profile-details">
               <h3 className="profile-name" style={{ display: 'flex', alignItems: 'center', gap: '4px', margin: 0, fontSize: '15px' }}>
-                {profile.username} <span style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>✏️</span>
+                <span className="header-truncate">{profile.username}</span> <span style={{ fontSize: '12px', color: 'var(--text-tertiary)', flexShrink: 0 }}>✏️</span>
               </h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 }}>
                 <div className="profile-level" style={{ fontSize: '12px' }}>
-                  <Award size={12} />
-                  <span>{getDBZLevelTitle(levelInfo.level)}</span>
+                  <Award size={12} style={{ flexShrink: 0 }} />
+                  <span className="header-truncate">{getDBZLevelTitle(levelInfo.level)}</span>
                 </div>
                 {(profile.clan || profile.cursed_technique) && (
-                  <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                  <span className="header-secondary" style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
                     {profile.clan ? `Clan ${profile.clan}` : ''} 
                     {profile.clan && profile.cursed_technique ? ' • ' : ''}
                     {profile.cursed_technique ? `${profile.cursed_technique}` : ''}
@@ -2826,7 +2896,12 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
         {/* ACTIVE WORKOUT PANEL */}
         {activeWorkout && currentActiveExercise && (
           <div className="overlay-screen animate-slide">
-            
+            {/* 2026-10-07 (SDD Fase 2): onboarding pendiente con entreno activo
+                → barra superior no bloqueante en vez del wizard a pantalla completa */}
+            {!onboardingCompleted && (
+              <OnboardingMiniBar step={onboardingStep} onOpen={() => setOnboardingFromWorkout(true)} />
+            )}
+
             <header className="overlay-header">
               <div>
                 <span className="overlay-header-title-sub">Entrenamiento Z en Curso</span>
@@ -3182,6 +3257,13 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                     textAlign: 'center'
                   }}
                 >
+                  {/* 2026-10-07 (SDD Fase 2): barra de onboarding visible también
+                      sobre el overlay de descanso (centrado → la anclamos arriba) */}
+                  {!onboardingCompleted && (
+                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 1 }}>
+                      <OnboardingMiniBar step={onboardingStep} onOpen={() => setOnboardingFromWorkout(true)} />
+                    </div>
+                  )}
                   <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--accent-primary)', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '16px' }}>
                     ⚡ Intervalo de Recarga ⚡
                   </span>
@@ -4453,6 +4535,9 @@ const [assigningRoutineDayValue, setAssigningRoutineDayValue] = useState<number 
                 if (confirm('¿Seguro que deseas restablecer el templo? Esto eliminará todo tu historial de hechicería y cargará los datos por defecto.')) {
                   await clearAllTables();
                   localStorage.removeItem('onboarding_completed');
+                  // 2026-10-07 (SDD Fase 2): clearAllTables NO toca app_settings;
+                  // hay que bajar el respaldo o el wizard no volvería a salir.
+                  await setAppSetting('onboarding_completed', 'false');
                   localStorage.removeItem('weekly_goal_days');
                   localStorage.removeItem('user_weight');
                   localStorage.removeItem('user_height');

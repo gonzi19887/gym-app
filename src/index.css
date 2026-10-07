@@ -346,12 +346,108 @@ input[type="password"]::placeholder {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 10px;
   padding: 16px;
   background-color: var(--bg-secondary);
   border-bottom: 1px solid var(--border-color);
   position: sticky;
   top: 0;
   z-index: 10;
+}
+
+/* 2026-10-07 (SDD Fase 2): el header móvil no debe romperse con títulos de
+   nivel largos — truncar en una sola línea y ceder ancho solo al perfil. */
+.app-header > div:first-child,
+.app-header > button {
+  flex-shrink: 0;
+}
+.profile-section,
+.profile-details {
+  min-width: 0;
+}
+.header-truncate {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.streak-badge {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+@media (max-width: 400px) {
+  .app-header {
+    padding: 12px;
+    gap: 6px;
+  }
+  /* Secundarios (Clan • Técnica) solo en la pestaña Perfil en pantallas
+     pequeñas — el nivel y la racha siguen visibles con truncado. */
+  .header-secondary {
+    display: none;
+  }
+  .app-header .profile-avatar {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+/* 2026-10-07 (SDD Fase 2): barra de onboarding no bloqueante durante entreno */
+.onboarding-minibar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 14px;
+  background-color: var(--bg-secondary);
+  border: none;
+  border-bottom: 1px solid var(--border-color);
+  border-left: 3px solid var(--accent-primary);
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+}
+.onboarding-minibar-label {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--accent-primary);
+  white-space: nowrap;
+}
+.onboarding-minibar-dots {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex: 1;
+}
+.onboarding-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border-color);
+  background: transparent;
+  font-size: 9px;
+  font-weight: 900;
+  color: #141722;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+.onboarding-dot.done {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+}
+.onboarding-dot.current {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 6px rgba(244, 162, 97, 0.6);
+}
+.onboarding-minibar-cta {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  white-space: nowrap;
 }
 
 .profile-section {

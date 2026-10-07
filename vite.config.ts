@@ -13,8 +13,10 @@ export default defineConfig({
         name: 'Gym Routine Tracker',
         short_name: 'GymApp',
         description: 'Offline-first gym routine and workout tracker with gamification.',
-        theme_color: '#0a0a0a',
-        background_color: '#0a0a0a',
+        // 2026-10-07 (SDD Fase 2): #0a0a0a era un token obsoleto; el fondo de
+        // diseño Chronos vigente es #10131e.
+        theme_color: '#10131e',
+        background_color: '#10131e',
         display: 'standalone',
         orientation: 'portrait',
         start_url: '/',
@@ -30,6 +32,12 @@ export default defineConfig({
             sizes: 'any',
             type: 'image/svg+xml',
             purpose: 'maskable'
+          },
+          {
+            src: 'pwa-180x180.png',
+            sizes: '180x180',
+            type: 'image/png',
+            purpose: 'any'
           }
         ]
       },
