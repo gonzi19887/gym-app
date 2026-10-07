@@ -2071,7 +2071,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
               {authMode === 'signup' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <label style={{ fontSize: '12px', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontWeight: 'bold' }}>Apodo / Username</label>
-                  <input
+                  <input aria-label="Apodo / Username" 
                     type="text"
                     placeholder="Ej: Gojo Satoru"
                     value={authUsername}
@@ -2084,7 +2084,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: '12px', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontWeight: 'bold' }}>Email</label>
-                <input
+                <input aria-label="Email" 
                   type="email"
                   placeholder="chaman@jjk.com"
                   value={authEmail}
@@ -2108,7 +2108,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                       </button>
                     )}
                   </div>
-                  <input
+                  <input aria-label="Contraseña" 
                     type="password"
                     placeholder="••••••••"
                     value={authPassword}
@@ -2414,7 +2414,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
 
               <div className="form-group">
                 <label className="form-label" style={{ fontSize: '13px', fontWeight: 'bold' }}>Nombre del Guerrero</label>
-                <input 
+                <input aria-label="Nombre del Guerrero"  
                   type="text"
                   placeholder="Ej: Son Goku"
                   value={onboardingUsername}
@@ -2503,7 +2503,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
 
               <div className="form-group">
                 <label className="form-label" style={{ fontSize: '13px', fontWeight: 'bold' }}>Raza / Escuela</label>
-                <select 
+                <select aria-label="Raza / Escuela"  
                   value={onboardingClan}
                   onChange={(e) => setOnboardingClan(e.target.value)}
                   className="form-input"
@@ -2519,7 +2519,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
 
               <div className="form-group">
                 <label className="form-label" style={{ fontSize: '13px', fontWeight: 'bold' }}>Técnica Especial</label>
-                <input 
+                <input aria-label="Técnica Especial"  
                   type="text"
                   placeholder="Ej: Kamehameha..."
                   value={onboardingCursedTechnique}
@@ -2541,7 +2541,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
               <div style={{ display: 'flex', gap: '16px' }}>
                 <div className="form-group" style={{ flex: 1 }}>
                   <label className="form-label" style={{ fontSize: '13px', fontWeight: 'bold' }}>Peso (kg)</label>
-                  <input 
+                  <input aria-label="Peso (kg)"  
                     type="number"
                     value={onboardingWeight || ''}
                     onChange={(e) => setOnboardingWeight(parseFloat(e.target.value) || 0)}
@@ -2551,7 +2551,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                 </div>
                 <div className="form-group" style={{ flex: 1 }}>
                   <label className="form-label" style={{ fontSize: '13px', fontWeight: 'bold' }}>Estatura (cm)</label>
-                  <input 
+                  <input aria-label="Estatura (cm)"  
                     type="number"
                     value={onboardingHeight || ''}
                     onChange={(e) => setOnboardingHeight(parseFloat(e.target.value) || 0)}
@@ -2582,7 +2582,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                 {[1, 2, 3, 4, 5, 6, 7].map(num => {
                   const isSelected = onboardingGoalDays === num;
                   return (
-                    <button
+                    <button aria-label={`${num} días a la semana`} 
                       key={num}
                       type="button"
                       onClick={() => setOnboardingGoalDays(num)}
@@ -2735,14 +2735,14 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
           </footer>
         </main>
         
-        <input 
+        <input aria-label="Subir foto desde el dispositivo"  
           type="file"
           ref={fileInputRef}
           onChange={handleFileChange}
           accept="image/*"
           style={{ display: 'none' }}
         />
-        <input 
+        <input aria-label="Hacer foto con la cámara"  
           type="file"
           ref={cameraFallbackInputRef}
           onChange={handleFileChange}
@@ -3097,7 +3097,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                         
                         {!isCardioOrStretch && (
                           <div className="stepper-container">
-                            <button
+                            <button aria-label={`Restar 2,5 kg, serie ${set.set_number}`} 
                               type="button"
                               disabled={isCompleted || isPending}
                               onClick={() => handleSetChange(set.id, 'weight', Math.max(0, parseFloat(((set.weight || 0) - 2.5).toFixed(2))))}
@@ -3105,7 +3105,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                             >
                               -
                             </button>
-                            <input 
+                            <input aria-label={`Peso (kg), serie ${set.set_number}`}  
                               type="number"
                               placeholder="0"
                               value={set.weight || ''}
@@ -3114,7 +3114,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                               onChange={(e) => handleSetChange(set.id, 'weight', parseFloat(e.target.value) || 0)}
                               className="set-input-stepped"
                             />
-                            <button
+                            <button aria-label={`Sumar 2,5 kg, serie ${set.set_number}`} 
                               type="button"
                               disabled={isCompleted || isPending}
                               onClick={() => handleSetChange(set.id, 'weight', parseFloat(((set.weight || 0) + 2.5).toFixed(2)))}
@@ -3126,7 +3126,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                         )}
                         
                         <div className="stepper-container">
-                          <button
+                          <button aria-label={`Restar una repetición, serie ${set.set_number}`} 
                             type="button"
                             disabled={isCompleted || isPending}
                             onClick={() => handleSetChange(set.id, 'reps', Math.max(1, (set.reps || 0) - 1))}
@@ -3134,7 +3134,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                           >
                             -
                           </button>
-                          <input 
+                          <input aria-label={`Repeticiones, serie ${set.set_number}`}  
                             type="number"
                             placeholder="0"
                             value={set.reps || ''}
@@ -3144,7 +3144,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                             className="set-input-stepped"
                             style={isCardioOrStretch ? { width: '80px' } : undefined}
                           />
-                          <button
+                          <button aria-label={`Sumar una repetición, serie ${set.set_number}`} 
                             type="button"
                             disabled={isCompleted || isPending}
                             onClick={() => handleSetChange(set.id, 'reps', (set.reps || 0) + 1)}
@@ -3179,7 +3179,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
             {timerRemaining > 0 && (
               isTimerMinimized ? (
                 /* Minimized state: show compact banner with a maximize button */
-                <div className="workout-rest-timer-banner" style={{ cursor: 'pointer' }} onClick={() => setIsTimerMinimized(false)}>
+                <div role="status" aria-live="polite"  className="workout-rest-timer-banner" style={{ cursor: 'pointer' }} onClick={() => setIsTimerMinimized(false)}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
                     <div className="timer-circle-wrap">
                       <svg className="timer-circle-svg">
@@ -3203,7 +3203,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                   </div>
 
                   <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
-                    <button 
+                    <button aria-label={isTimerRunning ? 'Pausar descanso' : 'Reanudar descanso'}  
                       onClick={() => setIsTimerRunning(!isTimerRunning)} 
                       style={{
                         width: '28px',
@@ -3220,7 +3220,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                     >
                       {isTimerRunning ? <Pause size={12} /> : <Play size={12} />}
                     </button>
-                    <button 
+                    <button aria-label="Omitir descanso"  
                       onClick={() => setTimerRemaining(0)} 
                       style={{
                         width: '28px',
@@ -3284,7 +3284,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                         style={{ transition: 'stroke-dashoffset 1s linear, stroke 0.3s' }}
                       />
                     </svg>
-                    <div style={{ position: 'absolute', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <div role="status" aria-live="polite"  style={{ position: 'absolute', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                       <span style={{ fontSize: '56px', fontWeight: 900, color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>{timerRemaining}</span>
                       <span style={{ fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px' }}>segundos</span>
                     </div>
@@ -3903,7 +3903,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                         >
                           Entrenar
                         </button>
-                        <button
+                        <button aria-label="Editar rutina" 
                           type="button"
                           onClick={() => {
                             const assocs = routineExercises.filter(re => re.routine_id === routine.id);
@@ -3931,7 +3931,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                         >
                           <span className="material-symbols-outlined text-[14px]">edit</span>
                         </button>
-                        <button
+                        <button aria-label={`Eliminar rutina ${routine.name}`} 
                           onClick={async () => {
                             if (confirm('¿Seguro que deseas eliminar esta rutina?')) {
                               await saveRecord('routines', routine, 'DELETE');
@@ -4018,7 +4018,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                             isNameManuallyEdited.current = true;
                           }}
                         />                      </div>
-                      <button
+                      <button aria-label="Sugerir nombre aleatorio de rutina" 
                         type="button"
                         onClick={() => {
                           const selectedIds = newRoutineSelectedExercises.map(item => item.id);
@@ -4046,7 +4046,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                         {WEEKDAYS.map((day) => {
                           const isSelected = newRoutineDays.includes(day.value);
                           return (
-                            <button
+                            <button aria-label={day.name} 
                               key={day.value}
                               type="button"
                               onClick={() => {
@@ -4145,7 +4145,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                                   <div>
                                     <label className="text-[11px] text-on-surface-variant/80 uppercase block mb-1" style={{ fontSize: '12px' }}>Series</label>
                                     <div className="stepper-container bg-surface-container-high">
-                                      <button
+                                      <button aria-label="Restar series" 
                                         type="button"
                                         onClick={() => {
                                           const val = Math.max(1, (config.sets || 1) - 1);
@@ -4157,7 +4157,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                                       >
                                         -
                                       </button>
-                                      <input 
+                                      <input aria-label="Series"  
                                         type="number"
                                         min="1"
                                         max="12"
@@ -4171,7 +4171,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                                         }}
                                         className="set-input-stepped font-bold"
                                       />
-                                      <button
+                                      <button aria-label="Sumar series" 
                                         type="button"
                                         onClick={() => {
                                           const val = Math.min(12, (config.sets || 1) + 1);
@@ -4190,7 +4190,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                                       {config.is_time_based ? 'Segundos' : 'Reps'}
                                     </label>
                                     <div className="stepper-container bg-surface-container-high">
-                                      <button
+                                      <button aria-label={config.is_time_based ? 'Restar un segundo' : 'Restar una repetición'} 
                                         type="button"
                                         onClick={() => {
                                           const val = Math.max(1, (config.reps || 1) - 1);
@@ -4202,7 +4202,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                                       >
                                         -
                                       </button>
-                                      <input 
+                                      <input aria-label={config.is_time_based ? 'Segundos' : 'Reps'}  
                                         type="number"
                                         min="1"
                                         max="100"
@@ -4216,7 +4216,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                                         }}
                                         className="set-input-stepped font-bold"
                                       />
-                                      <button
+                                      <button aria-label={config.is_time_based ? 'Sumar un segundo' : 'Sumar una repetición'} 
                                         type="button"
                                         onClick={() => {
                                           const val = Math.min(100, (config.reps || 1) + 1);
@@ -4233,7 +4233,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                                   <div>
                                     <label className="text-[11px] text-on-surface-variant/80 uppercase block mb-1" style={{ fontSize: '12px' }}>Descanso (s)</label>
                                     <div className="stepper-container bg-surface-container-high">
-                                      <button
+                                      <button aria-label="Restar 5 segundos de descanso" 
                                         type="button"
                                         onClick={() => {
                                           const val = Math.max(0, (config.rest || 0) - 5);
@@ -4245,7 +4245,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                                       >
                                         -
                                       </button>
-                                      <input 
+                                      <input aria-label="Descanso (s)"  
                                         type="number"
                                         min="0"
                                         step="5"
@@ -4259,7 +4259,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                                         }}
                                         className="set-input-stepped font-bold"
                                       />
-                                      <button
+                                      <button aria-label="Sumar 5 segundos de descanso" 
                                         type="button"
                                         onClick={() => {
                                           const val = (config.rest || 0) + 5;
@@ -4293,7 +4293,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                       {['Pecho', 'Espalda', 'Piernas', 'Hombros', 'Brazos', 'Abdomen', 'Cardio'].map((cat) => {
                         const isSelected = newRoutineCategoryFilter === cat;
                         return (
-                          <button
+                          <button aria-label={`Filtrar por ${cat}`} 
                             key={cat}
                             type="button"
                             onClick={() => setNewRoutineCategoryFilter(isSelected ? null : cat)}
@@ -4318,7 +4318,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                     </div>
 
                     <div className="search-wrapper" style={{ margin: '4px 0', position: 'relative' }}>
-                      <input 
+                      <input aria-label="Buscar técnica por nombre"  
                         type="text"
                         placeholder="Buscar técnica por nombre..."
                         value={routineExerciseSearch}
@@ -4424,7 +4424,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
 
                   {/* Save Action */}
                   <div className="pt-6 mt-4 border-t border-white/5 pb-10">
-                    <button 
+                    <button aria-label={editingRoutineId ? 'Actualizar Rutina de Ki' : 'Guardar Rutina de Ki'}  
                       onClick={handleCreateRoutine}
                       disabled={!newRoutineName.trim() || newRoutineSelectedExercises.length === 0}
                       className="w-full h-14 rounded-full bg-primary text-on-primary font-bold text-lg tracking-tight shadow-[0_0_30px_rgba(244,162,97,0.28)] hover:brightness-110 active:scale-95 transition-all flex justify-center items-center gap-2 relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed"
@@ -4659,14 +4659,14 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                     <Camera size={14} color="var(--accent-primary)" />
                     <span>Tomar Foto</span>
                   </button>
-                  <input 
+                  <input aria-label="Subir foto desde el dispositivo"  
                     type="file"
                     ref={fileInputRef}
                     onChange={handleFileChange}
                     accept="image/*"
                     style={{ display: 'none' }}
                   />
-                  <input 
+                  <input aria-label="Hacer foto con la cámara"  
                     type="file"
                     ref={cameraFallbackInputRef}
                     onChange={handleFileChange}
@@ -4687,7 +4687,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
 
               <div className="form-group">
                 <label className="form-label" style={{ fontSize: '13px', fontWeight: 'bold' }}>Nombre del Guerrero</label>
-                <input 
+                <input aria-label="Nombre del Guerrero"  
                   type="text"
                   placeholder="Ej: Son Goku"
                   value={editUsername}
@@ -4699,7 +4699,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
 
               <div className="form-group">
                 <label className="form-label" style={{ fontSize: '13px', fontWeight: 'bold' }}>Raza / Escuela</label>
-                <select 
+                <select aria-label="Raza / Escuela"  
                   value={editClan}
                   onChange={(e) => setEditClan(e.target.value)}
                   className="form-input"
@@ -4726,7 +4726,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
 
               <div className="form-group">
                 <label className="form-label" style={{ fontSize: '13px', fontWeight: 'bold' }}>Técnica Especial / Habilidad</label>
-                <input 
+                <input aria-label="Técnica Especial / Habilidad"  
                   type="text"
                   placeholder="Ej: Kamehameha, Destello Final..."
                   value={editCursedTechnique}
@@ -4736,7 +4736,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                 />
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '8px' }}>
                   {['Kamehameha 👐', 'Destello Final ⚡', 'Genkidama 🌟', 'Kienzan 🌀', 'Kaio-ken 🔴', 'Puño Dragón 🐉'].map(t => (
-                    <button
+                    <button aria-label={`Usar ${t}`} 
                        key={t}
                        type="button"
                        onClick={() => setEditCursedTechnique(t)}
@@ -4870,7 +4870,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                   {authMode === 'signup' && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                       <label style={{ fontSize: '12px', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontWeight: 'bold' }}>Apodo / Username</label>
-                      <input
+                      <input aria-label="Apodo / Username" 
                         type="text"
                         placeholder="Ej: Gojo Satoru"
                         value={authUsername}
@@ -4883,7 +4883,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     <label style={{ fontSize: '12px', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontWeight: 'bold' }}>Email</label>
-                    <input
+                    <input aria-label="Email" 
                       type="email"
                       placeholder="chaman@jjk.com"
                       value={authEmail}
@@ -4895,7 +4895,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     <label style={{ fontSize: '12px', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontWeight: 'bold' }}>Contraseña</label>
-                    <input
+                    <input aria-label="Contraseña" 
                       type="password"
                       placeholder="••••••••"
                       value={authPassword}
@@ -5091,7 +5091,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
           <div className="overlay-body" style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '16px' }}>
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
               <div className="search-wrapper" style={{ flex: 1, margin: 0 }}>
-                <input 
+                <input aria-label="Buscar ejercicio"  
                   type="text"
                   placeholder="Buscar ejercicio..."
                   value={exerciseSearch}
@@ -5128,7 +5128,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                   {/* Name */}
                   <div className="form-group">
                     <label className="form-label">Nombre del Ejercicio</label>
-                    <input 
+                    <input aria-label="Nombre del Ejercicio"  
                       type="text"
                       placeholder="Ej: Curl de bíceps con barra"
                       value={newExerciseName}
@@ -5141,7 +5141,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                   {/* Category */}
                   <div className="form-group">
                     <label className="form-label">Categoría</label>
-                    <select
+                    <select aria-label="Categoría" 
                       value={newExerciseCategory}
                       onChange={(e) => setNewExerciseCategory(e.target.value)}
                       className="form-input"
@@ -5190,7 +5190,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                       }}
                         onClick={() => document.getElementById('exercise-media-input-glossary')?.click()}
                       >
-                        <input 
+                        <input aria-label="Subir imagen o vídeo del ejercicio"  
                           id="exercise-media-input-glossary"
                           type="file"
                           accept="image/*,video/*"
@@ -5205,7 +5205,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                         </span>
                       </div>
                     ) : (
-                      <input 
+                      <input aria-label="URL de imagen o vídeo del ejercicio"  
                         type="text"
                         placeholder="Ej: https://v1.pinimg.com/...mp4"
                         value={newExerciseMediaUrl}
@@ -5219,7 +5219,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                   {/* Technique Tips */}
                   <div className="form-group">
                     <label className="form-label">Tips de técnica (uno por línea)</label>
-                    <textarea
+                    <textarea aria-label="Tips de técnica (uno por línea)" 
                       placeholder="Ej: Mantén los codos pegados al cuerpo&#10;Contrae el abdomen durante el levantamiento"
                       value={newExerciseTipsText}
                       onChange={(e) => setNewExerciseTipsText(e.target.value)}
@@ -5415,7 +5415,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
             padding: '16px'
           }}
         >
-          <div 
+          <div role="status" aria-live="polite"  
             style={{
               width: '100%',
               maxWidth: '440px',
