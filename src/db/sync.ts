@@ -2,6 +2,62 @@ import { supabase, isSupabaseConfigured } from './supabaseClient';
 import { getAllRecords, deleteRecord, addRecord, getRecord, queueSyncItem, getSyncQueue } from './localDb';
 import type { Profile, Exercise, Routine, Workout, RoutineExercise, WorkoutSet } from './localDb';
 
+// Local-only fields that must never be sent to PostgREST (no column in the DB,
+// or values that are not JSON-serializable such as Blobs).
+const LOCAL_ONLY_FIELDS = ['runtime_media_url', 'media_blob'] as const;
+
+// Errors that will never succeed no matter how many times we retry (schema drift:
+// missing columns, unknown table, broken foreign key). Sending the same payload
+// again would poison the FIFO queue forever, so the item must be discarded.
+function isPermanentSyncError(err: unknown): boolean {
+  const code = (err as { code?: string })?.code;
+  if (code === '42703' || code === '42P01' || code === 'PGRST204') return true;
+  const message = (err as { message?: string })?.message || '';
+  return /does not exist|not found in schema cache|schema cache/i.test(message);
+}
+
+// Extracts the offending column from a PostgREST 42703 error
+// ("column workout_sets.is_time_based does not exist").
+function missingColumnOf(err: unknown): string | null {
+  const message = (err as { message?: string })?.message || '';
+  const match = message.match(/column \w+\.(\w+) does not exist/i) || message.match(/column "(\w+)" does not exist/i);
+  return match ? match[1] : null;
+}
+
+// Upserts, and if the column does not exist in the cloud schema (drift), drops
+// that single field and retries once — data is preserved minus the unknown
+// column instead of blocking/discarding the whole queue item.
+async function upsertResilient(
+  table: string,
+  payload: Record<string, unknown>
+): Promise<{ error: unknown; droppedColumns: string[] }> {
+  const droppedColumns: string[] = [];
+  const current = { ...payload };
+
+  for (let attempt = 0; attempt < 6; attempt++) {
+    const { error } = await supabase!.from(table).upsert(current);
+    if (!error) return { error: null, droppedColumns };
+
+    const missing = missingColumnOf(error);
+    if (!missing || !(missing in current)) {
+      return { error, droppedColumns };
+    }
+    console.warn(`Schema drift: column "${table}.${missing}" missing in cloud — dropping it from payload.`);
+    delete current[missing];
+    droppedColumns.push(missing);
+  }
+  return { error: new Error('Too many missing columns'), droppedColumns };
+}
+
+// Strip local-only fields before upserting.
+function sanitizePayload(payload: Record<string, unknown>): Record<string, unknown> {
+  const tablePayload = { ...payload };
+  for (const field of LOCAL_ONLY_FIELDS) {
+    if (field in tablePayload) delete tablePayload[field];
+  }
+  return tablePayload;
+}
+
 // Sync local queue to Supabase
 export async function syncLocalQueueToCloud(): Promise<void> {
   if (!isSupabaseConfigured || !supabase) return;
@@ -21,12 +77,7 @@ export async function syncLocalQueueToCloud(): Promise<void> {
         const { tableName, action, payload, id } = item;
 
         if (action === 'CREATE' || action === 'UPDATE') {
-          const tablePayload = { ...payload };
-          
-          // Clean up runtime fields that don't belong in the DB
-          if ('runtime_media_url' in tablePayload) {
-            delete tablePayload.runtime_media_url;
-          }
+          const tablePayload = sanitizePayload(payload);
 
           // Enforce current user ID
           if (tableName === 'profiles') {
@@ -40,9 +91,7 @@ export async function syncLocalQueueToCloud(): Promise<void> {
             tablePayload.user_id = session.user.id;
           }
 
-          const { error } = await supabase
-            .from(tableName)
-            .upsert(tablePayload);
+          const { error } = await upsertResilient(tableName, tablePayload);
 
           if (error) throw error;
         } else if (action === 'DELETE') {
@@ -57,6 +106,13 @@ export async function syncLocalQueueToCloud(): Promise<void> {
         // Remove item from local queue after successful sync
         await deleteRecord('sync_queue', id);
       } catch (err) {
+        if (isPermanentSyncError(err)) {
+          // Schema drift: this payload can never be uploaded. Discard it so it
+          // does not block the rest of the queue (workouts, sets, etc.).
+          console.error('Discarding unsyncable item (permanent schema error):', item, err);
+          await deleteRecord('sync_queue', item.id);
+          continue;
+        }
         console.error('Failed to sync item:', item, err);
         // Break out of the loop on connection or other error to preserve order of operations (FIFO queue)
         break;
@@ -85,39 +141,45 @@ export async function syncTableToCloud(tableName: 'profiles' | 'exercises' | 'ro
     for (const item of items) {
       const { action, payload, id } = item;
 
-      if (action === 'CREATE' || action === 'UPDATE') {
-        const tablePayload = { ...payload };
-        
-        if ('runtime_media_url' in tablePayload) {
-          delete tablePayload.runtime_media_url;
-        }
+      try {
+        if (action === 'CREATE' || action === 'UPDATE') {
+          const tablePayload = sanitizePayload(payload);
 
-        if (tableName === 'profiles') {
-          tablePayload.id = session.user.id;
-          if (tablePayload.last_workout_date === '') {
-            tablePayload.last_workout_date = null;
+          if (tableName === 'profiles') {
+            tablePayload.id = session.user.id;
+            if (tablePayload.last_workout_date === '') {
+              tablePayload.last_workout_date = null;
+            }
+          } else if ('user_id' in tablePayload && tableName !== 'exercises') {
+            tablePayload.user_id = session.user.id;
+          } else if (tableName === 'exercises' && tablePayload.is_custom) {
+            tablePayload.user_id = session.user.id;
           }
-        } else if ('user_id' in tablePayload && tableName !== 'exercises') {
-          tablePayload.user_id = session.user.id;
-        } else if (tableName === 'exercises' && tablePayload.is_custom) {
-          tablePayload.user_id = session.user.id;
+
+          const { error } = await upsertResilient(tableName, tablePayload);
+
+          if (error) throw error;
+        } else if (action === 'DELETE') {
+          const { error } = await supabase
+            .from(tableName)
+            .delete()
+            .eq('id', payload.id);
+
+          if (error) throw error;
         }
 
-        const { error } = await supabase
-          .from(tableName)
-          .upsert(tablePayload);
-
-        if (error) throw error;
-      } else if (action === 'DELETE') {
-        const { error } = await supabase
-          .from(tableName)
-          .delete()
-          .eq('id', payload.id);
-
-        if (error) throw error;
+        await deleteRecord('sync_queue', id);
+      } catch (err) {
+        if (isPermanentSyncError(err)) {
+          // Discard payload that can never be uploaded instead of blocking this
+          // table's queue forever (FIFO: nothing behind it would ever sync).
+          console.error('Discarding unsyncable item (permanent schema error):', item, err);
+          await deleteRecord('sync_queue', id);
+          continue;
+        }
+        console.error(`Sync table ${tableName} error:`, err);
+        throw err;
       }
-
-      await deleteRecord('sync_queue', id);
     }
   } catch (err) {
     console.error(`Sync table ${tableName} error:`, err);
