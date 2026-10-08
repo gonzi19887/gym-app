@@ -375,7 +375,11 @@ input[type="password"]::placeholder {
   flex-shrink: 0;
   white-space: nowrap;
 }
-@media (max-width: 400px) {
+/* 2026-10-07 (SDD Bugs UI): breakpoint subido a 480px — Android típico (412px)
+   e iPhone Pro Max (430px) NO entraban en el de 400px y el header quedaba
+   amontonado. En pantallas pequeñas se ocultan el wordmark "Capsule Corp" y
+   la etiqueta del botón de tema (queda solo el icono). */
+@media (max-width: 480px) {
   .app-header {
     padding: 12px;
     gap: 6px;
@@ -388,6 +392,12 @@ input[type="password"]::placeholder {
   .app-header .profile-avatar {
     width: 36px;
     height: 36px;
+  }
+  .header-wordmark {
+    display: none;
+  }
+  .header-theme-label {
+    display: none;
   }
 }
 
