@@ -267,15 +267,25 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
   const [onboardingFromWorkout, setOnboardingFromWorkout] = useState(false);
   // Respaldo del flag en IndexedDB: evita el flash del wizard mientras se lee.
   const [onboardingChecked, setOnboardingChecked] = useState(false);
+  // 2026-10-07 (Bugs UI): el wizard no se evalúa hasta que loadData termina de
+  // restaurar el entreno activo — si no, tapa la sesión con el modal completo
+  // justo al abrir/iniciar la rutina en vez de mostrar la minibar.
+  const [dataLoaded, setDataLoaded] = useState(false);
   // 2026-10-07 (SDD Fase 2): si iOS/Safari purga localStorage (presión de
   // almacenamiento o inactividad), el flag en app_settings restaura el estado.
   useEffect(() => {
     let cancelled = false;
     getAppSetting<string>('onboarding_completed')
-      .then(v => {
-        if (!cancelled && v === 'true') {
+      .then(async v => {
+        if (cancelled) return;
+        if (v === 'true') {
           localStorage.setItem('onboarding_completed', 'true');
           setOnboardingCompleted(true);
+        } else if (v !== 'false' && localStorage.getItem('onboarding_completed') === 'true') {
+          // Sanar: localStorage dice "completado" pero el respaldo IDB nunca se
+          // escribió (onboarding anterior a Fase 2) → lo copiamos, para que una
+          // purga de localStorage no reabra el wizard a pantalla completa.
+          await setAppSetting('onboarding_completed', 'true');
         }
       })
       .catch(() => { /* IDB no disponible → nos quedamos con localStorage */ })
@@ -919,6 +929,10 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
     } catch (err) {
       console.warn('Could not restore active workout state:', err);
     }
+
+    // 2026-10-07 (Bugs UI): recién aquí el entreno activo está restaurado;
+    // a partir de este punto el wizard puede decidir entre modal o minibar.
+    setDataLoaded(true);
   };
 
   // Helper to determine if a URL represents a video format
@@ -1692,6 +1706,9 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
     setActiveExercises(loadedExercises);
     setActiveWorkoutSets(generatedSets);
     setActiveExerciseIndex(0);
+    // 2026-10-07 (Bugs UI): un wizard abierto desde la barra en una sesión
+    // anterior no debe reabrirse a pantalla completa sobre este entreno nuevo.
+    setOnboardingFromWorkout(false);
     setTimerRemaining(0);
     setIsTimerRunning(false);
     setShowBlackFlash(false);
@@ -1811,6 +1828,9 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
       setActiveExerciseIndex(0);
       setTimerRemaining(0);
       setIsTimerRunning(false);
+      // 2026-10-07 (Bugs UI): cerrar/cancelar el entreno reactiva el wizard a
+      // pantalla completa solo si el usuario no lo abrió desde la minibar.
+      setOnboardingFromWorkout(false);
     }
   };
 
@@ -1875,6 +1895,9 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
     setActiveExerciseIndex(0);
     setTimerRemaining(0);
     setIsTimerRunning(false);
+    // 2026-10-07 (Bugs UI): al completar el entreno, si el wizard sigue
+    // pendiente aparece a pantalla completa (no quedó abierto desde la barra).
+    setOnboardingFromWorkout(false);
     // SPEC_007: Clear persisted workout state on successful completion
     clearActiveWorkoutState().catch(err => console.warn('Could not clear workout state:', err));
   };
@@ -2240,7 +2263,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
   // 2026-10-07 (SDD Fase 2): onboardingChecked evita que el wizard parpadee
   // antes de leer el respaldo de IDB; con entreno activo (o si el usuario abrió
   // el wizard desde la barra) el wizard solo se muestra a pantalla completa.
-  if (!onboardingCompleted && profile && onboardingChecked && (!activeWorkout || onboardingFromWorkout)) {
+  if (!onboardingCompleted && profile && onboardingChecked && dataLoaded && (!activeWorkout || onboardingFromWorkout)) {
     const imc = onboardingWeight / Math.pow(onboardingHeight / 100, 2);
     let imcCategory = 'Normal';
     let imcColor = '#10b981'; // Green
@@ -2778,7 +2801,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
               }}>
                 CC
               </div>
-              <span style={{ fontFamily: 'Outfit, sans-serif', fontWeight: '800', fontSize: '12px', letterSpacing: '1px', textTransform: 'uppercase', color: 'var(--accent-primary)' }}>
+              <span className="header-wordmark" style={{ fontFamily: 'Outfit, sans-serif', fontWeight: '800', fontSize: '12px', letterSpacing: '1px', textTransform: 'uppercase', color: 'var(--accent-primary)' }}>
                 Capsule Corp
               </span>
             </div>
@@ -2802,7 +2825,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
               title="Cambiar tema"
             >
               <span>{theme === 'dark' ? '☀️' : '🌙'}</span>
-              <span style={{ fontSize: '10px' }}>{theme === 'dark' ? 'CLARO' : 'OSCURO'}</span>
+              <span className="header-theme-label" style={{ fontSize: '10px' }}>{theme === 'dark' ? 'CLARO' : 'OSCURO'}</span>
             </button>
 
             <div className="profile-section" style={{ cursor: 'pointer' }} onClick={() => setActiveTab('perfil')} title="Ver perfil del hechicero">
