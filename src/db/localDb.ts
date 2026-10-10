@@ -9,6 +9,14 @@ export interface Profile {
   last_workout_date: string;
   clan?: string;
   cursed_technique?: string;
+  // 2026-10-09 (nube): antes vivían solo en localStorage y se perdían al limpiar
+  // caché o cambiar de equipo. Columnas creadas por la migración
+  // supabase_migration_2026-10-09.sql.
+  weight?: number | null;
+  height?: number | null;
+  fat_percentage?: number | null;
+  goal_days?: number | null;
+  onboarding_completed?: boolean | null;
 }
 
 export interface Exercise {

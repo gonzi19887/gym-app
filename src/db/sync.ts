@@ -1,5 +1,5 @@
 import { supabase, isSupabaseConfigured } from './supabaseClient';
-import { getAllRecords, deleteRecord, addRecord, getRecord, queueSyncItem, getSyncQueue } from './localDb';
+import { getAllRecords, deleteRecord, addRecord, getRecord, queueSyncItem, getSyncQueue, setAppSetting, getAppSetting } from './localDb';
 import type { Profile, Exercise, Routine, Workout, RoutineExercise, WorkoutSet } from './localDb';
 
 // Local-only fields that must never be sent to PostgREST (no column in the DB,
@@ -58,17 +58,105 @@ function sanitizePayload(payload: Record<string, unknown>): Record<string, unkno
   return tablePayload;
 }
 
+// ─── Estado de sincronización para la barra de estado (Q3, 2026-10-09) ────────
+// El modal bloqueante desapareció. Lo que queda es una barra no bloqueante que
+// necesita saber: ¿hubo sync?, ¿falló?, ¿cuándo fue la última vez?
+// Todo se persiste en localStorage (rápido) y en IndexedDB `app_settings`
+// (sobrevive a la purga de localStorage del navegador móvil).
+export const SYNC_ERROR_KEY = 'sync_last_error';
+export const SYNC_AT_KEY = 'sync_last_at';
+export const SYNC_ATTEMPTED_KEY = 'sync_attempted_at';
+
+export interface SyncErrorRecord {
+  message: string;
+  at: string;
+}
+
+function errMessage(err: unknown): string {
+  const e = err as { message?: string } | null;
+  return (e && e.message) || String(err);
+}
+
+export function readSyncError(): SyncErrorRecord | null {
+  try {
+    const raw = localStorage.getItem(SYNC_ERROR_KEY);
+    return raw ? (JSON.parse(raw) as SyncErrorRecord) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function readSyncAt(): string | null {
+  try {
+    return localStorage.getItem(SYNC_AT_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function markSyncAttempted(): void {
+  try {
+    localStorage.setItem(SYNC_ATTEMPTED_KEY, new Date().toISOString());
+  } catch { /* localStorage no disponible */ }
+}
+
+export function recordSyncError(err: unknown): void {
+  const record: SyncErrorRecord = { message: errMessage(err), at: new Date().toISOString() };
+  try {
+    localStorage.setItem(SYNC_ERROR_KEY, JSON.stringify(record));
+  } catch { /* localStorage no disponible */ }
+  // Espejo en IndexedDB por si el navegador purga localStorage.
+  void setAppSetting(SYNC_ERROR_KEY, record).catch(() => { /* IDB no disponible */ });
+}
+
+// 2026-10-09: se limpia al arrancar cada sync para que un fallo de la sesión
+// anterior no haga fallar visualmente una ejecución que sí salió bien.
+export function clearSyncError(): void {
+  try {
+    localStorage.removeItem(SYNC_ERROR_KEY);
+  } catch { /* localStorage no disponible */ }
+  void setAppSetting(SYNC_ERROR_KEY, null).catch(() => { /* IDB no disponible */ });
+}
+
+export function recordSyncSuccess(at: string): void {
+  try {
+    localStorage.setItem(SYNC_AT_KEY, at);
+    localStorage.removeItem(SYNC_ERROR_KEY);
+  } catch { /* localStorage no disponible */ }
+  void setAppSetting(SYNC_AT_KEY, at).catch(() => { /* IDB no disponible */ });
+  void setAppSetting(SYNC_ERROR_KEY, null).catch(() => { /* IDB no disponible */ });
+}
+
+// 2026-10-09: si el navegador purgó localStorage, se repone el estado desde
+// IndexedDB antes de decidir qué mostrar en la barra.
+export async function restoreSyncStateFromIdb(): Promise<void> {
+  try {
+    if (!localStorage.getItem(SYNC_ERROR_KEY)) {
+      const stored = await getAppSetting<SyncErrorRecord>(SYNC_ERROR_KEY);
+      if (stored) localStorage.setItem(SYNC_ERROR_KEY, JSON.stringify(stored));
+    }
+    if (!localStorage.getItem(SYNC_AT_KEY)) {
+      const stored = await getAppSetting<string>(SYNC_AT_KEY);
+      if (stored) localStorage.setItem(SYNC_AT_KEY, stored);
+    }
+  } catch { /* IndexedDB no disponible: nos quedamos con localStorage */ }
+}
+
 // Sync local queue to Supabase
-export async function syncLocalQueueToCloud(): Promise<void> {
-  if (!isSupabaseConfigured || !supabase) return;
+export async function syncLocalQueueToCloud(): Promise<number> {
+  // 2026-10-09: devuelve el nº de items subidos, para que la barra de sync solo
+  // aparezca cuando algo se movió de verdad.
+  let pushed = 0;
+  if (!isSupabaseConfigured || !supabase) return pushed;
+  markSyncAttempted();
 
   try {
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
+    if (!session) return pushed;
 
     // Use chronologically sorted queue from outbox
     const queue = await getSyncQueue();
-    if (queue.length === 0) return;
+    if (queue.length === 0) return pushed;
 
     console.log(`Syncing ${queue.length} items to Supabase (Outbox Pattern)...`);
 
@@ -105,27 +193,35 @@ export async function syncLocalQueueToCloud(): Promise<void> {
 
         // Remove item from local queue after successful sync
         await deleteRecord('sync_queue', id);
+        pushed += 1;
       } catch (err) {
         if (isPermanentSyncError(err)) {
           // Schema drift: this payload can never be uploaded. Discard it so it
           // does not block the rest of the queue (workouts, sets, etc.).
           console.error('Discarding unsyncable item (permanent schema error):', item, err);
           await deleteRecord('sync_queue', item.id);
+          pushed += 1;
           continue;
         }
         console.error('Failed to sync item:', item, err);
+        // 2026-10-09 (Q3): el fallo se persiste para que la barra de estado lo
+        // muestre y decida si reintenta. Sin esto, el error moría en consola.
+        recordSyncError(err);
         // Break out of the loop on connection or other error to preserve order of operations (FIFO queue)
         break;
       }
     }
   } catch (err) {
     console.error('Sync process error:', err);
+    recordSyncError(err);
   }
+  return pushed;
 }
 
 // Sync a specific table's local queue items to Supabase
 export async function syncTableToCloud(tableName: 'profiles' | 'exercises' | 'routines' | 'routine_exercises' | 'workouts' | 'workout_sets'): Promise<void> {
   if (!isSupabaseConfigured || !supabase) return;
+  markSyncAttempted();
 
   try {
     const { data: { session } } = await supabase.auth.getSession();
@@ -178,6 +274,8 @@ export async function syncTableToCloud(tableName: 'profiles' | 'exercises' | 'ro
           continue;
         }
         console.error(`Sync table ${tableName} error:`, err);
+        // 2026-10-09 (Q3): queda registrado para la barra de estado de sync.
+        recordSyncError(err);
         throw err;
       }
     }
@@ -240,11 +338,12 @@ export async function pullCloudDataToLocal(): Promise<void> {
 // Pull a specific table from cloud to local IndexedDB (used for per-step login sync overlay)
 export async function pullTableFromCloud(
   tableName: 'profiles' | 'exercises' | 'routines' | 'routine_exercises' | 'workouts' | 'workout_sets'
-): Promise<void> {
-  if (!isSupabaseConfigured || !supabase) return;
+): Promise<number> {
+  if (!isSupabaseConfigured || !supabase) return 0;
+  markSyncAttempted();
 
   const { data: { session } } = await supabase.auth.getSession();
-  if (!session) return;
+  if (!session) return 0;
 
   const queue = await getSyncQueue();
   const pendingIds = new Set(
@@ -262,8 +361,15 @@ export async function pullTableFromCloud(
   }
 
   const { data, error } = await query;
-  if (error) throw error;
+  if (error) {
+    // 2026-10-09 (Q3): el fallo de descarga también debe verse en la barra.
+    recordSyncError(error);
+    throw error;
+  }
 
+  // 2026-10-09: se devuelve el nº de filas escritas para que la barra de sync
+  // solo aparezca cuando algo se movió de verdad (nada de trabajo → nada que ver).
+  let written = 0;
   if (data && data.length > 0) {
     for (const row of data) {
       if (pendingIds.has(row.id)) {
@@ -271,8 +377,10 @@ export async function pullTableFromCloud(
         continue;
       }
       await addRecord(tableName, row);
+      written += 1;
     }
   }
+  return written;
 }
 
 // Migrate guest data to authenticated user

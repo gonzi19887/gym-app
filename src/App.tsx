@@ -53,7 +53,7 @@ import { CalendarKi } from './components/CalendarKi';
 import { seedDatabase } from './db/seed';
 import { supabase, isSupabaseConfigured } from './db/supabaseClient';
 import type { Session } from '@supabase/supabase-js';
-import { syncLocalQueueToCloud, migrateGuestDataToUser, syncTableToCloud, pullTableFromCloud } from './db/sync';
+import { syncLocalQueueToCloud, migrateGuestDataToUser, syncTableToCloud, pullTableFromCloud, readSyncError, readSyncAt, restoreSyncStateFromIdb, recordSyncSuccess, clearSyncError } from './db/sync';
 
 // Web Audio API beep for rest timer completion
 const playBeep = () => {
@@ -337,22 +337,69 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
   const [editingRoutineId, setEditingRoutineId] = useState<string | null>(null);
   const [isSealingPact, setIsSealingPact] = useState(false);
   const [pactStatus, setPactStatus] = useState<string | null>(null);
-  const [showSyncOverlay, setShowSyncOverlay] = useState(false);
+  // 2026-10-09 (Q3): el modal de sync a pantalla completa desapareció. Lo que queda
+  // es una barra fina NO bloqueante que solo aparece si:
+  //   · un sync real está en curso → "syncing" (se oculta sola al terminar)
+  //   · el último sync falló → "error" (persistido en localStorage + IndexedDB,
+  //     así sobrevive a un reinicio del navegador)
+  // Un arranque con datos intactos no muestra nada: sin barra, sin ruido.
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>(
+    () => (readSyncError() ? 'error' : 'idle')
+  );
+  const [syncError, setSyncError] = useState<string | null>(() => readSyncError()?.message ?? null);
+  // Último sync completado con éxito (ISO). Se muestra como "Guardado hace X".
+  const [lastSyncAt, setLastSyncAt] = useState<string | null>(() => readSyncAt());
+  // Detalle de la barra, visible solo si el usuario la toca (Q4: el detalle del
+  // sync vive detrás de la barra, no en un modal propio).
+  const [syncBarExpanded, setSyncBarExpanded] = useState(false);
   // 2026-10-05 (fix móvil): bloquea ejecuciones concurrentes de runLoginSync
   const isSyncRunningRef = useRef(false);
+  // 2026-10-09 (Q1/Q4): auth-js emite SIGNED_IN en el arranque con sesión guardada
+  // (GoTrueClient._recoverAndRefresh, línea 4042), no solo en un login real. Ese
+  // falso SIGNED_IN era el que abría el modal en cada cambio de app. Marca los
+  // logins manuales (Google/email) para que solo esos cuenten como "login real".
+  const realLoginRef = useRef(false);
+  // 2026-10-09: el backfill de datos físicos hacia la nube se intenta una sola vez.
+  const bodyBackfillRef = useRef(false);
+
+  // 2026-10-09 (Q3): la barra nunca se queda pegada. El éxito se confirma y se va;
+  // un sync colgado (red que murió a mitad de camino) se retira solo a los 30s.
+  useEffect(() => {
+    if (syncStatus === 'success') {
+      const t = window.setTimeout(() => setSyncStatus('idle'), 1800);
+      return () => window.clearTimeout(t);
+    }
+    if (syncStatus === 'syncing') {
+      const t = window.setTimeout(() => {
+        if (!isSyncRunningRef.current) setSyncStatus('idle');
+      }, 30000);
+      return () => window.clearTimeout(t);
+    }
+    return;
+  }, [syncStatus]);
+
+  // 2026-10-09: si el navegador purgó localStorage, el estado de sync se repone
+  // desde IndexedDB antes de decidir qué mostrar al abrir la app.
+  useEffect(() => {
+    let cancelled = false;
+    restoreSyncStateFromIdb()
+      .then(() => {
+        if (cancelled) return;
+        const err = readSyncError();
+        if (err) {
+          setSyncStatus('error');
+          setSyncError(err.message);
+        }
+        setLastSyncAt(readSyncAt());
+      })
+      .catch(() => { /* IndexedDB no disponible */ });
+    return () => { cancelled = true; };
+  }, []);
   // 2026-10-06 (fix móvil): cronómetros persistidos que esperan a restaurarse
   // cuando la sesión activa (SPEC_007) se recupera de IndexedDB
   const [pendingTimers, setPendingTimers] = useState<PersistedTimers>(null);
   const timersAppliedRef = useRef(false);
   const hadRunningTimersRef = useRef(false);
-  const [syncOverlayMode, setSyncOverlayMode] = useState<'upload' | 'download'>('upload');
-  const [syncSteps, setSyncSteps] = useState<{[key: string]: 'pending' | 'syncing' | 'completed' | 'error'}>({
-    profile: 'pending',
-    exercises: 'pending',
-    routines: 'pending',
-    workouts: 'pending',
-    calendar: 'pending'
-  });
 
   // Dynamic JJK Routine Name Generator
   const isNameManuallyEdited = useRef(false);
@@ -523,9 +570,10 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
       if (session) {
         setGuestMode(false);
         localStorage.removeItem('guestMode');
-        // 2026-10-06 (fix móvil): en una recarga (sesión ya existente) el sync va
-        // SILENCIOSO en segundo plano — el overlay solo en un login real.
-        runLoginSync(session.user.id, { silent: true });
+        // 2026-10-09: recarga → sync en segundo plano. La barra fina avisa
+        // mientras sincroniza y desaparece sola en cuanto termina sin novedad;
+        // solo se queda si algo falló. No bloquea la interfaz en ningún caso.
+        runLoginSync(session.user.id);
       } else {
         loadData();
       }
@@ -536,11 +584,15 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
       if (session) {
         setGuestMode(false);
         localStorage.removeItem('guestMode');
-        // 2026-10-05 (fix móvil): el overlay de sync SOLO en un sign-in real.
-        // TOKEN_REFRESHED / INITIAL_SESSION / USER_UPDATED se emiten cada vez que
-        // el móvil despierta de bloqueo de pantalla y reproducían el modal.
+        // 2026-10-09 (Q1/Q4): SIGNED_IN NO equivale a "el usuario inició sesión".
+        // auth-js lo emite en cada arranque con sesión guardada
+        // (GoTrueClient._recoverAndRefresh, línea ~4042), y en móvil la pestaña se
+        // recarga al cambiar de app o apagar la pantalla → ese era el falso disparo
+        // que abría el modal en cada movimiento. Solo un login manual (Google o
+        // email, marcado con realLoginRef) tiene tratamiento preferente.
         if (_event === 'SIGNED_IN') {
-          runLoginSync(session.user.id);
+          runLoginSync(session.user.id, { forceBar: realLoginRef.current });
+          realLoginRef.current = false;
         }
       } else {
         loadData();
@@ -553,12 +605,12 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
   // Sync when coming back online
   useEffect(() => {
     const handleOnline = () => {
-      if (isSupabaseConfigured && session) {
-        syncLocalQueueToCloud();
-      }
+      // 2026-10-09 (Q3): sube lo que quedó pendiente mientras no había red.
+      void flushPendingQueue();
     };
     window.addEventListener('online', handleOnline);
     return () => window.removeEventListener('online', handleOnline);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- flushPendingQueue depende de `session`
   }, [session]);
 
   // Auto-sync when app becomes hidden — SPEC_007: only sync if queue has items
@@ -570,14 +622,63 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
           // Check queue length before triggering sync to avoid empty-queue popups
           const queue = await getAllRecords('sync_queue');
           if (queue.length > 0) {
-            syncLocalQueueToCloud();
+            // 2026-10-09 (Q3): la subida en segundo plano usa la barra fina, no el
+            // modal. Si el SO mata la app antes de terminar, la cola intacta hace
+            // que el próximo arranque la reintente (outbox pattern).
+            void flushPendingQueue();
           }
         }
       }
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- flushPendingQueue depende de `session`
   }, [session]);
+
+  // 2026-10-09 (Q4): texto de "hace cuánto" para el detalle de la barra de sync.
+  const formatSyncAge = (iso: string | null): string | null => {
+    if (!iso) return null;
+    const diff = Date.now() - new Date(iso).getTime();
+    if (!Number.isFinite(diff) || diff < 0) return null;
+    const minutes = Math.floor(diff / 60000);
+    if (minutes < 1) return 'Ahora mismo';
+    if (minutes < 60) return `Hace ${minutes} min`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `Hace ${hours} h`;
+    return `Hace ${Math.floor(hours / 24)} d`;
+  };
+
+  // 2026-10-09 (Q3): sube la cola pendiente en segundo plano (al volver en línea
+  // o al ocultar la app). Usa el mismo modelo de estado que el sync de login, así
+  // que un fallo aquí también se ve en la barra y se reintenta solo.
+  const flushPendingQueue = async () => {
+    if (!isSupabaseConfigured || !session || !navigator.onLine) return;
+    // Una cola vacía no debe hacer parpadear la barra.
+    try {
+      const queue = await getAllRecords('sync_queue');
+      if (queue.length === 0) return;
+    } catch { return; }
+
+    setSyncStatus('syncing');
+    setSyncError(null);
+    clearSyncError();
+    try {
+      const pushed = await syncLocalQueueToCloud();
+      if (pushed === 0) {
+        setSyncStatus('idle');
+        return;
+      }
+      const finishedAt = new Date().toISOString();
+      recordSyncSuccess(finishedAt);
+      setLastSyncAt(finishedAt);
+      setSyncStatus('success');
+    } catch (err) {
+      console.error('Background queue flush failed:', err);
+      const stored = readSyncError();
+      setSyncStatus('error');
+      setSyncError(stored ? stored.message : 'No se pudo subir tus datos a la nube.');
+    }
+  };
 
   const handleGoogleLogin = async () => {
     if (!isSupabaseConfigured || !supabase) {
@@ -585,6 +686,10 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
       return;
     }
     setAuthLoading(true);
+    // 2026-10-09: marca el login como manual para que el sync posterior trate el
+    // evento como login de verdad (el OAuth redirige y pierde el contexto, pero en
+    // email/password sí sobrevive; en Google, igual hay trabajo real que mostrar).
+    realLoginRef.current = true;
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -615,6 +720,8 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
         alert('¡Enlace enviado! Revisa tu bandeja de entrada (y la carpeta de spam) para restablecer tu contraseña.');
         setAuthMode('login');
       } else if (authMode === 'signup') {
+        // 2026-10-09: login manual → el sync posterior muestra la barra de estado.
+        realLoginRef.current = true;
         const { error } = await supabase.auth.signUp({
           email: authEmail,
           password: authPassword,
@@ -629,6 +736,8 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
         alert('¡Registro exitoso! Si tu configuración de Supabase tiene activa la confirmación de correo (activada por defecto), debes confirmar el correo de verificación antes de poder iniciar sesión.');
         setAuthMode('login');
       } else {
+        // 2026-10-09: login manual → el sync posterior muestra la barra de estado.
+        realLoginRef.current = true;
         const { error } = await supabase.auth.signInWithPassword({
           email: authEmail,
           password: authPassword
@@ -680,6 +789,57 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
       }
       return ex;
     });
+  };
+
+  // 2026-10-09 (Q6/Q8): los datos físicos y el flag de onboarding ya viven en la
+  // nube (columnas creadas por supabase_migration_2026-10-09.sql). Antes estaban
+  // solo en localStorage y se perdían al limpiar caché o cambiar de equipo.
+  const applyProfileToLocalState = (p: Profile) => {
+    const num = (v: number | null | undefined): number | null =>
+      typeof v === 'number' && !Number.isNaN(v) ? v : null;
+    const w = num(p.weight);
+    const h = num(p.height);
+    const f = num(p.fat_percentage);
+    const g = num(p.goal_days);
+    // La nube manda: si trae valores, reflejan en localStorage y en el estado.
+    if (w !== null) { localStorage.setItem('user_weight', String(w)); setUserWeight(w); }
+    if (h !== null) { localStorage.setItem('user_height', String(h)); setUserHeight(h); }
+    if (f !== null) { localStorage.setItem('user_fat_pct', String(f)); setUserFatPct(f); }
+    if (g !== null) { localStorage.setItem('weekly_goal_days', String(g)); setWeeklyGoalDays(g); }
+    if (p.onboarding_completed === true) {
+      localStorage.setItem('onboarding_completed', 'true');
+      setOnboardingCompleted(true);
+    }
+  };
+
+  // Copia los valores locales actuales al perfil para que suban a la nube.
+  const withBodyMetrics = (p: Profile): Profile => ({
+    ...p,
+    weight: userWeight,
+    height: userHeight,
+    fat_percentage: userFatPct,
+    goal_days: weeklyGoalDays,
+    onboarding_completed: localStorage.getItem('onboarding_completed') === 'true'
+  });
+
+  // 2026-10-09 (Q8): actualizar los datos físicos desde el perfil también sincroniza
+  // la nube; antes solo escribían en localStorage y se perdían.
+  const updateBodyMetrics = async (w: number, f: number, h: number) => {
+    setUserWeight(w);
+    setUserFatPct(f);
+    setUserHeight(h);
+    localStorage.setItem('user_weight', w.toString());
+    localStorage.setItem('user_fat_pct', f.toString());
+    localStorage.setItem('user_height', h.toString());
+    if (profile) {
+      const updated: Profile = { ...profile, weight: w, fat_percentage: f, height: h };
+      setProfile(updated);
+      try {
+        await saveRecord('profiles', updated, 'UPDATE');
+      } catch (err) {
+        console.warn('Body metrics save failed (local values kept):', err);
+      }
+    }
   };
 
   async function loadData(overrideUserId?: string) {
@@ -744,6 +904,19 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
       if (localAvatarUrl) currentProfile.avatar_url = localAvatarUrl;
     } catch (err) {
       console.warn('Could not restore local profile settings:', err);
+    }
+    // 2026-10-09 (Q6/Q8): los datos físicos del perfil de la nube se reflejan en
+    // localStorage/estado. Si el perfil no los trae todavía (cuenta anterior a la
+    // migración), se suben una sola vez para rellenar la nube.
+    applyProfileToLocalState(currentProfile);
+    if (currentProfile.weight == null && !bodyBackfillRef.current) {
+      bodyBackfillRef.current = true;
+      currentProfile = withBodyMetrics(currentProfile);
+      try {
+        await saveRecord('profiles', currentProfile, 'UPDATE');
+      } catch (err) {
+        console.warn('Body metrics backfill failed (local values kept):', err);
+      }
     }
     setProfile(currentProfile);
     setEditUsername(currentProfile.username);
@@ -1031,112 +1204,110 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
       img.src = dataUrl;
     });
   };
-  // Helper for the sequential step-by-step sync overlay
-  const resetSyncSteps = () => ({
-    profile: 'pending' as const,
-    exercises: 'pending' as const,
-    routines: 'pending' as const,
-    workouts: 'pending' as const,
-    calendar: 'pending' as const,
-  });
+  // ── Progreso de la rutina activa (Q5, 2026-10-09) ──────────────────────────
+  // La barra flotante muestra "series hechas/total + volumen en kg" SOLO mientras
+  // hay un entreno en curso; desaparece al terminarlo. Recalcular en cada render
+  // es barato: el array rara vez pasa de 20 series.
+  const routineTotalSets = activeWorkoutSets.length;
+  const routineDoneSets = activeWorkoutSets.filter(s => s.is_completed).length;
+  const routineVolumeKg = activeWorkoutSets
+    .filter(s => s.is_completed)
+    .reduce((sum, s) => sum + (s.weight || 0) * (s.reps || 0), 0);
+  const routineProgressPct = routineTotalSets > 0
+    ? Math.round((routineDoneSets / routineTotalSets) * 100)
+    : 0;
 
-  const runLoginSync = async (userId: string, opts: { silent?: boolean } = {}) => {
-    // silent=true → sync en segundo plano SIN overlay. Se usa cuando la pestaña
-    // revivió tras ser descartada por el navegador (recarga): el usuario no pidió
-    // nada, no debe ver el modal. Overlay solo en login real (SIGNED_IN) o manual.
-    const silent = opts.silent === true;
-    // 2026-10-05 (fix móvil): evita ejecuciones concurrentes — los eventos de auth
-    // al despertar el móvil re-lanzaban el sync y el modal se repetía.
+  // 2026-10-09 (Q3): sync completo de login — descarga por tablas y sube la cola
+  // pendiente. NUNCA lanza excepción: cualquier fallo queda persistido en
+  // localStorage + IndexedDB (ver db/sync.ts) y lo refleja la barra de estado.
+  // La barra fina avisa mientras sincroniza y se va sola en cuanto termina sin
+  // novedad; solo se queda visible si algo falló (entonces ofrece reintento).
+  const runLoginSync = async (userId: string, opts: { forceBar?: boolean } = {}) => {
+    // forceBar=true → se confirma el resultado aunque no haya habido nada que
+    // mover (login manual o guardado de perfil).
     if (isSyncRunningRef.current) return;
+    // H3 (revisión 2026-10-09): sin red no hay sync posible. Antes cada arranque
+    // en avión/metro pintaba la barra roja "No se pudo sincronizar". Se carga lo
+    // local y se espera a que vuelva la red: el listener de `online` dispara
+    // flushPendingQueue. OJO: hay que llamar a loadData aquí igualmente, porque
+    // es esta función (no el caller) la que puebla la app en modo offline.
+    if (!navigator.onLine) {
+      try {
+        await loadData(userId);
+      } catch (err) {
+        console.error('loadData (offline) failed:', err);
+      }
+      return;
+    }
     isSyncRunningRef.current = true;
-    // Si un paso se queda colgado (red lenta/offline), el overlay se cierra solo a los 15s.
-    const safetyClose = silent ? undefined : setTimeout(() => setShowSyncOverlay(false), 15000);
 
-    // Migrate any local guest data first (silent)
+    // Un fallo de la sesión anterior no debe pintar de rojo esta ejecución.
+    clearSyncError();
+    setSyncStatus('syncing');
+    setSyncError(null);
+
+    let hadError = false;
+    let moved = 0;
+
     try {
-      await migrateGuestDataToUser(userId);
-    } catch (err) {
-      console.error('guest migration failed (continuing):', err);
+      // Migrate any local guest data first (silent)
+      try {
+        await migrateGuestDataToUser(userId);
+      } catch (err) {
+        console.error('guest migration failed (continuing):', err);
+      }
+
+      const pullStep = async (
+        tables: Array<'profiles' | 'exercises' | 'routines' | 'routine_exercises' | 'workouts' | 'workout_sets'>
+      ) => {
+        for (const table of tables) {
+          try {
+            moved += await pullTableFromCloud(table);
+          } catch (err) {
+            console.error(err);
+            hadError = true;
+          }
+        }
+      };
+
+      await pullStep(['profiles']);
+      await pullStep(['exercises']);
+      await pullStep(['routines', 'routine_exercises']);
+      await pullStep(['workouts', 'workout_sets']);
+
+      // Sube la cola pendiente (outbox pattern).
+      try {
+        moved += await syncLocalQueueToCloud();
+      } catch (err) {
+        console.error(err);
+        hadError = true;
+      }
+
+      // Load local data into state — pass userId to avoid stale session closure
+      try {
+        await loadData(userId);
+      } catch (err) {
+        console.error('loadData after sync failed:', err);
+      }
+    } finally {
+      isSyncRunningRef.current = false;
     }
 
-    // Show the download overlay (nunca en modo silencioso)
-    if (!silent) {
-      setSyncOverlayMode('download');
-      setSyncSteps(resetSyncSteps());
-      setShowSyncOverlay(true);
+    // Estado final. sync.ts persiste el error, así que un fallo ocurrido en
+    // cualquier paso (aunque este no lanzara) igualmente se ve aquí.
+    const storedError = readSyncError();
+    if (hadError || storedError) {
+      setSyncStatus('error');
+      setSyncError(storedError ? storedError.message : 'No se pudo sincronizar con la nube.');
+      return;
     }
 
-    const sleep = (ms: number) => new Promise(res => setTimeout(res, ms));
-
-    // Step 1: Profile
-    setSyncSteps(prev => ({ ...prev, profile: 'syncing' }));
-    try {
-      await pullTableFromCloud('profiles');
-      setSyncSteps(prev => ({ ...prev, profile: 'completed' }));
-    } catch (err) {
-      console.error(err);
-      setSyncSteps(prev => ({ ...prev, profile: 'error' }));
-    }
-    await sleep(400);
-
-    // Step 2: Exercises
-    setSyncSteps(prev => ({ ...prev, exercises: 'syncing' }));
-    try {
-      await pullTableFromCloud('exercises');
-      setSyncSteps(prev => ({ ...prev, exercises: 'completed' }));
-    } catch (err) {
-      console.error(err);
-      setSyncSteps(prev => ({ ...prev, exercises: 'error' }));
-    }
-    await sleep(400);
-
-    // Step 3: Routines
-    setSyncSteps(prev => ({ ...prev, routines: 'syncing' }));
-    try {
-      await pullTableFromCloud('routines');
-      await pullTableFromCloud('routine_exercises');
-      setSyncSteps(prev => ({ ...prev, routines: 'completed' }));
-    } catch (err) {
-      console.error(err);
-      setSyncSteps(prev => ({ ...prev, routines: 'error' }));
-    }
-    await sleep(400);
-
-    // Step 4: Workouts
-    setSyncSteps(prev => ({ ...prev, workouts: 'syncing' }));
-    try {
-      await pullTableFromCloud('workouts');
-      await pullTableFromCloud('workout_sets');
-      setSyncSteps(prev => ({ ...prev, workouts: 'completed' }));
-    } catch (err) {
-      console.error(err);
-      setSyncSteps(prev => ({ ...prev, workouts: 'error' }));
-    }
-    await sleep(400);
-
-    // Step 5: Calendar / streak (also upload any pending queue)
-    setSyncSteps(prev => ({ ...prev, calendar: 'syncing' }));
-    try {
-      await syncLocalQueueToCloud();
-      setSyncSteps(prev => ({ ...prev, calendar: 'completed' }));
-    } catch (err) {
-      console.error(err);
-      setSyncSteps(prev => ({ ...prev, calendar: 'error' }));
-    }
-
-    // Load local data into state — pass userId to avoid stale session closure
-    try {
-      await loadData(userId);
-    } catch (err) {
-      console.error('loadData after sync failed:', err);
-    }
-
-    // 2026-10-05 (fix móvil): auto-cierre — no obligar al usuario a tocar el botón.
-    if (!silent) {
-      clearTimeout(safetyClose);
-      setTimeout(() => setShowSyncOverlay(false), 700);
-    }
-    isSyncRunningRef.current = false;
+    const finishedAt = new Date().toISOString();
+    recordSyncSuccess(finishedAt);
+    setLastSyncAt(finishedAt);
+    // Sin trabajo real y sin login manual → ni siquiera se confirma el éxito.
+    if (moved > 0 || opts.forceBar) setSyncStatus('success');
+    else setSyncStatus('idle');
   };
 
   const handleSaveProfile = async () => {
@@ -1150,13 +1321,14 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
         finalAvatarUrl = await compressAvatar(editAvatarUrl);
       }
 
-      const updated = {
+      // 2026-10-09 (Q8): el perfil sube con los datos físicos incluidos.
+      const updated = withBodyMetrics({
         ...profile,
         username: editUsername,
         avatar_url: finalAvatarUrl,
         clan: editClan,
         cursed_technique: editCursedTechnique
-      };
+      });
 
       // SPEC_007: Save to IndexedDB FIRST (immediate, local-first)
       // This guarantees persistence even if Supabase sync fails or network is lost
@@ -1172,24 +1344,43 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
       }
       setIsCameraActive(false);
 
-      // SPEC_007: Sync only the profile — no need to run full 5-step overlay
-      // Supabase sync is secondary; local data is already saved above
+      // SPEC_007: Sync only the profile — no need to run full 5-step flow.
+      // 2026-10-09 (Q3): se comunica con la barra fina, nunca con el modal.
       if (isSupabaseConfigured && session && navigator.onLine) {
-        setSyncOverlayMode('upload');
-        setSyncSteps({ profile: 'syncing', exercises: 'pending', routines: 'pending', workouts: 'pending', calendar: 'pending' });
-        setShowSyncOverlay(true);
+        setSyncStatus('syncing');
+        setSyncError(null);
         try {
+          // Un fallo anterior no debe pintar de rojo este guardado.
+          clearSyncError();
           await syncTableToCloud('profiles');
-          setSyncSteps(prev => ({ ...prev, profile: 'completed', exercises: 'completed', routines: 'completed', workouts: 'completed', calendar: 'completed' }));
+          const finishedAt = new Date().toISOString();
+          recordSyncSuccess(finishedAt);
+          setLastSyncAt(finishedAt);
+          setSyncStatus('success');
+          setPactStatus('¡Perfil guardado y sincronizado! ✅');
         } catch (err) {
           console.error('Profile sync failed (data saved locally):', err);
-          setSyncSteps(prev => ({ ...prev, profile: 'error' }));
+          // sync.ts ya persistió el motivo (localStorage + IndexedDB).
+          const stored = readSyncError();
+          setSyncStatus('error');
+          setSyncError(stored ? stored.message : 'No se pudo sincronizar el perfil.');
+          setPactStatus('Guardado localmente. Reintentando sincronización…');
+          // Reintento único en segundo plano; si vuelve a fallar, la cola local
+          // lo retomará en el próximo sync (outbox pattern).
+          setTimeout(async () => {
+            try {
+              await syncTableToCloud('profiles');
+              const retryAt = new Date().toISOString();
+              recordSyncSuccess(retryAt);
+              setLastSyncAt(retryAt);
+              setSyncStatus('success');
+              setPactStatus('¡Perfil sincronizado! ✅');
+            } catch (retryErr) {
+              console.warn('Profile sync retry failed (queued for next sync):', retryErr);
+            }
+          }, 3000);
         }
-        setPactStatus('¡Perfil guardado y sincronizado! ✅');
         setIsSealingPact(false);
-        // 2026-10-05 (fix móvil): auto-cierre también en el sync de perfil (si el
-        // paso falla, calendar queda 'pending' y el modal no tenía botón de salida).
-        setTimeout(() => setShowSyncOverlay(false), 900);
       } else {
         setPactStatus('¡Perfil guardado localmente! ✅');
         setIsSealingPact(false);
@@ -2292,27 +2483,38 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
       // mata la app durante el seed asincrónico, el wizard no vuelve a aparecer.
       localStorage.setItem('onboarding_completed', 'true');
       await setAppSetting('onboarding_completed', 'true');
-      const updatedProfile = {
+
+      // 2026-10-09 (Q6/Q8): los datos del asistente se persisten en localStorage
+      // Y en el perfil (que sube a la nube en el mismo saveRecord). Antes solo
+      // vivían en el navegador y se perdían al limpiar caché o cambiar de equipo.
+      localStorage.setItem('user_weight', onboardingWeight.toString());
+      localStorage.setItem('user_height', onboardingHeight.toString());
+      // 2026-10-09: antes el % grasa estaba hardcodeado a 14 y pisaba el valor que
+      // el usuario ya hubiera fijado en el perfil; ahora se respeta el existente.
+      const fatPct = Number.isFinite(userFatPct) && userFatPct > 0 ? userFatPct : 14;
+      localStorage.setItem('user_fat_pct', String(fatPct));
+      localStorage.setItem('weekly_goal_days', onboardingGoalDays.toString());
+      setUserWeight(onboardingWeight);
+      setUserHeight(onboardingHeight);
+      setUserFatPct(fatPct);
+      setWeeklyGoalDays(onboardingGoalDays);
+
+      const updatedProfile: Profile = {
         ...profile,
         username: onboardingUsername.trim() || 'Guerrero Z',
         avatar_url: onboardingAvatarUrl || profile.avatar_url,
         clan: onboardingClan,
-        cursed_technique: onboardingCursedTechnique
+        cursed_technique: onboardingCursedTechnique,
+        onboarding_completed: true,
+        weight: onboardingWeight,
+        height: onboardingHeight,
+        fat_percentage: fatPct,
+        goal_days: onboardingGoalDays
       };
       await setAppSetting('profile_username', updatedProfile.username);
       await setAppSetting('profile_avatar_url', updatedProfile.avatar_url);
       await saveRecord('profiles', updatedProfile, 'UPDATE');
       setProfile(updatedProfile);
-
-      localStorage.setItem('user_weight', onboardingWeight.toString());
-      localStorage.setItem('user_height', onboardingHeight.toString());
-      localStorage.setItem('user_fat_pct', '14');
-      setUserWeight(onboardingWeight);
-      setUserHeight(onboardingHeight);
-      setUserFatPct(14);
-
-      localStorage.setItem('weekly_goal_days', onboardingGoalDays.toString());
-      setWeeklyGoalDays(onboardingGoalDays);
 
       if (onboardingRoutineTemplate !== 'empty') {
         const loadedExercises = await getAllRecords<Exercise>('exercises');
@@ -3202,12 +3404,12 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
             {timerRemaining > 0 && (
               isTimerMinimized ? (
                 /* Minimized state: show compact banner with a maximize button */
-                <div role="status" aria-live="polite"  className="workout-rest-timer-banner" style={{ cursor: 'pointer' }} onClick={() => setIsTimerMinimized(false)}>
+                <div role="status" aria-live="polite"  className="workout-rest-timer-banner always-dark-surface" style={{ cursor: 'pointer' }} onClick={() => setIsTimerMinimized(false)}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
                     <div className="timer-circle-wrap">
                       <svg className="timer-circle-svg">
                         <circle cx="20" cy="20" r="17" stroke="rgba(255,255,255,0.05)" strokeWidth="2.5" fill="transparent" />
-                        <circle cx="20" cy="20" r="17" stroke="var(--accent-primary)" strokeWidth="2.5" fill="transparent" 
+                        <circle cx="20" cy="20" r="17" stroke="#f4a261" strokeWidth="2.5" fill="transparent" 
                           strokeDasharray="106.8"
                           strokeDashoffset={106.8 - (106.8 * timerRemaining) / timerDuration}
                         />
@@ -3216,7 +3418,9 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                     </div>
                     
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                      <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--accent-primary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      {/* 2026-10-09 (SPEC_015): acento fijo — en tema claro el token
+                          era terracota (#aa3015) y sobre este fondo oscuro daba 2.8:1 */}
+                      <span style={{ fontSize: '11px', fontWeight: '800', color: '#f4a261', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                         Intervalo de Recarga
                       </span>
                       <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>
@@ -3265,7 +3469,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
               ) : (
                 /* Full-screen rest overlay with JJK premium styling and backdrop blur */
                 <div 
-                  className="overlay-screen animate-slide"
+                  className="overlay-screen animate-slide always-dark-surface"
                   style={{
                     backgroundColor: 'rgba(7, 7, 10, 0.96)',
                     backdropFilter: 'blur(20px)',
@@ -3286,7 +3490,9 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                       <OnboardingMiniBar step={onboardingStep} onOpen={() => setOnboardingFromWorkout(true)} />
                     </div>
                   )}
-                  <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--accent-primary)', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '16px' }}>
+                  {/* 2026-10-09 (SPEC_015): acento fijo ámbar (el token era terracota
+                      en tema claro y no llegaba a AA sobre este fondo oscuro) */}
+                  <span style={{ fontSize: '11px', fontWeight: 800, color: '#f4a261', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '16px' }}>
                     ⚡ Intervalo de Recarga ⚡
                   </span>
                   
@@ -3298,7 +3504,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                         cx="100" 
                         cy="100" 
                         r="85" 
-                        stroke="var(--accent-primary)" 
+                        stroke="#f4a261" 
                         strokeWidth="6" 
                         fill="transparent" 
                         strokeDasharray="534.07"
@@ -3462,9 +3668,12 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                 <button
                   onClick={() => setIsExerciseTimerRunning(!isExerciseTimerRunning)}
                   style={{
-                    backgroundColor: isExerciseTimerRunning ? 'rgba(239, 68, 68, 0.15)' : 'rgba(255, 255, 255, 0.05)',
-                    border: '1px solid var(--border-color)',
-                    color: isExerciseTimerRunning ? '#ef4444' : '#f0f2f5',
+                    backgroundColor: isExerciseTimerRunning ? 'rgba(248, 113, 113, 0.18)' : 'rgba(255, 255, 255, 0.05)',
+                    /* 2026-10-09 (SPEC_015): bordes fijos — var(--border-color) era
+                       oscuro sobre el fondo siempre oscuro del widget, invisible. */
+                    border: `1px solid ${isExerciseTimerRunning ? 'rgba(248, 113, 113, 0.45)' : 'rgba(255, 255, 255, 0.18)'}`,
+                    /* 2026-10-09 (SPEC_015): #ef4444 daba 4.11:1; #f87171 pasa AA. */
+                    color: isExerciseTimerRunning ? '#f87171' : '#f0f2f5',
                     borderRadius: '8px',
                     padding: '6px 12px',
                     fontSize: '11px',
@@ -3483,7 +3692,8 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                   onClick={() => setExerciseTimeElapsed(0)}
                   style={{
                     backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                    border: '1px solid var(--border-color)',
+                    /* 2026-10-09 (SPEC_015): igual que arriba, borde fijo visible. */
+                    border: '1px solid rgba(255, 255, 255, 0.18)',
                     color: '#9ca3af',
                     borderRadius: '8px',
                     padding: '6px 10px',
@@ -4806,27 +5016,19 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                   </div>
                 </div>
                 <button 
-                  onClick={() => {
+                  onClick={async () => {
                     const w = prompt('Introduce tu peso actual (kg):', userWeight.toString());
-                    if (w !== null) {
-                      const parsedW = parseFloat(w) || userWeight;
-                      setUserWeight(parsedW);
-                      localStorage.setItem('user_weight', parsedW.toString());
-                      
-                      const f = prompt('Introduce tu porcentaje de grasa corporal (%):', userFatPct.toString());
-                      if (f !== null) {
-                        const parsedF = parseFloat(f) || userFatPct;
-                        setUserFatPct(parsedF);
-                        localStorage.setItem('user_fat_pct', parsedF.toString());
-                      }
+                    if (w === null) return;
+                    const parsedW = parseFloat(w) || userWeight;
 
-                      const h = prompt('Introduce tu altura actual (cm):', userHeight.toString());
-                      if (h !== null) {
-                        const parsedH = parseFloat(h) || userHeight;
-                        setUserHeight(parsedH);
-                        localStorage.setItem('user_height', parsedH.toString());
-                      }
-                    }
+                    const f = prompt('Introduce tu porcentaje de grasa corporal (%):', userFatPct.toString());
+                    const parsedF = f === null ? userFatPct : (parseFloat(f) || userFatPct);
+
+                    const h = prompt('Introduce tu altura actual (cm):', userHeight.toString());
+                    const parsedH = h === null ? userHeight : (parseFloat(h) || userHeight);
+
+                    // 2026-10-09 (Q8): sube a la nube además de guardarse en el navegador.
+                    await updateBodyMetrics(parsedW, parsedF, parsedH);
                   }}
                   className="btn-secondary"
                   style={{ padding: '6px 12px', fontSize: '11px', borderRadius: '20px', borderColor: 'rgba(255,255,255,0.1)', cursor: 'pointer' }}
@@ -5094,7 +5296,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
       {/* GLOSARIO DE TÉCNICAS (MODAL DE DOMINIO EXPANSIÓN) */}
       {showGlossary && (
         <div 
-          className="overlay-screen animate-slide"
+          className="overlay-screen animate-slide always-dark-surface"
           style={{ 
             backgroundColor: 'rgba(7, 7, 10, 0.96)', 
             backdropFilter: 'blur(16px)',
@@ -5305,7 +5507,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
       {/* GLOSARIO DE TÉCNICAS (MODAL DE DOMINIO EXPANSIÓN) */}
       {selectedExerciseForGlosario && (
         <div 
-          className="overlay-screen animate-slide"
+          className="overlay-screen animate-slide always-dark-surface"
           style={{ 
             backgroundColor: 'rgba(7, 7, 10, 0.96)', 
             backdropFilter: 'blur(16px)',
@@ -5427,185 +5629,126 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
         </div>
       )}
 
-      {/* Sellar Pacto - Sincronización Detallada */}
-      {showSyncOverlay && (
-        <div
-          className="overlay-screen animate-fade-in"
-          style={{ 
-            backgroundColor: 'rgba(7, 7, 10, 0.95)', 
-            backdropFilter: 'blur(20px)',
-            WebkitBackdropFilter: 'blur(20px)',
-            zIndex: 300,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '16px'
-          }}
-        >
-          <div role="status" aria-live="polite"  
+      {/* 2026-10-09 (Q5): barra de progreso de la rutina — solo mientras hay un
+          entreno activo; desaparece al terminarlo. No bloquea la interfaz. */}
+      {activeWorkout && routineTotalSets > 0 && (
+        <div className="floating-bar animate-fade-in" role="status" aria-live="polite">
+          <div
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={routineTotalSets}
+            aria-valuenow={routineDoneSets}
+            aria-label={`Progreso del entrenamiento: ${routineDoneSets} de ${routineTotalSets} series`}
             style={{
-              width: '100%',
-              maxWidth: '440px',
-              backgroundColor: 'var(--bg-secondary)',
-              border: '1.5px solid var(--border-color)',
-              borderRadius: '20px',
-              padding: '24px',
-              boxShadow: '0 10px 40px rgba(0, 0, 0, 0.6)',
+              pointerEvents: 'auto',
               display: 'flex',
-              flexDirection: 'column',
-              gap: '20px',
-              position: 'relative',
-              overflow: 'hidden'
+              alignItems: 'center',
+              gap: '10px',
+              padding: '8px 12px',
+              backgroundColor: 'var(--bg-secondary)',
+              border: '1px solid var(--border-color)',
+              borderLeft: '3px solid var(--accent-primary)',
+              borderRadius: '16px',
+              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.45)'
             }}
           >
-            <div style={{ textAlign: 'center' }}>
-              <div 
-                style={{ 
-                  width: '56px', 
-                  height: '56px', 
-                  borderRadius: '50%', 
-                  backgroundColor: 'rgba(28, 69, 149, 0.1)', 
-                  border: '1px solid rgba(28, 69, 149, 0.2)', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center',
-                  margin: '0 auto 12px'
-                }}
-              >
-                <Zap className="text-primary animate-pulse" size={28} />
-              </div>
-              <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-                {syncOverlayMode === 'download' ? 'Entrenamiento Z: Cargando' : 'Estableciendo Vínculo Z'}
-              </h3>
-              <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px', margin: 0 }}>
-                {syncOverlayMode === 'download'
-                  ? 'Restaurando tus datos Z desde la nube...'
-                  : 'Sincronizando tus datos Z con el planeta Kaito...'}
-              </p>
-            </div>
+            <span style={{ fontSize: '12px', fontWeight: 800, fontFamily: 'Outfit', color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
+              {routineDoneSets}/{routineTotalSets} series
+            </span>
+            <span className="routine-progress-track" aria-hidden="true">
+              <span className="routine-progress-fill" style={{ width: `${routineProgressPct}%` }}></span>
+            </span>
+            <span style={{ fontSize: '12px', fontWeight: 700, fontFamily: 'Outfit', color: 'var(--accent-primary)', whiteSpace: 'nowrap' }}>
+              {routineVolumeKg.toLocaleString('es-CO')} kg
+            </span>
+          </div>
+        </div>
+      )}
 
-            {/* Checklist */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', margin: '8px 0' }}>
+      {/* 2026-10-09 (Q3): barra fina de sincronización — reemplaza al modal
+          bloqueante "Reconocimiento al Chamán". No tapa la interfaz y solo se
+          materializa cuando tiene algo que decir:
+            · 'syncing' → hay un sync en curso (se retira sola a los 30s si algo
+              se cuelga; nunca bloquea el uso de la app)
+            · 'success' → confirmación breve del último guardado correcto
+            · 'error'   → se queda hasta que el usuario reintente o la cierre
+          Un arranque con datos intactos no muestra nada: sin barra, sin ruido.
+          Tocarla despliega el detalle (último guardado real + motivo del error). */}
+      {syncStatus !== 'idle' && (
+        <div className={`floating-bar animate-fade-in${activeWorkout ? ' pushed' : ''}`}>
+          <div
+            className={`sync-status-bar ${syncStatus}`}
+            role="status"
+            aria-live="polite"
+          >
+            <button
+              type="button"
+              className="sync-status-pill"
+              onClick={() => setSyncBarExpanded(prev => !prev)}
+              aria-expanded={syncBarExpanded}
+              aria-controls="sync-bar-detail"
+            >
+              {syncStatus === 'syncing' ? (
+                <span className="sync-spinner" aria-hidden="true"></span>
+              ) : syncStatus === 'error' ? (
+                <span className="sync-status-glyph sync-status-glyph-error" aria-hidden="true">✗</span>
+              ) : (
+                <span className="sync-status-glyph sync-status-glyph-ok" aria-hidden="true">✓</span>
+              )}
+              <span className="sync-status-label">
+                {syncStatus === 'syncing' && 'Sincronizando con la nube…'}
+                {syncStatus === 'success' && 'Datos guardados en la nube'}
+                {syncStatus === 'error' && 'No se pudo sincronizar'}
+              </span>
+              {/* Sin aria-hidden: TalkBack debe anunciar que el botón despliega
+                  el detalle (solo el icono ✗/✓ va oculto al lector). */}
+              <span className="sync-status-action">
+                {syncBarExpanded ? 'Ocultar' : 'Detalle'}
+              </span>
+            </button>
 
-              {/* 1. Profile */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: '10px', backgroundColor: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.04)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <User size={16} style={{ color: syncSteps.profile === 'syncing' ? 'var(--accent-primary)' : 'var(--text-secondary)' }} />
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-primary)' }}>
-                      {syncOverlayMode === 'download' ? 'Reconociendo al Chamán' : 'Identidad del Chamán'}
-                    </span>
-                    <span style={{ fontSize: '10px', color: 'var(--text-tertiary)' }}>
-                      {syncOverlayMode === 'download' ? 'Descargando nombre, clan, nivel y foto' : 'Subiendo nombre, clan, nivel y foto'}
-                    </span>
-                  </div>
+            {syncBarExpanded && (
+              <div id="sync-bar-detail" className="sync-status-detail">
+                <div className="sync-status-row">
+                  {/* Es el último SYNC correcto, no necesariamente un guardado:
+                      en un arranque sin novedad también se registra. */}
+                  <span className="sync-status-row-label">Última sincronización</span>
+                  <span className="sync-status-row-value">{formatSyncAge(lastSyncAt) ?? 'Todavía ninguna'}</span>
                 </div>
-                {syncSteps.profile === 'pending' && <div style={{ width: '12px', height: '12px', borderRadius: '50%', border: '2.5px solid var(--border-color)', flexShrink: 0 }}></div>}
-                {syncSteps.profile === 'syncing' && <div style={{ width: '16px', height: '16px', borderRadius: '50%', border: '2px solid var(--accent-primary)', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite', flexShrink: 0 }}></div>}
-                {syncSteps.profile === 'completed' && <span style={{ fontSize: '16px', fontWeight: 'bold', color: 'var(--accent-primary)', flexShrink: 0 }}>✓</span>}
-                {syncSteps.profile === 'error' && <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#ef4444', flexShrink: 0 }}>✗</span>}
-              </div>
-
-              {/* 2. Exercises */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: '10px', backgroundColor: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.04)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <Zap size={16} style={{ color: syncSteps.exercises === 'syncing' ? 'var(--accent-primary)' : 'var(--text-secondary)' }} />
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-primary)' }}>
-                      {syncOverlayMode === 'download' ? 'Recuperando Técnicas' : 'Técnicas Guardadas'}
-                    </span>
-                    <span style={{ fontSize: '10px', color: 'var(--text-tertiary)' }}>
-                      {syncOverlayMode === 'download' ? 'Cargando ejercicios personalizados' : 'Escaneando ejercicios personalizados'}
-                    </span>
-                  </div>
+                {syncError && (
+                  <p className="sync-status-error-msg">{syncError}</p>
+                )}
+                <div className="sync-status-buttons">
+                  <button
+                    type="button"
+                    className="btn-secondary sync-status-btn"
+                    onClick={() => {
+                      setSyncBarExpanded(false);
+                      if (session) runLoginSync(session.user.id, { forceBar: true });
+                    }}
+                  >
+                    Reintentar
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-secondary sync-status-btn"
+                    onClick={() => {
+                      setSyncBarExpanded(false);
+                      if (syncStatus === 'error') {
+                        // H2 (revisión 2026-10-09): "Cerrar" debe olvidar el fallo.
+                        // Sin esto el error seguía persistido en localStorage+IDB y
+                        // la barra roja reaparecía en cada arranque posterior aunque
+                        // nadie hubiera vuelto a fallar.
+                        clearSyncError();
+                        setSyncError(null);
+                        setSyncStatus('idle');
+                      }
+                    }}
+                  >
+                    Cerrar
+                  </button>
                 </div>
-                {syncSteps.exercises === 'pending' && <div style={{ width: '12px', height: '12px', borderRadius: '50%', border: '2.5px solid var(--border-color)', flexShrink: 0 }}></div>}
-                {syncSteps.exercises === 'syncing' && <div style={{ width: '16px', height: '16px', borderRadius: '50%', border: '2px solid var(--accent-primary)', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite', flexShrink: 0 }}></div>}
-                {syncSteps.exercises === 'completed' && <span style={{ fontSize: '16px', fontWeight: 'bold', color: 'var(--accent-primary)', flexShrink: 0 }}>✓</span>}
-                {syncSteps.exercises === 'error' && <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#ef4444', flexShrink: 0 }}>✗</span>}
               </div>
-
-              {/* 3. Routines */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: '10px', backgroundColor: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.04)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <BookOpen size={16} style={{ color: syncSteps.routines === 'syncing' ? 'var(--accent-primary)' : 'var(--text-secondary)' }} />
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-primary)' }}>
-                      {syncOverlayMode === 'download' ? 'Restaurando Dominios' : 'Dominios Forjados'}
-                    </span>
-                    <span style={{ fontSize: '10px', color: 'var(--text-tertiary)' }}>
-                      {syncOverlayMode === 'download' ? 'Descargando rutinas de entrenamiento' : 'Sincronizando rutinas y combinaciones'}
-                    </span>
-                  </div>
-                </div>
-                {syncSteps.routines === 'pending' && <div style={{ width: '12px', height: '12px', borderRadius: '50%', border: '2.5px solid var(--border-color)', flexShrink: 0 }}></div>}
-                {syncSteps.routines === 'syncing' && <div style={{ width: '16px', height: '16px', borderRadius: '50%', border: '2px solid var(--accent-primary)', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite', flexShrink: 0 }}></div>}
-                {syncSteps.routines === 'completed' && <span style={{ fontSize: '16px', fontWeight: 'bold', color: 'var(--accent-primary)', flexShrink: 0 }}>✓</span>}
-                {syncSteps.routines === 'error' && <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#ef4444', flexShrink: 0 }}>✗</span>}
-              </div>
-
-              {/* 4. Workouts */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: '10px', backgroundColor: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.04)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <Award size={16} style={{ color: syncSteps.workouts === 'syncing' ? 'var(--accent-primary)' : 'var(--text-secondary)' }} />
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-primary)' }}>
-                      {syncOverlayMode === 'download' ? 'Recuperando Registros' : 'Registros de Combate'}
-                    </span>
-                    <span style={{ fontSize: '10px', color: 'var(--text-tertiary)' }}>
-                      {syncOverlayMode === 'download' ? 'Historial de combates y series' : 'Subiendo entrenamientos y series'}
-                    </span>
-                  </div>
-                </div>
-                {syncSteps.workouts === 'pending' && <div style={{ width: '12px', height: '12px', borderRadius: '50%', border: '2.5px solid var(--border-color)', flexShrink: 0 }}></div>}
-                {syncSteps.workouts === 'syncing' && <div style={{ width: '16px', height: '16px', borderRadius: '50%', border: '2px solid var(--accent-primary)', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite', flexShrink: 0 }}></div>}
-                {syncSteps.workouts === 'completed' && <span style={{ fontSize: '16px', fontWeight: 'bold', color: 'var(--accent-primary)', flexShrink: 0 }}>✓</span>}
-                {syncSteps.workouts === 'error' && <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#ef4444', flexShrink: 0 }}>✗</span>}
-              </div>
-
-              {/* 5. Calendar */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: '10px', backgroundColor: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.04)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <Calendar size={16} style={{ color: syncSteps.calendar === 'syncing' ? 'var(--accent-primary)' : 'var(--text-secondary)' }} />
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-primary)' }}>
-                      {syncOverlayMode === 'download' ? 'Restaurando el Pacto' : 'Calendario del Pacto'}
-                    </span>
-                    <span style={{ fontSize: '10px', color: 'var(--text-tertiary)' }}>
-                      {syncOverlayMode === 'download' ? 'Racha y calendario de batallas' : 'Estableciendo racha y fechas'}
-                    </span>
-                  </div>
-                </div>
-                {syncSteps.calendar === 'pending' && <div style={{ width: '12px', height: '12px', borderRadius: '50%', border: '2.5px solid var(--border-color)', flexShrink: 0 }}></div>}
-                {syncSteps.calendar === 'syncing' && <div style={{ width: '16px', height: '16px', borderRadius: '50%', border: '2px solid var(--accent-primary)', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite', flexShrink: 0 }}></div>}
-                {syncSteps.calendar === 'completed' && <span style={{ fontSize: '16px', fontWeight: 'bold', color: 'var(--accent-primary)', flexShrink: 0 }}>✓</span>}
-                {syncSteps.calendar === 'error' && <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#ef4444', flexShrink: 0 }}>✗</span>}
-              </div>
-
-            </div>
-
-            {/* Final action button — appears when done */}
-            {syncSteps.calendar === 'completed' && (
-              <button 
-                onClick={() => {
-                  setShowSyncOverlay(false);
-                  setActiveTab('hoy');
-                }}
-                style={{ 
-                  padding: '12px', 
-                  fontSize: '13px', 
-                  borderRadius: '12px', 
-                  fontWeight: 'bold', 
-                  marginTop: '10px',
-                  width: '100%',
-                  background: 'linear-gradient(135deg, var(--accent-primary), var(--accent-secondary, var(--accent-primary)))',
-                  color: '#000',
-                  border: 'none',
-                  cursor: 'pointer'
-                }}
-              >
-                {syncOverlayMode === 'download' ? '⚡ Pacto Restaurado ⚡' : '⚡ Pacto Sellado ⚡'}
-              </button>
             )}
           </div>
         </div>
