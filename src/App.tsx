@@ -48,12 +48,15 @@ import type {
   WorkoutSet
 } from './db/localDb';
 import { CalendarKi } from './components/CalendarKi';
-// import ShenronRewardModal from './components/ShenronRewardModal'; // Comentado temporalmente para evitar error TS6133
+import { ShenronRewardModal } from './components/ShenronRewardModal';
 
 import { seedDatabase } from './db/seed';
 import { supabase, isSupabaseConfigured } from './db/supabaseClient';
 import type { Session } from '@supabase/supabase-js';
 import { syncLocalQueueToCloud, migrateGuestDataToUser, syncTableToCloud, pullTableFromCloud, readSyncError, readSyncAt, restoreSyncStateFromIdb, recordSyncSuccess, clearSyncError } from './db/sync';
+
+// 2026-10-13: bonus de Ki (XP) al reunir las 7 esferas y reclamar a Shenron.
+const SHENRON_BONUS_KI = 70;
 
 // Web Audio API beep for rest timer completion
 const playBeep = () => {
@@ -163,7 +166,7 @@ function App() {
   });
 
   
-const [, setShowShenronModal] = useState<boolean>(false);
+const [showShenronModal, setShowShenronModal] = useState<boolean>(false);
 
   useEffect(() => {
     try {
@@ -653,12 +656,18 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
   // que un fallo aquí también se ve en la barra y se reintenta solo.
   const flushPendingQueue = async () => {
     if (!isSupabaseConfigured || !session || !navigator.onLine) return;
+    // 2026-10-13: protección de concurrencia — handleOnline y visibilitychange
+    // pueden dispararse a la vez y lanzar dos subidas paralelas sobre la misma
+    // cola FIFO, corrompiendo el outbox. Se reutiliza el mismo guard que
+    // runLoginSync.
+    if (isSyncRunningRef.current) return;
     // Una cola vacía no debe hacer parpadear la barra.
     try {
       const queue = await getAllRecords('sync_queue');
       if (queue.length === 0) return;
     } catch { return; }
 
+    isSyncRunningRef.current = true;
     setSyncStatus('syncing');
     setSyncError(null);
     clearSyncError();
@@ -677,6 +686,8 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
       const stored = readSyncError();
       setSyncStatus('error');
       setSyncError(stored ? stored.message : 'No se pudo subir tus datos a la nube.');
+    } finally {
+      isSyncRunningRef.current = false;
     }
   };
 
@@ -1347,6 +1358,13 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
       // SPEC_007: Sync only the profile — no need to run full 5-step flow.
       // 2026-10-09 (Q3): se comunica con la barra fina, nunca con el modal.
       if (isSupabaseConfigured && session && navigator.onLine) {
+        // 2026-10-13: protección de concurrencia — no pisar el syncStatus de un
+        // runLoginSync/flushPendingQueue que esté en curso.
+        if (isSyncRunningRef.current) {
+          setIsSealingPact(false);
+          return;
+        }
+        isSyncRunningRef.current = true;
         setSyncStatus('syncing');
         setSyncError(null);
         try {
@@ -1379,6 +1397,8 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
               console.warn('Profile sync retry failed (queued for next sync):', retryErr);
             }
           }, 3000);
+        } finally {
+          isSyncRunningRef.current = false;
         }
         setIsSealingPact(false);
       } else {
@@ -3602,6 +3622,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                     {/* Minimize Overlay */}
                     <button 
                       onClick={() => setIsTimerMinimized(true)}
+                      aria-label="Minimizar descanso"
                       style={{
                         height: '40px',
                         background: 'transparent',
@@ -5754,6 +5775,12 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
         </div>
       )}
 
+      {/* SHENRON REWARD MODAL — 2026-10-13: reconectado (antes commented out y el botón de CalendarKi no hacía nada) */}
+      <ShenronRewardModal
+        isOpen={showShenronModal}
+        onClose={() => setShowShenronModal(false)}
+        bonusKi={SHENRON_BONUS_KI}
+      />
     </div>
   );
 }
