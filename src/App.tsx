@@ -1050,7 +1050,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
       if (activeState) {
         console.log('Restoring active workout session from IndexedDB:', activeState);
         const activeW: Workout = {
-          id: activeState.startedAt ? `${activeState.routineId}-active` : generateUUID(),
+          id: activeState.workoutId ?? generateUUID(),
           user_id: userId,
           routine_id: activeState.routineId,
           started_at: activeState.startedAt,
@@ -1927,6 +1927,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
     // SPEC_007: Persist workout start to IndexedDB for crash/interrupt recovery
     saveActiveWorkoutState({
       routineId: routine.id,
+      workoutId: workoutId,
       routineName: routine.name,
       exercises: loadedExercises,
       currentExerciseIndex: 0,
@@ -1984,6 +1985,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                   }, {} as Record<string, WorkoutSet[]>);
                   saveActiveWorkoutState({
                     routineId: activeRoutine.id,
+                    workoutId: activeWorkout?.id ?? generateUUID(),
                     routineName: activeRoutine.name,
                     exercises: activeExercises,
                     currentExerciseIndex: activeExerciseIndex,

@@ -13,6 +13,9 @@ function isPermanentSyncError(err: unknown): boolean {
   const code = (err as { code?: string })?.code;
   if (code === '42703' || code === '42P01' || code === 'PGRST204') return true;
   const message = (err as { message?: string })?.message || '';
+  // UUID malformado (p. ej. el pseudo-id heredado `<routineId>-active`): nunca
+  // se arregla reintentando, así que se descarta para no bloquear la cola FIFO.
+  if (code === '22P02' || /invalid input syntax for type uuid/i.test(message)) return true;
   return /does not exist|not found in schema cache|schema cache/i.test(message);
 }
 

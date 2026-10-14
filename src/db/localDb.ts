@@ -90,6 +90,11 @@ export interface SyncQueueItem {
 export interface ActiveWorkoutState {
   id: 'current'; // singleton key
   routineId: string;
+  // UUID real del entreno en curso. Se persiste para que, tras un crash/lock,
+  // la restauración reutilice el mismo UUID válido en lugar de inventar un
+  // pseudo-id `<routineId>-active` que Supabase rechaza
+  // ("invalid input syntax for type uuid") y que bloqueaba la cola de sync.
+  workoutId: string;
   routineName: string;
   exercises: Exercise[];       // full exercise list for the session
   currentExerciseIndex: number;
