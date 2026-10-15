@@ -9,27 +9,36 @@
 :root,
 :root[data-theme="dark"],
 .dark {
-  /* Dark Mode: Cámara del Tiempo / Espacio Profundo */
+  /* Dark Mode: Cámara del Tiempo / Espacio Profundo (Chronos Gen 2) */
   --bg-primary: #10131e;
-  --bg-secondary: #1c202e;
-  --bg-tertiary: #24293a;
+  --bg-secondary: #181b26;
+  --bg-tertiary: #1c1f2a;
   --bg-surface-elevated: #272935;
   --bg-accent: rgba(244, 162, 97, 0.12);
 
-  --text-primary: #f0f2f5;
-  --text-secondary: #9ca3af;
-  --text-tertiary: #6b7280;
+  --text-primary: #e0e1f1;
+  --text-secondary: #d8c2b5;
+  --text-tertiary: #94a3b8;
 
   --accent-primary: #f4a261; /* Sun Ki Amber */
-  --accent-secondary: #2a9d8f; /* Scouter Teal */
-  --accent-tertiary: #ffd700; /* SSJ Dragon Ball Gold */
-  --accent-alert: #e76f51; /* Terracotta Red PR */
+  --accent-secondary: #6fd8c8; /* Scouter Cyan */
+  --accent-tertiary: #ffd700; /* SSJ Gold */
+  --accent-alert: #e05638; /* Capsule Vermilion */
 
-  --border-color: rgba(255, 255, 255, 0.08);
-  --border-color-glow: rgba(244, 162, 97, 0.25);  --card-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  --border-color: #2e354b;
+  --border-color-glow: rgba(244, 162, 97, 0.25);
+  --card-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
 
-  /* Headline font (Outfit) - usado por var(--font-headline) */
+  /* Tokens compartidos (antes en el bloque legacy Dragon Ball, movidos el
+     2026-10-14 al eliminar esa paleta; se usan en App.tsx y en index.css) */
+  --accent-glow: rgba(244, 162, 97, 0.15);
+  --border-radius-smooth: 16px;
+  --border-radius-card: 20px;
+  --border-radius-pill: 9999px;
+  --font-sans: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
   --font-headline: 'Outfit', 'Inter', system-ui, sans-serif;
+  --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-bounce: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 :root[data-theme="light"],
 .light {
@@ -52,6 +61,15 @@
   --border-color: rgba(0, 0, 0, 0.08);
   --border-color-glow: rgba(170, 48, 21, 0.2);
   --card-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+
+  /* Tokens compartidos (misma copia que el bloque oscuro) */
+  --accent-glow: rgba(170, 48, 21, 0.15);
+  --border-radius-smooth: 16px;
+  --border-radius-card: 20px;
+  --border-radius-pill: 9999px;
+  --font-sans: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
+  --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-bounce: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 /* Material Symbols font configuration */
@@ -190,37 +208,11 @@
   box-shadow: 0 4px 12px rgba(244, 162, 97, 0.35);
 }
 
-:root {
-  /* Colors - Dragon Ball Theme */
-  --bg-primary: #01080a; /* Space/Universe Black */
-  --bg-secondary: #0d1117; /* Gi Surface Level 1 */
-  --bg-tertiary: #161b22; /* Gi Surface Level 2 */
-  --bg-accent: rgba(28, 69, 149, 0.08); /* Gi Blue accent bg */
-  
-  --text-primary: #e7e5e8; /* Off-White */
-  --text-secondary: #8b949e; /* Muted Gray */
-  --text-tertiary: #484f58; /* Muted Outline */
-  
-  --accent-primary: #1c4595; /* Goku Gi Blue */
-  --accent-secondary: #e76a24; /* Super Saiyan Orange */
-  --accent-tertiary: #fbbc42; /* Dragon Ball Star Yellow */
-  
-  --accent-glow: rgba(231, 106, 36, 0.15); /* Ki Glow */
-  --border-color: rgba(255, 255, 255, 0.08); /* Border Subtle */
-  --border-color-glow: rgba(231, 106, 36, 0.2);
-  
-  /* Borders & Spacing */
-  --border-radius-smooth: 16px;
-  --border-radius-card: 20px;
-  --border-radius-pill: 9999px;
-  
-  /* Fonts */
-  --font-sans: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
-  
-  /* Animations */
-  --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-bounce: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
+/* 2026-10-14: eliminado el bloque legacy ":root { Colors - Dragon Ball Theme }"
+   (bg #01080a, azul Gi #1c4595, naranja #e76a24...). Estaba DESPUÉS en la
+   cascada que los bloques de tema y pisaba sus valores en carga inicial.
+   Sus tokens compartidos (--accent-glow, --border-radius-*, --font-sans,
+   --transition-*) se movieron arriba a los bloques dark y light. */
 
 * {
   box-sizing: border-box;
@@ -280,7 +272,7 @@ input[type="password"]::placeholder {
     box-shadow: 0 0 15px var(--accent-glow);
   }
   50% {
-    box-shadow: 0 0 25px rgba(168, 85, 247, 0.6);
+    box-shadow: 0 0 25px rgba(244, 162, 97, 0.6);
   }
 }
 
@@ -621,7 +613,7 @@ input[type="password"]::placeholder {
   border-radius: 50%;
   border: 2px solid var(--accent-primary);
   object-fit: cover;
-  box-shadow: 0 0 10px rgba(168, 85, 247, 0.2);
+  box-shadow: 0 0 10px rgba(244, 162, 97, 0.2);
 }
 
 .profile-details {
@@ -707,9 +699,9 @@ input[type="password"]::placeholder {
 }
 
 .tab-button.active .tab-icon-wrapper {
-  background-color: rgba(168, 85, 247, 0.15);
+  background-color: rgba(244, 162, 97, 0.15);
   border-color: var(--accent-primary);
-  box-shadow: 0 0 10px rgba(168, 85, 247, 0.3);
+  box-shadow: 0 0 10px rgba(244, 162, 97, 0.3);
 }
 
 .tab-button svg {
@@ -822,14 +814,14 @@ input[type="password"]::placeholder {
 .calendar-day-box.today {
   border-color: var(--accent-primary);
   color: var(--accent-primary);
-  box-shadow: 0 0 8px rgba(168, 85, 247, 0.15);
+  box-shadow: 0 0 8px rgba(244, 162, 97, 0.15);
 }
 
 .calendar-day-box.completed {
   background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
   border: none;
   color: white;
-  box-shadow: 0 4px 10px rgba(168, 85, 247, 0.3);
+  box-shadow: 0 4px 10px rgba(244, 162, 97, 0.3);
 }
 
 /* Lists and Routine Items */
@@ -857,7 +849,7 @@ input[type="password"]::placeholder {
 
 .routine-item-btn:hover {
   border-color: var(--accent-primary);
-  background-color: rgba(168, 85, 247, 0.02);
+  background-color: rgba(244, 162, 97, 0.02);
 }
 
 .routine-name {
@@ -983,8 +975,8 @@ input[type="password"]::placeholder {
   font-weight: 700;
   text-transform: uppercase;
   color: var(--accent-primary);
-  background-color: rgba(168, 85, 247, 0.1);
-  border: 1px solid rgba(168, 85, 247, 0.2);
+  background-color: rgba(244, 162, 97, 0.1);
+  border: 1px solid rgba(244, 162, 97, 0.2);
   padding: 3px 8px;
   border-radius: 4px;
   letter-spacing: 0.5px;
@@ -1064,8 +1056,8 @@ input[type="password"]::placeholder {
 }
 
 .set-row.completed {
-  background-color: rgba(168, 85, 247, 0.04);
-  border-color: rgba(168, 85, 247, 0.15);
+  background-color: rgba(244, 162, 97, 0.04);
+  border-color: rgba(244, 162, 97, 0.15);
 }
 
 .set-number {
@@ -1121,7 +1113,7 @@ input[type="password"]::placeholder {
   background-color: var(--accent-primary);
   border-color: var(--accent-primary);
   color: white;
-  box-shadow: 0 4px 10px rgba(168, 85, 247, 0.3);
+  box-shadow: 0 4px 10px rgba(244, 162, 97, 0.3);
 }
 
 /* Buttons */
@@ -1135,13 +1127,13 @@ input[type="password"]::placeholder {
   border-radius: 10px;
   cursor: pointer;
   transition: var(--transition-smooth);
-  box-shadow: 0 4px 12px rgba(168, 85, 247, 0.25);
+  box-shadow: 0 4px 12px rgba(244, 162, 97, 0.25);
   font-family: var(--font-sans);
 }
 
 .btn-primary:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(168, 85, 247, 0.35);
+  box-shadow: 0 6px 16px rgba(244, 162, 97, 0.35);
 }
 
 .btn-secondary {
@@ -1234,15 +1226,15 @@ input[type="password"]::placeholder {
    valor que esos tokens ya tenían en el tema oscuro. Tokens globales intactos. */
 .always-dark-surface {
   --bg-primary: #16181f;
-  --text-primary: #f0f2f5;
-  --text-secondary: #9ca3af;
-  --text-tertiary: #9ca3af;
+  --text-primary: #e0e1f1;
+  --text-secondary: #d8c2b5;
+  --text-tertiary: #94a3b8;
   --border-color: rgba(255, 255, 255, 0.18);
 }
 .always-dark-surface .btn-secondary {
   background-color: #16181f;
   border-color: rgba(255, 255, 255, 0.18);
-  color: #f0f2f5;
+  color: #e0e1f1;
 }
 .always-dark-surface .btn-secondary:hover {
   border-color: #f4a261;
@@ -1251,7 +1243,7 @@ input[type="password"]::placeholder {
 /* El primario conserva el degradado del tema oscuro con texto oscuro (10.6:1);
    con el terracota del tema claro el texto blanco no llegaba a AA. */
 .always-dark-surface .btn-primary {
-  background: linear-gradient(135deg, #f4a261, #2a9d8f);
+  background: linear-gradient(135deg, #f4a261, #6fd8c8);
   color: #10131e;
 }
 
@@ -1318,7 +1310,7 @@ input[type="password"]::placeholder {
 
 .timer-ctrl-btn:hover {
   color: var(--accent-primary);
-  background-color: rgba(168, 85, 247, 0.05);
+  background-color: rgba(244, 162, 97, 0.05);
 }
 
 /* Search Exercise bar */
@@ -1452,9 +1444,9 @@ input[type="password"]::placeholder {
 }
 
 .checkbox-row.selected {
-  background-color: rgba(168, 85, 247, 0.05);
+  background-color: rgba(244, 162, 97, 0.05);
   color: var(--accent-primary);
-  border-color: rgba(168, 85, 247, 0.1);
+  border-color: rgba(244, 162, 97, 0.1);
   font-weight: 600;
 }
 
@@ -1534,14 +1526,14 @@ input[type="password"]::placeholder {
   width: 96px;
   height: 96px;
   border-radius: 50%;
-  background-color: rgba(168, 85, 247, 0.1);
+  background-color: rgba(244, 162, 97, 0.1);
   border: 2px solid var(--accent-primary);
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--accent-primary);
   margin-bottom: 24px;
-  box-shadow: 0 0 30px rgba(168, 85, 247, 0.2);
+  box-shadow: 0 0 30px rgba(244, 162, 97, 0.2);
 }
 
 .lvl-title {

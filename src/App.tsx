@@ -246,6 +246,23 @@ const [showShenronModal, setShowShenronModal] = useState<boolean>(false);
   const [levelUpInfo, setLevelUpInfo] = useState<{ oldLevel: number; newLevel: number; xpEarned: number } | null>(null);
   const [showBlackFlash, setShowBlackFlash] = useState(false); // Jujutsu personal record burst
 
+  // 2026-10-14 (Stitch Gen 2): pantalla de transición "Siguiente Ejercicio"
+  // y pantalla de "Resumen de Rutina" al completar el entreno.
+  const [showExerciseTransition, setShowExerciseTransition] = useState(false);
+  const [transitionTargetIndex, setTransitionTargetIndex] = useState(0);
+  const [equipmentConfirmed, setEquipmentConfirmed] = useState(false);
+  const [workoutSummary, setWorkoutSummary] = useState<{
+    durationMin: number;
+    volumeKg: number;
+    setsDone: number;
+    setsTotal: number;
+    executionPct: number;
+    xpEarned: number;
+    perExercise: { name: string; category: string; setsDone: number; setsTotal: number; volumeKg: number }[];
+  } | null>(null);
+  const [summaryTab, setSummaryTab] = useState<'resumen' | 'desglose' | 'beneficios' | 'recuperacion'>('resumen');
+  const [isClaiming, setIsClaiming] = useState(false);
+
   // Profile Editor Modal State
 
   const [editUsername, setEditUsername] = useState('');
@@ -2048,7 +2065,50 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
   };
 
   // End active Workout and award XP
-  const finishWorkout = async () => {
+  // 2026-10-14 (Stitch Gen 2): "Completar" ya no guarda directamente. Calcula la
+  // telemetría del entreno y abre la pantalla de Resumen de Rutina; el guardado
+  // real ocurre al pulsar "Reclamar logro y guardar rutina" (claimWorkout).
+  const finishWorkout = () => {
+    if (!activeWorkout || !profile) return;
+
+    const completedSets = activeWorkoutSets.filter((s) => s.is_completed);
+    const allSetsCompleted = activeWorkoutSets.every((s) => s.is_completed);
+    const durationMs = Date.now() - new Date(activeWorkout.started_at).getTime();
+    const durationMin = Math.max(1, Math.round(durationMs / 60000));
+    const volumeKg = completedSets.reduce((sum, s) => sum + (s.weight || 0) * (s.reps || 0), 0);
+
+    let xpEarned = 100 + completedSets.length * 10;
+    if (allSetsCompleted && activeWorkoutSets.length > 0) xpEarned += 25;
+
+    const perExercise = activeExercises.map((ex) => {
+      const exSets = activeWorkoutSets.filter((s) => s.exercise_id === ex.id);
+      const exDone = exSets.filter((s) => s.is_completed);
+      return {
+        name: ex.name,
+        category: ex.category,
+        setsDone: exDone.length,
+        setsTotal: exSets.length,
+        volumeKg: exDone.reduce((sum, s) => sum + (s.weight || 0) * (s.reps || 0), 0)
+      };
+    });
+
+    setWorkoutSummary({
+      durationMin,
+      volumeKg,
+      setsDone: completedSets.length,
+      setsTotal: activeWorkoutSets.length,
+      executionPct: activeWorkoutSets.length > 0
+        ? Math.round((completedSets.length / activeWorkoutSets.length) * 100)
+        : 0,
+      xpEarned,
+      perExercise
+    });
+    setSummaryTab('resumen');
+  };
+
+  // Guardado real del entreno (antes era finishWorkout). Se invoca desde el
+  // botón "Reclamar logro y guardar rutina" de la pantalla de Resumen.
+  const claimWorkout = async () => {
     if (!activeWorkout || !profile) return;
 
     const completedTime = new Date().toISOString();
@@ -2101,6 +2161,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
     setWorkouts(await getAllRecords<Workout>('workouts'));
     setWorkoutSets(await getAllRecords<WorkoutSet>('workout_sets'));
 
+    setWorkoutSummary(null);
     setActiveWorkout(null);
     setActiveRoutine(null);
     setActiveWorkoutSets([]);
@@ -2243,7 +2304,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
     return (
       <div className="app-container flex flex-col justify-center items-center px-6 py-12 min-h-screen bg-background text-on-background relative overflow-hidden" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: '100svh', padding: '24px' }}>
         {/* Decorative elements */}
-        <div className="absolute -top-32 -right-32 w-64 h-64 rounded-full bg-purple-500/10 blur-3xl pointer-events-none" />
+        <div className="absolute -top-32 -right-32 w-64 h-64 rounded-full bg-amber-500/10 blur-3xl pointer-events-none" />
         <div className="absolute -bottom-32 -left-32 w-64 h-64 rounded-full bg-lime-500/10 blur-3xl pointer-events-none" />
         
         <div className="w-full max-w-sm z-10 flex flex-col gap-6" style={{ width: '100%', maxWidth: '360px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -3093,16 +3154,16 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
           <div 
             className="fixed inset-0 flex flex-col items-center justify-center z-50 animate-pop"
             style={{ 
-              background: 'radial-gradient(circle, rgba(0,0,0,0.95) 30%, rgba(168,85,247,0.3) 100%)',
+              background: 'radial-gradient(circle, rgba(0,0,0,0.95) 30%, rgba(244,162,97,0.3) 100%)',
               border: '4px solid var(--accent-primary)',
-              boxShadow: '0 0 100px rgba(168,85,247,0.6)'
+              boxShadow: '0 0 100px rgba(244,162,97,0.6)'
             }}
           >
-            <Zap size={72} className="text-purple-400" fill="currentColor" style={{ filter: 'drop-shadow(0 0 20px #a855f7)', animation: 'pulseGlow 0.4s infinite' }} />
+            <Zap size={72} className="text-[#f4a261]" fill="currentColor" style={{ filter: 'drop-shadow(0 0 20px #f4a261)', animation: 'pulseGlow 0.4s infinite' }} />
             <h1 className="lvl-title" style={{ fontSize: '42px', letterSpacing: '1px', marginTop: '16px' }}>
               DESTELLO NEGRO
             </h1>
-            <p style={{ color: '#fff', fontSize: '16px', fontWeight: 'bold', textShadow: '0 0 8px #a855f7', textTransform: 'uppercase' }}>
+            <p style={{ color: '#fff', fontSize: '16px', fontWeight: 'bold', textShadow: '0 0 8px #f4a261', textTransform: 'uppercase' }}>
               ¡BLACK FLASH! ⚡
             </p>
             <p style={{ color: 'var(--text-secondary)', fontSize: '12px', marginTop: '8px' }}>
@@ -3663,7 +3724,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                 backgroundColor: 'rgba(10, 10, 15, 0.95)',
                 backdropFilter: 'blur(12px)',
                 WebkitBackdropFilter: 'blur(12px)',
-                border: '1.5px solid #2a9d8f',
+                border: '1.5px solid #6fd8c8',
                 borderRadius: '14px',
                 padding: '10px 16px',
                 display: 'flex',
@@ -3674,14 +3735,14 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{ fontSize: '18px', fontWeight: 900, color: '#f0f2f5', fontVariantNumeric: 'tabular-nums', letterSpacing: '0.5px' }}>
+                <span style={{ fontSize: '18px', fontWeight: 900, color: '#e0e1f1', fontVariantNumeric: 'tabular-nums', letterSpacing: '0.5px' }}>
                   {formatExerciseTime(exerciseTimeElapsed)}
                 </span>
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                   <span style={{ fontSize: '9px', color: '#f4a261', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px' }}>
                     Cronómetro
                   </span>
-                  <span style={{ fontSize: '10px', color: '#9ca3af' }}>
+                  <span style={{ fontSize: '10px', color: '#94a3b8' }}>
                     {isCardioOrStretch ? 'Cardio activo ⚡' : 'Misión en curso'}
                   </span>
                 </div>
@@ -3696,7 +3757,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                        oscuro sobre el fondo siempre oscuro del widget, invisible. */
                     border: `1px solid ${isExerciseTimerRunning ? 'rgba(248, 113, 113, 0.45)' : 'rgba(255, 255, 255, 0.18)'}`,
                     /* 2026-10-09 (SPEC_015): #ef4444 daba 4.11:1; #f87171 pasa AA. */
-                    color: isExerciseTimerRunning ? '#f87171' : '#f0f2f5',
+                    color: isExerciseTimerRunning ? '#f87171' : '#e0e1f1',
                     borderRadius: '8px',
                     padding: '6px 12px',
                     fontSize: '11px',
@@ -3717,7 +3778,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                     backgroundColor: 'rgba(255, 255, 255, 0.05)',
                     /* 2026-10-09 (SPEC_015): igual que arriba, borde fijo visible. */
                     border: '1px solid rgba(255, 255, 255, 0.18)',
-                    color: '#9ca3af',
+                    color: '#94a3b8',
                     borderRadius: '8px',
                     padding: '6px 10px',
                     fontSize: '11px',
@@ -3742,7 +3803,14 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
               </button>
               <button
                 disabled={activeExerciseIndex === activeExercises.length - 1}
-                onClick={() => setActiveExerciseIndex(prev => prev + 1)}
+                onClick={() => {
+                  const next = activeExerciseIndex + 1;
+                  if (next < activeExercises.length) {
+                    setTransitionTargetIndex(next);
+                    setEquipmentConfirmed(false);
+                    setShowExerciseTransition(true);
+                  }
+                }}
                 className="btn-primary"
                 style={{ flex: 1 }}
               >
@@ -3753,18 +3821,481 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
           </div>
         )}
 
+        {/* 2026-10-14 (Stitch Gen 2): Pantalla de transición "Siguiente Ejercicio" —
+            celebra el ejercicio completado y presenta el próximo con su protocolo. */}
+        {activeWorkout && showExerciseTransition && (() => {
+          const fromEx = activeExercises[activeExerciseIndex];
+          const toEx = activeExercises[transitionTargetIndex];
+          if (!fromEx || !toEx) return null;
+          const fromSets = activeWorkoutSets.filter(s => s.exercise_id === fromEx.id);
+          const fromDone = fromSets.filter(s => s.is_completed);
+          const fromVolume = fromDone.reduce((sum, s) => sum + (s.weight || 0) * (s.reps || 0), 0);
+          const fromCompleted = fromSets.length > 0 && fromDone.length === fromSets.length;
+          const toSets = activeWorkoutSets.filter(s => s.exercise_id === toEx.id);
+          const toFirst = toSets[0];
+
+          const goToTarget = () => {
+            setShowExerciseTransition(false);
+            setActiveExerciseIndex(transitionTargetIndex);
+          };
+
+          return (
+            <div
+              className="overlay-screen animate-slide always-dark-surface"
+              style={{ zIndex: 160, overflowY: 'auto', paddingBottom: '32px' }}
+            >
+              {/* Header: rutina + contador de ejercicio */}
+              <header className="overlay-header" style={{ alignItems: 'center' }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <span className="overlay-header-title-sub">{activeRoutine?.name}</span>
+                  <h2 className="overlay-header-title" style={{ fontSize: '15px' }}>
+                    <span
+                      style={{
+                        color: 'var(--accent-primary)',
+                        border: '1px solid rgba(244, 162, 97, 0.2)',
+                        borderRadius: '9999px',
+                        padding: '2px 10px',
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        textTransform: 'uppercase'
+                      }}
+                    >
+                      • Ejercicio {transitionTargetIndex + 1} de {activeExercises.length}
+                    </span>
+                  </h2>
+                </div>
+                <button
+                  onClick={() => setShowExerciseTransition(false)}
+                  aria-label="Cerrar transición"
+                  className="btn-secondary"
+                  style={{ padding: '6px 12px', fontSize: '12px' }}
+                >
+                  ✕
+                </button>
+              </header>
+
+              <div className="overlay-body" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {/* Barra de progreso */}
+                <div
+                  style={{
+                    height: '6px',
+                    borderRadius: '9999px',
+                    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                    overflow: 'hidden'
+                  }}
+                >
+                  <div
+                    style={{
+                      width: `${(transitionTargetIndex / activeExercises.length) * 100}%`,
+                      height: '100%',
+                      borderRadius: '9999px',
+                      background: 'linear-gradient(90deg, var(--accent-alert), var(--accent-primary))',
+                      transition: 'width 0.4s ease'
+                    }}
+                  />
+                </div>
+
+                {/* Banner de completado */}
+                {fromCompleted && (
+                  <section
+                    className="card"
+                    style={{ border: '1px solid rgba(111, 216, 200, 0.35)', backgroundColor: 'rgba(111, 216, 200, 0.08)' }}
+                  >
+                    <span
+                      style={{
+                        fontSize: '11px',
+                        fontWeight: 800,
+                        letterSpacing: '1.5px',
+                        textTransform: 'uppercase',
+                        color: 'var(--accent-secondary)'
+                      }}
+                    >
+                      Completado con Éxito
+                    </span>
+                    <h3 style={{ fontFamily: 'Outfit', fontSize: '19px', fontWeight: 800, color: 'var(--text-primary)', margin: '6px 0 0 0' }}>
+                      ¡{fromEx.name} Superada!
+                    </h3>
+                    <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '6px 0 0 0' }}>
+                      {fromDone.length} series efectivas · {fromVolume.toFixed(0)} kg acumulados
+                    </p>
+                  </section>
+                )}
+
+                {/* Hero del próximo ejercicio */}
+                <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span
+                      style={{
+                        fontSize: '11px',
+                        fontWeight: 800,
+                        letterSpacing: '1.5px',
+                        textTransform: 'uppercase',
+                        color: 'var(--accent-primary)'
+                      }}
+                    >
+                      Siguiente Reto
+                    </span>
+                    <span
+                      style={{
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        textTransform: 'uppercase',
+                        color: 'var(--accent-secondary)',
+                        border: '1px solid rgba(111, 216, 200, 0.25)',
+                        borderRadius: '9999px',
+                        padding: '2px 10px'
+                      }}
+                    >
+                      {toEx.category}
+                    </span>
+                  </div>
+
+                  <h2 style={{ fontFamily: 'Outfit', fontSize: '22px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                    {toEx.name}
+                  </h2>
+
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <div
+                      style={{
+                        flex: 1,
+                        padding: '10px 12px',
+                        borderRadius: '12px',
+                        backgroundColor: 'rgba(244, 162, 97, 0.08)',
+                        border: '1px solid rgba(244, 162, 97, 0.2)'
+                      }}
+                    >
+                      <span style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-secondary)', display: 'block' }}>
+                        Volumen Objetivo
+                      </span>
+                      <span style={{ fontFamily: 'Outfit', fontSize: '16px', fontWeight: 800, color: 'var(--accent-primary)' }}>
+                        {toSets.length > 0 ? `${toSets.length}×${toSets[0].reps ?? '–'}` : '—'}
+                      </span>
+                    </div>
+                    <div
+                      style={{
+                        flex: 1,
+                        padding: '10px 12px',
+                        borderRadius: '12px',
+                        backgroundColor: 'rgba(111, 216, 200, 0.08)',
+                        border: '1px solid rgba(111, 216, 200, 0.2)'
+                      }}
+                    >
+                      <span style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-secondary)', display: 'block' }}>
+                        Carga Inicial
+                      </span>
+                      <span style={{ fontFamily: 'Outfit', fontSize: '16px', fontWeight: 800, color: 'var(--accent-secondary)' }}>
+                        {toFirst ? `${toFirst.weight ?? 0} kg` : '—'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {toEx.ejecucion && toEx.ejecucion.length > 0 && (
+                    <p style={{ fontSize: '12px', lineHeight: 1.55, color: 'var(--text-secondary)', margin: 0 }}>
+                      <strong style={{ color: 'var(--text-primary)' }}>Protocolo:</strong> {toEx.ejecucion.join('. ')}
+                    </p>
+                  )}
+
+                  {/* Checklist de máquina/equipo (toggle visual) */}
+                  <button
+                    onClick={() => setEquipmentConfirmed(c => !c)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      padding: '10px 12px',
+                      borderRadius: '12px',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      backgroundColor: equipmentConfirmed ? 'rgba(111, 216, 200, 0.1)' : 'transparent',
+                      border: `1px solid ${equipmentConfirmed ? 'rgba(111, 216, 200, 0.45)' : 'rgba(255, 255, 255, 0.15)'}`,
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    <span
+                      style={{
+                        width: '20px',
+                        height: '20px',
+                        borderRadius: '6px',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '12px',
+                        fontWeight: 900,
+                        flexShrink: 0,
+                        backgroundColor: equipmentConfirmed ? 'var(--accent-secondary)' : 'transparent',
+                        color: equipmentConfirmed ? '#0b2b26' : 'var(--text-secondary)',
+                        border: `1px solid ${equipmentConfirmed ? 'var(--accent-secondary)' : 'rgba(255, 255, 255, 0.2)'}`
+                      }}
+                    >
+                      ✓
+                    </span>
+                    <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                      Máquina y equipo ajustados
+                    </span>
+                  </button>
+                </section>
+
+                {/* Deck de acciones */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <button
+                    onClick={goToTarget}
+                    className="btn-primary"
+                    style={{ width: '100%', padding: '16px', fontSize: '14px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px', borderRadius: '9999px' }}
+                  >
+                    Comenzar {toEx.name}
+                  </button>
+                  <button
+                    onClick={goToTarget}
+                    className="btn-secondary"
+                    style={{ width: '100%', padding: '14px', fontSize: '13px' }}
+                  >
+                    Ajustar Peso Inicial / Técnica
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* 2026-10-14 (Stitch Gen 2): Pantalla de "Resumen de Rutina" — aparece
+            al tocar "Completar". Telemetría Ki + 4 pestañas; el guardado real
+            ocurre al reclamar el logro (claimWorkout). */}
+        {workoutSummary && (() => {
+          const s = workoutSummary;
+          const fmtDur = (m: number) => (m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : `${m} min`);
+          const cats = Array.from(new Set(s.perExercise.map(e => e.category)));
+          const tabs: { id: typeof summaryTab; label: string }[] = [
+            { id: 'resumen', label: 'Resumen' },
+            { id: 'desglose', label: 'Desglose' },
+            { id: 'beneficios', label: 'Beneficios' },
+            { id: 'recuperacion', label: 'Recuperación' }
+          ];
+          return (
+            <div
+              className="overlay-screen animate-slide always-dark-surface"
+              style={{ zIndex: 170, overflowY: 'auto', paddingBottom: '120px' }}
+            >
+              <header className="overlay-header">
+                <div>
+                  <span className="overlay-header-title-sub">Misión Cumplida</span>
+                  <h2 className="overlay-header-title" style={{ fontSize: '16px' }}>Resumen de Rutina</h2>
+                </div>
+              </header>
+
+              <div className="overlay-body" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {/* Telemetría Ki (KPIs) */}
+                <section style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
+                  <div className="card" style={{ padding: '14px' }}>
+                    <span style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-secondary)', display: 'block' }}>Volumen Ki</span>
+                    <span style={{ fontFamily: 'Outfit', fontSize: '24px', fontWeight: 900, color: 'var(--accent-primary)' }}>{s.volumeKg.toFixed(0)} kg</span>
+                  </div>
+                  <div className="card" style={{ padding: '14px' }}>
+                    <span style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-secondary)', display: 'block' }}>Duración</span>
+                    <span style={{ fontFamily: 'Outfit', fontSize: '24px', fontWeight: 900, color: 'var(--text-primary)' }}>{fmtDur(s.durationMin)}</span>
+                  </div>
+                  <div className="card" style={{ padding: '14px' }}>
+                    <span style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-secondary)', display: 'block' }}>Series</span>
+                    <span style={{ fontFamily: 'Outfit', fontSize: '24px', fontWeight: 900, color: 'var(--text-primary)' }}>{s.setsDone}/{s.setsTotal}</span>
+                  </div>
+                  <div className="card" style={{ padding: '14px' }}>
+                    <span style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-secondary)', display: 'block' }}>Ejecución</span>
+                    <span style={{ fontFamily: 'Outfit', fontSize: '24px', fontWeight: 900, color: 'var(--accent-secondary)' }}>{s.executionPct}%</span>
+                  </div>
+                </section>
+
+                {/* Pestañas */}
+                <nav style={{ display: 'flex', gap: '6px', padding: '6px', backgroundColor: 'var(--bg-secondary)', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
+                  {tabs.map(t => (
+                    <button
+                      key={t.id}
+                      onClick={() => setSummaryTab(t.id)}
+                      style={{
+                        flex: 1,
+                        padding: '8px 4px',
+                        borderRadius: '12px',
+                        fontSize: '11px',
+                        fontWeight: summaryTab === t.id ? 800 : 600,
+                        color: summaryTab === t.id ? '#fff' : 'var(--text-secondary)',
+                        backgroundColor: summaryTab === t.id ? 'var(--accent-alert)' : 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        whiteSpace: 'nowrap'
+                      }}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </nav>
+
+                {/* Contenido por pestaña */}
+                {summaryTab === 'resumen' && (
+                  <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <h3 className="card-title" style={{ margin: 0 }}>Informe de Combate</h3>
+                    <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.6 }}>
+                      Canalizaste <strong style={{ color: 'var(--accent-primary)' }}>{s.volumeKg.toFixed(0)} kg</strong> de volumen Ki en {fmtDur(s.durationMin)}, completando {s.setsDone} de {s.setsTotal} series ({s.executionPct}% de ejecución).
+                    </p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 12px', borderRadius: '12px', backgroundColor: 'rgba(244, 162, 97, 0.08)', border: '1px solid rgba(244, 162, 97, 0.2)' }}>
+                      <span style={{ fontSize: '18px' }}>⚡</span>
+                      <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>+{s.xpEarned} XP de experiencia maldita</span>
+                    </div>
+                  </section>
+                )}
+
+                {summaryTab === 'desglose' && (
+                  <section style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {s.perExercise.map((e, i) => (
+                      <div key={i} className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px' }}>
+                        <div style={{ minWidth: 0 }}>
+                          <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', display: 'block' }}>{e.name}</span>
+                          <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{e.setsDone}/{e.setsTotal} series · {e.category}</span>
+                        </div>
+                        <span style={{ fontFamily: 'Outfit', fontSize: '15px', fontWeight: 800, color: 'var(--accent-primary)', flexShrink: 0, marginLeft: '10px' }}>
+                          {e.volumeKg.toFixed(0)} kg
+                        </span>
+                      </div>
+                    ))}
+                  </section>
+                )}
+
+                {summaryTab === 'beneficios' && (
+                  <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <h3 className="card-title" style={{ margin: 0 }}>Beneficios de esta Misión</h3>
+                    <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {cats.map((c, i) => (
+                        <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                          <span style={{ color: 'var(--accent-primary)', fontWeight: 900 }}>▸</span>
+                          <span><strong style={{ color: 'var(--text-primary)' }}>{c}</strong> — estímulo registrado que acelera la adaptación y la resistencia muscular de ese grupo.</span>
+                        </li>
+                      ))}
+                      {s.executionPct === 100 && (
+                        <li style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                          <span style={{ color: 'var(--accent-secondary)', fontWeight: 900 }}>▸</span>
+                          <span><strong style={{ color: 'var(--accent-secondary)' }}>Misión perfecta</strong> — todas las series superadas; consolidación técnica al máximo.</span>
+                        </li>
+                      )}
+                    </ul>
+                  </section>
+                )}
+
+                {summaryTab === 'recuperacion' && (
+                  <section className="card" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <h3 className="card-title" style={{ margin: 0 }}>Protocolo de Recuperación</h3>
+                    <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {[
+                        'Hidratación: repón líquidos durante las próximas 2 h (≥500 ml por cada 30 min de entreno).',
+                        'Ventana anabólica: ingiere proteína en los 60 min posteriores (0.3 g/kg).',
+                        `Descanso: los grupos estimados hoy (${cats.join(', ')}) necesitan ~48 h antes de volver a cargarse.`,
+                        'Sueño: 7–9 h para maximizar la liberación de hormona de crecimiento y la reparación.'
+                      ].map((tip, i) => (
+                        <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                          <span style={{ color: 'var(--accent-secondary)', fontWeight: 900 }}>▸</span>
+                          <span>{tip}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                )}
+              </div>
+
+              {/* Deck de acciones (fijo abajo) */}
+              <div
+                style={{
+                  position: 'fixed',
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  padding: '16px',
+                  paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))',
+                  background: 'linear-gradient(to top, var(--bg-primary) 60%, transparent)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '8px',
+                  zIndex: 171
+                }}
+              >
+                <button
+                  disabled={isClaiming}
+                  onClick={async () => {
+                    setIsClaiming(true);
+                    try {
+                      await claimWorkout();
+                    } finally {
+                      setIsClaiming(false);
+                    }
+                  }}
+                  className="btn-primary"
+                  style={{ width: '100%', padding: '16px', fontSize: '14px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px', borderRadius: '9999px', opacity: isClaiming ? 0.6 : 1 }}
+                >
+                  {isClaiming ? 'Guardando…' : 'Reclamar logro y guardar rutina'}
+                </button>
+                <button
+                  disabled={isClaiming}
+                  onClick={() => setWorkoutSummary(null)}
+                  className="btn-secondary"
+                  style={{ width: '100%', padding: '12px', fontSize: '13px' }}
+                >
+                  Seguir editando el entreno
+                </button>
+              </div>
+            </div>
+          );
+        })()}
+
         {/* TAB: HOY */}
         {activeTab === 'hoy' && profile && levelInfo && (() => {
           const totalTonnage = workoutSets.filter(s => s.is_completed).reduce((sum, s) => sum + ((s.weight || 0) * (s.reps || 0)), 0) / 1000;
-          const totalSets = workoutSets.filter(s => s.is_completed).length;
-          const totalWorkouts = workouts.length;
 
           return (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               
+              {/* 2026-10-14 (Stitch Gen 2): Hero de Home — "Capsule Corp Home" (6b630e4a).
+                  Título FITNESS FOR EVERYDAY ATHLETES + programa destacado con CTA. */}
+              <section style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <h1 style={{ fontFamily: 'Outfit', fontSize: '26px', fontWeight: 900, lineHeight: 1.15, letterSpacing: '-0.5px', textTransform: 'uppercase', color: 'var(--text-primary)', margin: 0 }}>
+                  Fitness for<br />everyday athletes
+                </h1>
+                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0 }}>
+                  Empuja tus límites hoy, hechicero.
+                </p>
+              </section>
+
+              {/* Programa destacado (Featured Program) */}
+              {(() => {
+                const todayDayIndex = new Date().getDay();
+                const featuredRoutine = routines.find(r => r.day_of_week && r.day_of_week.includes(todayDayIndex)) || routines[0];
+                if (!featuredRoutine) return null;
+                return (
+                  <section className="card" style={{ position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div className="absolute -top-16 -right-16 w-40 h-40 rounded-full bg-amber-500/10 blur-2xl pointer-events-none" />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative' }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 12px', backgroundColor: 'var(--bg-surface-elevated)', border: '1px solid var(--border-color)', borderRadius: '9999px', fontSize: '10px', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase', color: 'var(--accent-primary)' }}>
+                        <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>fitness_center</span>
+                        Programa Destacado
+                      </span>
+                      <span className="material-symbols-outlined" style={{ fontSize: '22px', color: 'var(--accent-primary)' }}>fitness_center</span>
+                    </div>
+                    <div style={{ position: 'relative' }}>
+                      <h2 style={{ fontFamily: 'Outfit', fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>{featuredRoutine.name}</h2>
+                      <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '6px 0 0 0', lineHeight: 1.5 }}>
+                        Sesión de conditioning completa. Pulsa para iniciar y canalizar tu Ki.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => startWorkout(featuredRoutine)}
+                      className="btn-primary"
+                      style={{ width: '100%', padding: '14px', borderRadius: '9999px', fontSize: '13px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px', background: 'linear-gradient(90deg, var(--accent-alert), var(--accent-primary))', color: '#2f1400', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>bolt</span>
+                      Iniciar Entreno Ki
+                    </button>
+                  </section>
+                );
+              })()}
+
               {/* Level XP Card */}
               <section className="card">
-                <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full bg-purple-500/10 blur-3xl pointer-events-none" />
+                <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full bg-amber-500/10 blur-3xl pointer-events-none" />
                 <div className="level-xp-info">
                   <span style={{ fontWeight: '700', color: 'var(--text-secondary)' }}>Nivel de Ki (XP)</span>
                   <span style={{ color: 'var(--accent-secondary)', fontWeight: '700' }}>
@@ -3785,29 +4316,30 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                 </div>
               </section>
 
-              {/* Battle Statistics Grid (New) */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
-                <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '12px', position: 'relative', overflow: 'hidden' }}>
-                  <span style={{ fontSize: '18px', color: 'var(--accent-primary)', marginBottom: '4px' }}>🏋️‍♂️</span>
-                  <span style={{ fontSize: '15px', fontWeight: '900', color: 'var(--text-primary)', fontFamily: 'Outfit' }}>{totalTonnage.toFixed(1)} T</span>
-                  <span style={{ fontSize: '9px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px' }}>Tonelaje</span>
-                </div>
-                <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '12px', position: 'relative', overflow: 'hidden' }}>
-                  <span style={{ fontSize: '18px', color: 'var(--accent-primary)', marginBottom: '4px' }}>🔁</span>
-                  <span style={{ fontSize: '15px', fontWeight: '900', color: 'var(--text-primary)', fontFamily: 'Outfit' }}>{totalSets}</span>
-                  <span style={{ fontSize: '9px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px' }}>Series</span>
-                </div>
-                <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '12px', position: 'relative', overflow: 'hidden' }}>
-                  <span style={{ fontSize: '18px', color: 'var(--accent-primary)', marginBottom: '4px' }}>🏆</span>
-                  <span style={{ fontSize: '15px', fontWeight: '900', color: 'var(--text-primary)', fontFamily: 'Outfit' }}>{totalWorkouts}</span>
-                  <span style={{ fontSize: '9px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px' }}>Rituales</span>
-                </div>
-              </div>
+              {/* 2026-10-14 (Stitch Gen 2): KPIs de Home — Total Volume / Current Streak / 1RM PR */}
+              {(() => {
+                const best1RM = Object.values(personalRecords).reduce((max, r) => Math.max(max, r.oneRM), 0);
+                const kpis: { label: string; value: string; accent: string }[] = [
+                  { label: 'Volumen Total', value: `${totalTonnage.toFixed(1)} T`, accent: 'var(--accent-primary)' },
+                  { label: 'Racha Actual', value: `${profile.current_streak} d`, accent: 'var(--accent-primary)' },
+                  { label: '1RM Kaioken PR', value: best1RM > 0 ? `${best1RM.toFixed(1)} kg` : '—', accent: 'var(--accent-secondary)' }
+                ];
+                return (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+                    {kpis.map(k => (
+                      <div key={k.label} className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '12px 8px', position: 'relative', overflow: 'hidden' }}>
+                        <span style={{ fontSize: '9px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px', display: 'block', marginBottom: '4px' }}>{k.label}</span>
+                        <span style={{ fontSize: '15px', fontWeight: '900', color: k.accent, fontFamily: 'Outfit' }}>{k.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
 
               {/* Weekly Calendar Card */}
               <section className="card">
                 <h3 className="card-title">
-                  <Calendar size={15} className="text-purple-400" />
+                  <Calendar size={15} className="text-[#f4a261]" />
                   <span>Misiones Semanales</span>
                 </h3>
                 
@@ -4003,7 +4535,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                     <span style={{ marginRight: '6px' }}>💧</span>
                     <span>Hidratación del Guerrero</span>
                   </h3>
-                  <span style={{ fontSize: '13px', fontWeight: '800', color: '#38bdf8' }}>
+                  <span style={{ fontSize: '13px', fontWeight: '800', color: '#6fd8c8' }}>
                     {waterIntake * 250} ml / 2000 ml
                   </span>
                 </div>
@@ -4024,8 +4556,8 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                           flex: 1,
                           height: '32px',
                           borderRadius: '6px',
-                          border: `1.5px solid ${isFilled ? '#38bdf8' : 'rgba(255,255,255,0.1)'}`,
-                          backgroundColor: isFilled ? 'rgba(56, 189, 248, 0.2)' : 'transparent',
+                          border: `1.5px solid ${isFilled ? '#6fd8c8' : 'rgba(255,255,255,0.1)'}`,
+                          backgroundColor: isFilled ? 'rgba(111, 216, 200, 0.2)' : 'transparent',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
@@ -4051,7 +4583,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                       localStorage.setItem(`water_intake_${todayStr}`, newVal.toString());
                     }}
                     className="btn-primary"
-                    style={{ flex: 1, padding: '10px', fontSize: '12px', backgroundColor: '#1c4595', borderColor: '#38bdf8', color: '#fff', borderRadius: '12px', cursor: 'pointer' }}
+                    style={{ flex: 1, padding: '10px', fontSize: '12px', backgroundColor: '#6fd8c8', borderColor: '#2dd4bf', color: '#0b2b26', borderRadius: '12px', cursor: 'pointer' }}
                   >
                     +250ml 💧
                   </button>
@@ -4081,7 +4613,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
               <section className="card" style={{ cursor: 'pointer', marginTop: '4px' }} onClick={() => setShowGlossary(true)}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <BookOpen size={16} className="text-purple-400" />
+                    <BookOpen size={16} className="text-[#f4a261]" />
                     <span style={{ fontWeight: '700', fontSize: '13px', color: 'var(--text-primary)' }}>Glosario de Técnicas</span>
                   </div>
                   <span style={{ fontSize: '12px', color: 'var(--accent-primary)', fontWeight: 'bold' }}>Ver Catálogo →</span>
@@ -4718,7 +5250,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
 
             <section className="card">
               <h3 className="card-title">
-                <TrendingUp size={15} className="text-purple-400" />
+                <TrendingUp size={15} className="text-[#f4a261]" />
                 <span>Destellos Negros ⚡ (1RM Estimados)</span>
               </h3>
               
@@ -4752,7 +5284,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
 
             <section className="card">
               <h3 className="card-title">
-                <Clock size={15} className="text-purple-400" />
+                <Clock size={15} className="text-[#f4a261]" />
                 <span>Historial de Rituales</span>
               </h3>
 
@@ -5064,7 +5596,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
             {/* Marcas & Destellos Récords (moved from Hoy) (SPEC_011) */}
             <section className="card">
               <h3 className="card-title">
-                <TrendingUp size={15} className="text-purple-400" />
+                <TrendingUp size={15} className="text-[#f4a261]" />
                 <span>Marcas & Destellos Récords</span>
               </h3>
               {Object.keys(personalRecords).length === 0 ? (
@@ -5105,7 +5637,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                       type="button"
                       onClick={() => setAuthMode('login')}
                       className={`btn-secondary ${authMode === 'login' ? 'completed' : ''}`}
-                      style={{ flex: 1, padding: '10px', fontSize: '12px', border: authMode === 'login' ? '1.5px solid var(--accent-primary)' : '1px solid var(--border-color)', backgroundColor: authMode === 'login' ? 'rgba(168, 85, 247, 0.05)' : 'transparent' }}
+                      style={{ flex: 1, padding: '10px', fontSize: '12px', border: authMode === 'login' ? '1.5px solid var(--accent-primary)' : '1px solid var(--border-color)', backgroundColor: authMode === 'login' ? 'rgba(244, 162, 97, 0.05)' : 'transparent' }}
                     >
                       Iniciar Sesión
                     </button>
@@ -5113,7 +5645,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                       type="button"
                       onClick={() => setAuthMode('signup')}
                       className={`btn-secondary ${authMode === 'signup' ? 'completed' : ''}`}
-                      style={{ flex: 1, padding: '10px', fontSize: '12px', border: authMode === 'signup' ? '1.5px solid var(--accent-primary)' : '1px solid var(--border-color)', backgroundColor: authMode === 'signup' ? 'rgba(168, 85, 247, 0.05)' : 'transparent' }}
+                      style={{ flex: 1, padding: '10px', fontSize: '12px', border: authMode === 'signup' ? '1.5px solid var(--accent-primary)' : '1px solid var(--border-color)', backgroundColor: authMode === 'signup' ? 'rgba(244, 162, 97, 0.05)' : 'transparent' }}
                     >
                       Crear Cuenta
                     </button>

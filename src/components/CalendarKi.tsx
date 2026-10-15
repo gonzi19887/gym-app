@@ -42,7 +42,7 @@ export const DragonBallIcon: React.FC<{ stars: number; size?: number; inactive?:
           width: size, 
           height: size, 
           borderRadius: '50%',
-          backgroundColor: 'var(--bg-surface-elevated, #24293a)',
+          backgroundColor: 'var(--bg-surface-elevated, #272935)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -50,7 +50,7 @@ export const DragonBallIcon: React.FC<{ stars: number; size?: number; inactive?:
           border: '1px solid var(--border-color, rgba(255,255,255,0.08))'
         }}
       >
-        <span style={{ fontSize: size * 0.4, color: 'var(--text-tertiary, #6b7280)' }}>★</span>
+        <span style={{ fontSize: size * 0.4, color: 'var(--text-tertiary, #94a3b8)' }}>★</span>
       </div>
     );
   }
@@ -383,13 +383,13 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
               fontWeight: '800', 
               margin: '2px 0 0 0', 
               letterSpacing: '-0.02em',
-              color: 'var(--text-primary, #f0f2f5)'
+              color: 'var(--text-primary, #e0e1f1)'
             }}>
               CALENDARIO DE KI
             </h1>
             <p style={{ 
               fontSize: '13px', 
-              color: 'var(--text-secondary, #9ca3af)', 
+              color: 'var(--text-secondary, #94a3b8)', 
               margin: '2px 0 0 0',
               lineHeight: '1.4'
             }}>
@@ -401,7 +401,7 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
             width: '42px',
             height: '42px',
             borderRadius: '50%',
-            backgroundColor: 'var(--bg-surface-elevated, #24293a)',
+            backgroundColor: 'var(--bg-surface-elevated, #272935)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -417,7 +417,7 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
           display: 'flex', 
           justifyContent: 'space-between', 
           alignItems: 'center', 
-          backgroundColor: 'var(--bg-secondary, #1c202e)',
+          backgroundColor: 'var(--bg-secondary, #181b26)',
           borderRadius: '9999px',
           padding: '4px',
           border: '1px solid var(--border-color, rgba(255,255,255,0.07))'
@@ -434,7 +434,7 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
                 fontWeight: '700',
                 cursor: 'pointer',
                 backgroundColor: viewMode === 'semana' ? 'var(--accent-primary, #f4a261)' : 'transparent',
-                color: viewMode === 'semana' ? '#141722' : 'var(--text-secondary, #9ca3af)',
+                color: viewMode === 'semana' ? '#141722' : 'var(--text-secondary, #94a3b8)',
                 transition: 'all 0.2s ease',
                 boxShadow: viewMode === 'semana' ? '0 2px 4px rgba(0,0,0,0.2)' : 'none'
               }}
@@ -452,7 +452,7 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
                 fontWeight: '700',
                 cursor: 'pointer',
                 backgroundColor: viewMode === 'mes' ? 'var(--accent-primary, #f4a261)' : 'transparent',
-                color: viewMode === 'mes' ? '#141722' : 'var(--text-secondary, #9ca3af)',
+                color: viewMode === 'mes' ? '#141722' : 'var(--text-secondary, #94a3b8)',
                 transition: 'all 0.2s ease',
                 boxShadow: viewMode === 'mes' ? '0 2px 4px rgba(0,0,0,0.2)' : 'none'
               }}
@@ -468,8 +468,8 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
                 width: '28px',
                 height: '28px',
                 borderRadius: '50%',
-                backgroundColor: 'var(--bg-tertiary, #24293a)',
-                color: 'var(--text-primary, #f0f2f5)',
+                backgroundColor: 'var(--bg-tertiary, #272935)',
+                color: 'var(--text-primary, #e0e1f1)',
                 border: 'none',
                 cursor: 'pointer',
                 display: 'flex',
@@ -484,7 +484,7 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
               fontFamily: 'Outfit, sans-serif', 
               fontSize: '12px', 
               fontWeight: '700', 
-              color: 'var(--text-primary, #f0f2f5)',
+              color: 'var(--text-primary, #e0e1f1)',
               padding: '0 4px',
               textTransform: 'uppercase',
               letterSpacing: '0.5px'
@@ -498,8 +498,8 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
                 width: '28px',
                 height: '28px',
                 borderRadius: '50%',
-                backgroundColor: 'var(--bg-tertiary, #24293a)',
-                color: 'var(--text-primary, #f0f2f5)',
+                backgroundColor: 'var(--bg-tertiary, #272935)',
+                color: 'var(--text-primary, #e0e1f1)',
                 border: 'none',
                 cursor: 'pointer',
                 display: 'flex',
@@ -515,7 +515,7 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
 
       {/* 2. Carousel Header: Dragon Balls Racha vs Métricas Saiyan */}
       <section style={{
-        backgroundColor: 'var(--bg-secondary, #1c202e)',
+        backgroundColor: 'var(--bg-secondary, #181b26)',
         borderRadius: '16px',
         padding: '16px',
         border: '1px solid var(--border-color, rgba(255,255,255,0.07))',
@@ -539,7 +539,7 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
                 alignItems: 'center',
                 gap: '4px',
                 backgroundColor: metricTab === 'racha' ? 'var(--accent-primary, #f4a261)' : 'transparent',
-                color: metricTab === 'racha' ? '#141722' : 'var(--text-secondary, #9ca3af)'
+                color: metricTab === 'racha' ? '#141722' : 'var(--text-secondary, #94a3b8)'
               }}
             >
               <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>stars</span>
@@ -559,7 +559,7 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
                 alignItems: 'center',
                 gap: '4px',
                 backgroundColor: metricTab === 'metricas' ? 'var(--accent-primary, #f4a261)' : 'transparent',
-                color: metricTab === 'metricas' ? '#141722' : 'var(--text-secondary, #9ca3af)'
+                color: metricTab === 'metricas' ? '#141722' : 'var(--text-secondary, #94a3b8)'
               }}
             >
               <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>military_tech</span>
@@ -586,15 +586,15 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
                 width: '8px',
                 height: '8px',
                 borderRadius: '50%',
-                backgroundColor: 'var(--accent-secondary, #2a9d8f)',
+                backgroundColor: 'var(--accent-secondary, #6fd8c8)',
                 display: 'inline-block',
-                boxShadow: '0 0 8px var(--accent-secondary, #2a9d8f)'
+                boxShadow: '0 0 8px var(--accent-secondary, #6fd8c8)'
               }} />
-              <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary, #f0f2f5)' }}>
+              <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary, #e0e1f1)' }}>
                 {completedDaysThisWeek} de 7 Esferas del Dragón
               </span>
             </div>
-            <span style={{ fontSize: '12px', color: 'var(--text-secondary, #9ca3af)' }}>
+            <span style={{ fontSize: '12px', color: 'var(--text-secondary, #94a3b8)' }}>
               Racha Activa: <strong style={{ color: 'var(--accent-primary, #f4a261)' }}>{completedDaysThisWeek} Días</strong>
             </span>
           </div>
@@ -603,9 +603,9 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
         {metricTab === 'metricas' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-              <div style={{ backgroundColor: 'var(--bg-tertiary, #24293a)', padding: '12px', borderRadius: '12px' }}>
-                <span style={{ fontSize: '11px', color: 'var(--text-secondary, #9ca3af)' }}>Entrenados este Mes</span>
-                <p style={{ fontFamily: 'Outfit, sans-serif', fontSize: '20px', fontWeight: '800', margin: '4px 0 0 0', color: 'var(--text-primary, #f0f2f5)' }}>
+              <div style={{ backgroundColor: 'var(--bg-tertiary, #272935)', padding: '12px', borderRadius: '12px' }}>
+                <span style={{ fontSize: '11px', color: 'var(--text-secondary, #94a3b8)' }}>Entrenados este Mes</span>
+                <p style={{ fontFamily: 'Outfit, sans-serif', fontSize: '20px', fontWeight: '800', margin: '4px 0 0 0', color: 'var(--text-primary, #e0e1f1)' }}>
                   {monthlyTrainedCount} / {targetMonthlyDays}
                 </p>
                 <div style={{ width: '100%', height: '4px', backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: '2px', marginTop: '6px', overflow: 'hidden' }}>
@@ -613,12 +613,12 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
                 </div>
               </div>
 
-              <div style={{ backgroundColor: 'var(--bg-tertiary, #24293a)', padding: '12px', borderRadius: '12px' }}>
-                <span style={{ fontSize: '11px', color: 'var(--text-secondary, #9ca3af)' }}>Fuego Ki Continuo</span>
-                <p style={{ fontFamily: 'Outfit, sans-serif', fontSize: '20px', fontWeight: '800', margin: '4px 0 0 0', color: 'var(--accent-secondary, #2a9d8f)' }}>
+              <div style={{ backgroundColor: 'var(--bg-tertiary, #272935)', padding: '12px', borderRadius: '12px' }}>
+                <span style={{ fontSize: '11px', color: 'var(--text-secondary, #94a3b8)' }}>Fuego Ki Continuo</span>
+                <p style={{ fontFamily: 'Outfit, sans-serif', fontSize: '20px', fontWeight: '800', margin: '4px 0 0 0', color: 'var(--accent-secondary, #6fd8c8)' }}>
                   {completedDaysThisWeek * 3} DÍAS
                 </p>
-                <span style={{ fontSize: '10px', color: 'var(--text-secondary, #9ca3af)' }}>Adherencia: {adherencePercent}%</span>
+                <span style={{ fontSize: '10px', color: 'var(--text-secondary, #94a3b8)' }}>Adherencia: {adherencePercent}%</span>
               </div>
             </div>
 
@@ -635,7 +635,7 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
                 <p style={{ margin: 0, fontWeight: '700', fontSize: '12px', color: 'var(--accent-primary, #f4a261)' }}>
                   Invocación Shenlong Disponible
                 </p>
-                <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-secondary, #9ca3af)' }}>
+                <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-secondary, #94a3b8)' }}>
                   Reúne 7 esferas para obtener bonus de Ki
                 </p>
               </div>
@@ -663,7 +663,7 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
       {/* 3. Interactive Views (Semana vs Mes) */}
       {viewMode === 'semana' ? (
         <section style={{
-          backgroundColor: 'var(--bg-secondary, #1c202e)',
+          backgroundColor: 'var(--bg-secondary, #181b26)',
           borderRadius: '16px',
           padding: '12px 8px',
           border: '1px solid var(--border-color, rgba(255,255,255,0.07))',
@@ -687,7 +687,7 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
                   backgroundColor: isSelected 
                     ? 'rgba(244, 162, 97, 0.12)' 
                     : d.isToday 
-                      ? 'var(--bg-tertiary, #24293a)' 
+                      ? 'var(--bg-tertiary, #272935)' 
                       : 'transparent',
                   cursor: 'pointer',
                   position: 'relative',
@@ -713,7 +713,7 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
                 <span style={{ 
                   fontSize: '10px', 
                   fontWeight: '700', 
-                  color: isSelected ? 'var(--accent-primary, #f4a261)' : 'var(--text-secondary, #9ca3af)',
+                  color: isSelected ? 'var(--accent-primary, #f4a261)' : 'var(--text-secondary, #94a3b8)',
                   marginBottom: '2px'
                 }}>
                   {d.label}
@@ -723,7 +723,7 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
                   fontFamily: 'Outfit, sans-serif',
                   fontSize: '13px', 
                   fontWeight: '800', 
-                  color: 'var(--text-primary, #f0f2f5)',
+                  color: 'var(--text-primary, #e0e1f1)',
                   marginBottom: '6px'
                 }}>
                   {d.dayNum}
@@ -736,11 +736,11 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
                     width: '32px',
                     height: '32px',
                     borderRadius: '50%',
-                    backgroundColor: 'var(--bg-tertiary, #24293a)',
+                    backgroundColor: 'var(--bg-tertiary, #272935)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: 'var(--text-tertiary, #6b7280)'
+                    color: 'var(--text-tertiary, #94a3b8)'
                   }}>
                     <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>bedtime</span>
                   </div>
@@ -751,7 +751,7 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
         </section>
       ) : (
         <section style={{
-          backgroundColor: 'var(--bg-secondary, #1c202e)',
+          backgroundColor: 'var(--bg-secondary, #181b26)',
           borderRadius: '16px',
           padding: '16px',
           border: '1px solid var(--border-color, rgba(255,255,255,0.07))',
@@ -761,7 +761,7 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
         }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', textAlign: 'center', paddingBottom: '4px' }}>
             {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map((dayChar, idx) => (
-              <span key={idx} style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-secondary, #9ca3af)' }}>
+              <span key={idx} style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-secondary, #94a3b8)' }}>
                 {dayChar}
               </span>
             ))}
@@ -780,14 +780,14 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
                     border: isSelected 
                       ? '2px solid var(--accent-primary, #f4a261)' 
                       : cell.isToday 
-                        ? '1px solid var(--accent-secondary, #2a9d8f)' 
+                        ? '1px solid var(--accent-secondary, #6fd8c8)' 
                         : '1px solid transparent',
                     backgroundColor: isSelected
                       ? 'rgba(244, 162, 97, 0.15)'
                       : cell.hasTrained
                         ? 'rgba(255, 190, 59, 0.1)'
                         : cell.isCurrentMonth
-                          ? 'var(--bg-tertiary, #24293a)'
+                          ? 'var(--bg-tertiary, #272935)'
                           : 'rgba(255,255,255,0.02)',
                     opacity: cell.isCurrentMonth ? 1 : 0.35,
                     display: 'flex',
@@ -805,8 +805,8 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
                     color: cell.isToday 
                       ? 'var(--accent-primary, #f4a261)' 
                       : cell.isCurrentMonth 
-                        ? 'var(--text-primary, #f0f2f5)' 
-                        : 'var(--text-tertiary, #6b7280)'
+                        ? 'var(--text-primary, #e0e1f1)' 
+                        : 'var(--text-tertiary, #94a3b8)'
                   }}>
                     {cell.dayNum}
                   </span>
@@ -816,7 +816,7 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
                   ) : cell.hasRoutine ? (
                     <span style={{ width: '4px', height: '4px', borderRadius: '50%', backgroundColor: 'var(--accent-primary, #f4a261)' }} />
                   ) : (
-                    <span style={{ fontSize: '9px', color: 'var(--text-tertiary, #6b7280)', opacity: 0.5 }}>-</span>
+                    <span style={{ fontSize: '9px', color: 'var(--text-tertiary, #94a3b8)', opacity: 0.5 }}>-</span>
                   )}
                 </button>
               );
@@ -828,7 +828,7 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
             justifyContent: 'space-between', 
             alignItems: 'center', 
             fontSize: '11px', 
-            color: 'var(--text-secondary, #9ca3af)', 
+            color: 'var(--text-secondary, #94a3b8)', 
             paddingTop: '6px',
             borderTop: '1px solid var(--border-color, rgba(255,255,255,0.07))'
           }}>
@@ -836,13 +836,13 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
               <span style={{ color: '#ffbe3b' }}>★</span> Completado
             </span>
             <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <span className="material-symbols-outlined" style={{ fontSize: '13px', color: 'var(--text-tertiary, #6b7280)' }}>shield</span> Descanso
+              <span className="material-symbols-outlined" style={{ fontSize: '13px', color: 'var(--text-tertiary, #94a3b8)' }}>shield</span> Descanso
             </span>
             <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
               <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--accent-primary, #f4a261)' }} /> Hoy
             </span>
             <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--accent-secondary, #2a9d8f)' }} /> Planificado
+              <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--accent-secondary, #6fd8c8)' }} /> Planificado
             </span>
           </div>
         </section>
@@ -850,7 +850,7 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
 
       {/* 4. Contextual Selected Day Card (Accordion) */}
       <section style={{
-        backgroundColor: 'var(--bg-secondary, #1c202e)',
+        backgroundColor: 'var(--bg-secondary, #181b26)',
         borderRadius: '16px',
         border: '1px solid var(--border-color, rgba(255,255,255,0.07))',
         boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
@@ -861,10 +861,10 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
           height: '4px',
           width: '100%',
           backgroundColor: selectedDayInfo.wasTrained 
-            ? 'var(--accent-secondary, #2a9d8f)' 
+            ? 'var(--accent-secondary, #6fd8c8)' 
             : selectedDayInfo.primaryRoutine 
               ? 'var(--accent-primary, #f4a261)' 
-              : 'var(--bg-tertiary, #24293a)'
+              : 'var(--bg-tertiary, #272935)'
         }} />
 
         <div 
@@ -883,7 +883,7 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
               width: '40px',
               height: '40px',
               borderRadius: '50%',
-              backgroundColor: 'var(--bg-tertiary, #24293a)',
+              backgroundColor: 'var(--bg-tertiary, #272935)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -920,10 +920,10 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
                       ? 'rgba(244, 162, 97, 0.15)' 
                       : 'rgba(255,255,255,0.08)',
                   color: selectedDayInfo.wasTrained 
-                    ? 'var(--accent-secondary, #2a9d8f)' 
+                    ? 'var(--accent-secondary, #6fd8c8)' 
                     : selectedDayInfo.primaryRoutine 
                       ? 'var(--accent-primary, #f4a261)' 
-                      : 'var(--text-tertiary, #6b7280)'
+                      : 'var(--text-tertiary, #94a3b8)'
                 }}>
                   {selectedDayInfo.wasTrained ? 'Completado' : selectedDayInfo.primaryRoutine ? 'Programado' : 'Descanso'}
                 </span>
@@ -934,7 +934,7 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
                 fontSize: '17px', 
                 fontWeight: '800', 
                 margin: '2px 0 0 0', 
-                color: 'var(--text-primary, #f0f2f5)' 
+                color: 'var(--text-primary, #e0e1f1)' 
               }}>
                 {selectedDayInfo.primaryRoutine 
                   ? selectedDayInfo.primaryRoutine.name 
@@ -949,11 +949,11 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
             width: '32px',
             height: '32px',
             borderRadius: '50%',
-            backgroundColor: 'var(--bg-tertiary, #24293a)',
+            backgroundColor: 'var(--bg-tertiary, #272935)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: 'var(--text-secondary, #9ca3af)',
+            color: 'var(--text-secondary, #94a3b8)',
             transform: isAccordionOpen ? 'rotate(180deg)' : 'rotate(0deg)',
             transition: 'transform 0.25s ease'
           }}>
@@ -969,24 +969,24 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
-                  backgroundColor: 'var(--bg-tertiary, #24293a)',
+                  backgroundColor: 'var(--bg-tertiary, #272935)',
                   padding: '10px 14px',
                   borderRadius: '12px',
                   fontSize: '12px'
                 }}>
-                  <span style={{ color: 'var(--text-primary, #f0f2f5)', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <span style={{ color: 'var(--text-primary, #e0e1f1)', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <span className="material-symbols-outlined" style={{ fontSize: '16px', color: 'var(--accent-primary, #f4a261)' }}>fitness_center</span>
                     {selectedDayInfo.targetExercises.length || 4} Ejercicios
                   </span>
 
-                  <span style={{ color: 'var(--text-primary, #f0f2f5)', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <span className="material-symbols-outlined" style={{ fontSize: '16px', color: 'var(--accent-secondary, #2a9d8f)' }}>repeat</span>
+                  <span style={{ color: 'var(--text-primary, #e0e1f1)', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: '16px', color: 'var(--accent-secondary, #6fd8c8)' }}>repeat</span>
                     {selectedDayInfo.totalSets} Series
                   </span>
 
-                  <span style={{ color: 'var(--text-secondary, #9ca3af)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <span style={{ color: 'var(--text-secondary, #94a3b8)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <span className="material-symbols-outlined" style={{ fontSize: '16px', color: 'var(--accent-primary, #f4a261)' }}>speed</span>
-                    Volumen: <strong style={{ color: 'var(--text-primary, #f0f2f5)' }}>{selectedDayInfo.totalTonnage}T</strong>
+                    Volumen: <strong style={{ color: 'var(--text-primary, #e0e1f1)' }}>{selectedDayInfo.totalTonnage}T</strong>
                   </span>
                 </div>
 
@@ -996,12 +996,12 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
                       <div 
                         key={ex.id || i}
                         style={{
-                          backgroundColor: 'var(--bg-tertiary, #24293a)',
+                          backgroundColor: 'var(--bg-tertiary, #272935)',
                           padding: '6px 12px',
                           borderRadius: '8px',
                           fontSize: '12px',
                           fontWeight: '600',
-                          color: 'var(--text-primary, #f0f2f5)',
+                          color: 'var(--text-primary, #e0e1f1)',
                           display: 'flex',
                           alignItems: 'center',
                           gap: '6px'
@@ -1047,8 +1047,8 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
                       padding: '12px 16px',
                       borderRadius: '9999px',
                       border: '1px solid var(--border-color, rgba(255,255,255,0.1))',
-                      backgroundColor: 'var(--bg-tertiary, #24293a)',
-                      color: 'var(--text-primary, #f0f2f5)',
+                      backgroundColor: 'var(--bg-tertiary, #272935)',
+                      color: 'var(--text-primary, #e0e1f1)',
                       fontFamily: 'Outfit, sans-serif',
                       fontWeight: '700',
                       fontSize: '12px',
@@ -1065,7 +1065,7 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
               </>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary, #9ca3af)', lineHeight: '1.5' }}>
+                <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary, #94a3b8)', lineHeight: '1.5' }}>
                   Recuperación de Ki activo para evitar sobreentrenamiento muscular. Ideal para descanso o sesión ligera de estiramientos.
                 </p>
 
