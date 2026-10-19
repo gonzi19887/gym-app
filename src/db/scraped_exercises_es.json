@@ -51886,5 +51886,48 @@
       "Pullover en polea con cuerda",
       "Pullover con mancuerna en banco plano"
     ]
+  },
+  "remo_inclinado_en_maquina_de_palanca": {
+    "name_es": "Remo inclinado en máquina de palanca",
+    "name_en": "Lever Bent Over Low Row",
+    "category": "Espalda",
+    "url": "https://www.kovofitness.com/exercises/lever-bent-over-low-row",
+    "gif_url": "https://www.kovofitness.com/x-media/cdn/exercise-animations/leverBentOverLowRow.gif",
+    "local_gif_path": "/images/ESPALDA/lever-bent-over-low-row.gif",
+    "overview_es": "El remo inclinado en máquina de palanca es un ejercicio de tracción horizontal que trabaja principalmente los dorsales y los trapecios medios, con la ayuda de los bíceps, los antebrazos, la espalda baja y los hombros posteriores. La resistencia fija de la máquina de palanca permite tirar cargas pesadas con la espalda inclinada manteniendo la postura estable, por lo que es ideal para desarrollar fuerza y grosor en la espalda.",
+    "instructions_es": [
+      "Colócate en una máquina de palanca con el mango bajo e inclínate hacia adelante desde las caderas con la espalda plana; agarra los mangos.",
+      "Tira de los mangos hacia la cintura llevando los codos hacia atrás y apretando los omóplatos.",
+      "Extiende los brazos de forma controlada resistiendo la carga de la máquina hasta volver a la posición inicial.",
+      "Mantén el core comprometido y la columna neutral durante todo el movimiento."
+    ],
+    "muscles_es": [
+      "Espalda / Ala",
+      "Trapecio"
+    ],
+    "equipment_es": [
+      "Máquina"
+    ],
+    "tips_es": [],
+    "mistakes_es": [
+      "No redondees la espalda; mantén el pecho arriba y la columna neutra.",
+      "No encogas los hombros ni tires solo con los brazos.",
+      "No dejes que el peso arrastre los brazos hacia adelante demasiado rápido."
+    ],
+    "alternates": [],
+    "posicion_inicial": [
+      "Colócate en una máquina de palanca con el mango bajo y ajústalo a una altura que te permita agarre holgado.",
+      "Inclínate hacia adelante desde las caderas con la espalda plana (pecho arriba, columna neutra) y agarra los mangos con los brazos extendidos."
+    ],
+    "ejecucion": [
+      "Tira de los mangos hacia la cintura llevando los codos hacia atrás y apretando los omóplatos.",
+      "Extiende los brazos de forma controlada resistiendo la carga de la máquina hasta volver a la posición inicial."
+    ],
+    "consejos": [
+      "Nota cómo se contraen los dorsales y la parte media de la espalda al tirar hacia la cintura.",
+      "Apreta los omóplatos en la parte superior del movimiento.",
+      "Mantén el core engagement y la columna neutral durante toda la serie."
+    ],
+    "variantes": []
   }
 }
