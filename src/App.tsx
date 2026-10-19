@@ -2237,6 +2237,17 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
   
   const lastSessionSets = getLastSessionSets();
 
+  // 2026-10-19: clave de fecha en HORA LOCAL (antes toISOString = UTC, que para
+  // España (UTC+2) devolvía el día anterior y desplazaba el calendario).
+  const toLocalDateStr = (d: Date): string => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+  const completedToLocalDateStr = (completedAt: string): string =>
+    toLocalDateStr(new Date(completedAt));
+
   const getWeeklyCalendar = () => {
     const today = new Date();
     const dayOfWeek = today.getDay();
@@ -2254,8 +2265,8 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
       d.setDate(monday.getDate() + i);
       const isToday = d.toDateString() === today.toDateString();
       
-      const dateStr = d.toISOString().split('T')[0];
-      const trainedWorkouts = workouts.filter((w) => w.completed_at.startsWith(dateStr));
+      const dateStr = toLocalDateStr(d);
+      const trainedWorkouts = workouts.filter((w) => w.completed_at && completedToLocalDateStr(w.completed_at) === dateStr);
 
       days.push({
         name: weekdaysShort[i],
