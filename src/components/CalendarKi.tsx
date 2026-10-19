@@ -14,6 +14,27 @@ interface CalendarKiProps {
   theme: 'dark' | 'light';
 }
 
+/**
+ * 2026-10-19: clave de fecha en HORA LOCAL (YYYY-MM-DD).
+ * Antes se usaba `toISOString().split('T')[0]` (UTC), que para España (UTC+2)
+ * devolvía el día ANTERIOR al construir las celdas en medianoche local. Eso
+ * desplazaba el marcador de "hoy" y el de "entrenado" una celda (hoy mostraba
+ * la rutina de mañana y el entreno se marcaba en otro día).
+ */
+const toLocalDateStr = (d: Date): string => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
+
+/**
+ * Convierte un `completed_at` (timestamp ISO en UTC, tal y como se guarda en la
+ * BD) a su día en HORA LOCAL, para compararlo con las claves de celda locales.
+ */
+const completedToLocalDateStr = (completedAt: string): string =>
+  toLocalDateStr(new Date(completedAt));
+
 const StarSvg: React.FC<{ size?: number; className?: string; style?: React.CSSProperties }> = ({ 
   size = 10, 
   className = "fill-current text-red-600",
@@ -153,7 +174,7 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
   const [metricTab, setMetricTab] = useState<'racha' | 'metricas'>('racha');
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   
-  const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
+  const todayStr = useMemo(() => toLocalDateStr(new Date()), []);
   const [selectedDateStr, setSelectedDateStr] = useState<string>(todayStr);
   const [isAccordionOpen, setIsAccordionOpen] = useState<boolean>(true);
 
@@ -217,10 +238,10 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
     for (let i = 0; i < 7; i++) {
       const dayDate = new Date(monday);
       dayDate.setDate(monday.getDate() + i);
-      const dateStr = dayDate.toISOString().split('T')[0];
+      const dateStr = toLocalDateStr(dayDate);
       const isToday = dateStr === todayStr;
 
-      const trainedWorkouts = workouts.filter(w => w.completed_at && w.completed_at.startsWith(dateStr));
+      const trainedWorkouts = workouts.filter(w => w.completed_at && completedToLocalDateStr(w.completed_at) === dateStr);
       const hasTrained = trainedWorkouts.length > 0;
       const assignedRoutines = routines.filter(r => r.day_of_week && r.day_of_week.includes(weekdayValues[i]));
 
@@ -255,12 +276,12 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
     for (let i = startDayIndex - 1; i >= 0; i--) {
       const dayNum = prevMonthLastDay - i;
       const prevDate = new Date(currentYear, currentMonth - 1, dayNum);
-      const dateStr = prevDate.toISOString().split('T')[0];
+      const dateStr = toLocalDateStr(prevDate);
       days.push({
         dayNum,
         dateStr,
         isCurrentMonth: false,
-        hasTrained: workouts.some(w => w.completed_at && w.completed_at.startsWith(dateStr)),
+        hasTrained: workouts.some(w => w.completed_at && completedToLocalDateStr(w.completed_at) === dateStr),
         isToday: dateStr === todayStr,
         weekdayValue: prevDate.getDay(),
         dateObj: prevDate
@@ -269,8 +290,8 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
 
     for (let dayNum = 1; dayNum <= totalDays; dayNum++) {
       const d = new Date(currentYear, currentMonth, dayNum);
-      const dateStr = d.toISOString().split('T')[0];
-      const hasTrained = workouts.some(w => w.completed_at && w.completed_at.startsWith(dateStr));
+      const dateStr = toLocalDateStr(d);
+      const hasTrained = workouts.some(w => w.completed_at && completedToLocalDateStr(w.completed_at) === dateStr);
       const isToday = dateStr === todayStr;
       const weekdayValue = d.getDay();
       const hasRoutine = routines.some(r => r.day_of_week && r.day_of_week.includes(weekdayValue));
@@ -290,12 +311,12 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
     const remainder = (7 - (days.length % 7)) % 7;
     for (let i = 1; i <= remainder; i++) {
       const nextDate = new Date(currentYear, currentMonth + 1, i);
-      const dateStr = nextDate.toISOString().split('T')[0];
+      const dateStr = toLocalDateStr(nextDate);
       days.push({
         dayNum: i,
         dateStr,
         isCurrentMonth: false,
-        hasTrained: workouts.some(w => w.completed_at && w.completed_at.startsWith(dateStr)),
+        hasTrained: workouts.some(w => w.completed_at && completedToLocalDateStr(w.completed_at) === dateStr),
         isToday: dateStr === todayStr,
         weekdayValue: nextDate.getDay(),
         dateObj: nextDate
@@ -318,7 +339,7 @@ export const CalendarKi: React.FC<CalendarKiProps> = ({
     const weekdayValue = selDate.getDay();
     const isToday = selectedDateStr === todayStr;
 
-    const completedWorkoutsOnDate = workouts.filter(w => w.completed_at && w.completed_at.startsWith(selectedDateStr));
+    const completedWorkoutsOnDate = workouts.filter(w => w.completed_at && completedToLocalDateStr(w.completed_at) === selectedDateStr);
     const wasTrained = completedWorkoutsOnDate.length > 0;
 
     const assigned = routines.filter(r => r.day_of_week && r.day_of_week.includes(weekdayValue));
