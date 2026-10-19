@@ -152,6 +152,23 @@ function OnboardingMiniBar({ step, onOpen }: { step: number; onOpen: () => void 
   );
 }
 
+/**
+ * 2026-10-19: clave de fecha en HORA LOCAL (YYYY-MM-DD).
+ * Antes se usaba `toISOString().split('T')[0]` (UTC), que para España (UTC+2)
+ * devolvía el día anterior. Nivel de módulo para poder usarlo en inicializadores
+ * de useState (hidratación) y en la lógica del calendario.
+ */
+const toLocalDateStr = (d: Date): string => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
+
+/** `completed_at` (timestamp ISO UTC de la BD) → su día en hora local. */
+const completedToLocalDateStr = (completedAt: string): string =>
+  toLocalDateStr(new Date(completedAt));
+
 function App() {
 
   // Theme State (Persisted in localStorage with system fallback)
@@ -316,7 +333,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
     return parseInt(localStorage.getItem('weekly_goal_days') || '3');
   });
   const [waterIntake, setWaterIntake] = useState<number>(() => {
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = toLocalDateStr(new Date());
     return parseInt(localStorage.getItem(`water_intake_${todayStr}`) || '0');
   });
   const [showCTARoutineDropdown, setShowCTARoutineDropdown] = useState<boolean>(false);
@@ -2236,17 +2253,6 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
   };
   
   const lastSessionSets = getLastSessionSets();
-
-  // 2026-10-19: clave de fecha en HORA LOCAL (antes toISOString = UTC, que para
-  // España (UTC+2) devolvía el día anterior y desplazaba el calendario).
-  const toLocalDateStr = (d: Date): string => {
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${y}-${m}-${day}`;
-  };
-  const completedToLocalDateStr = (completedAt: string): string =>
-    toLocalDateStr(new Date(completedAt));
 
   const getWeeklyCalendar = () => {
     const today = new Date();
@@ -4560,7 +4566,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                         onClick={() => {
                           const newVal = idx + 1;
                           setWaterIntake(newVal);
-                          const todayStr = new Date().toISOString().split('T')[0];
+                          const todayStr = toLocalDateStr(new Date());
                           localStorage.setItem(`water_intake_${todayStr}`, newVal.toString());
                         }}
                         style={{
@@ -4590,7 +4596,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                     onClick={() => {
                       const newVal = Math.min(12, waterIntake + 1);
                       setWaterIntake(newVal);
-                      const todayStr = new Date().toISOString().split('T')[0];
+                      const todayStr = toLocalDateStr(new Date());
                       localStorage.setItem(`water_intake_${todayStr}`, newVal.toString());
                     }}
                     className="btn-primary"
@@ -4602,7 +4608,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                     onClick={() => {
                       const newVal = Math.max(0, waterIntake - 1);
                       setWaterIntake(newVal);
-                      const todayStr = new Date().toISOString().split('T')[0];
+                      const todayStr = toLocalDateStr(new Date());
                       localStorage.setItem(`water_intake_${todayStr}`, newVal.toString());
                     }}
                     className="btn-secondary"
