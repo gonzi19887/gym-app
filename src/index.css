@@ -39,6 +39,92 @@
   --font-headline: 'Outfit', 'Inter', system-ui, sans-serif;
   --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-bounce: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+  /* Paleta Stitch → variables CSS (theme-aware). 2026-10-20: antes era
+     una paleta fija en tailwind.config.js (siempre oscura) y se mezclaba
+     con el tema claro. En el tema oscuro los valores NO cambian. */
+  --tw-background: #10131e;
+  --tw-surface: #10131e;
+  --tw-surface-level-1: #181b26;
+  --tw-surface-container: #1c1f2a;
+  --tw-surface-container-low: #181b26;
+  --tw-surface-container-high: #272935;
+  --tw-surface-container-highest: #313440;
+  --tw-surface-container-lowest: #0b0e18;
+  --tw-surface-variant: #313440;
+  --tw-surface-dim: #10131e;
+  --tw-surface-bright: #363945;
+  --tw-obsidian-zero: #0b0e18;
+  --tw-on-surface: #e0e1f1;
+  --tw-on-background: #e0e1f1;
+  --tw-on-surface-variant: 216 194 181;
+  --tw-primary: 244 162 97;
+  --tw-primary-container: #f4a261;
+  --tw-primary-fixed: #ffdcc4;
+  --tw-primary-fixed-dim: #ffb780;
+  --tw-on-primary: #2f1400;
+  --tw-on-primary-container: #6f3800;
+  --tw-on-primary-fixed: #2f1400;
+  --tw-on-primary-fixed-variant: #6f3800;
+  --tw-secondary: #6fd8c8;
+  --tw-secondary-container: #30a193;
+  --tw-secondary-fixed: #8cf5e4;
+  --tw-secondary-fixed-dim: #6fd8c8;
+  --tw-on-secondary: #003731;
+  --tw-on-secondary-container: #00302a;
+  --tw-on-secondary-fixed: #00201c;
+  --tw-on-secondary-fixed-variant: #005048;
+  --tw-tertiary: #ffc2b3;
+  --tw-tertiary-container: #ff9a81;
+  --tw-tertiary-fixed: #ffdad2;
+  --tw-tertiary-fixed-dim: #ffb4a2;
+  --tw-on-tertiary: #4e2600;
+  --tw-on-tertiary-container: #82250e;
+  --tw-on-tertiary-fixed: #3c0700;
+  --tw-on-tertiary-fixed-variant: #83260e;
+  --tw-outline: #a08d80;
+  --tw-outline-variant: #534439;
+  --tw-border-subtle: rgba(255, 255, 255, 0.05);
+  --tw-energy-track: #2e354b;
+  --tw-error: 255 180 171;
+  --tw-error-container: #93000a;
+  --tw-on-error: #690005;
+  --tw-on-error-container: #ffdad6;
+  --tw-inverse-primary: #8e4e14;
+  --tw-inverse-surface: #e0e1f1;
+  --tw-inverse-on-surface: #2d303c;
+  --tw-surface-tint: #ffb780;
+  --surface-scrim: rgba(7, 7, 10, 0.96);
+  --surface-widget: rgba(10, 10, 15, 0.95);
+  --surface-control-bg: rgba(255, 255, 255, 0.05);
+  --surface-control-border: rgba(255, 255, 255, 0.18);
+  --tw-accent-primary: 244 162 97;
+  --tw-accent-secondary: 111 216 200;
+  --tw-accent-alert: 224 86 56;
+  --surface-inset-bg: rgba(255, 255, 255, 0.02);
+  --surface-inset-border: rgba(255, 255, 255, 0.08);
+  --surface-hairline-bg: rgba(255, 255, 255, 0.01);
+  --surface-hairline-border: rgba(255, 255, 255, 0.03);
+  --surface-sunken-bg: rgba(255, 255, 255, 0.08);
+  --surface-chip-border: rgba(255, 255, 255, 0.1);
+  --tw-accent-secondary-08: rgba(111, 216, 200, 0.08);
+  --tw-accent-secondary-20: rgba(111, 216, 200, 0.2);
+  --tw-accent-secondary-35: rgba(111, 216, 200, 0.35);
+  --tw-accent-secondary-45: rgba(111, 216, 200, 0.45);
+  --tw-accent-primary-08: rgba(244, 162, 97, 0.08);
+  --tw-accent-primary-20: rgba(244, 162, 97, 0.2);
+  --tw-on-accent-secondary-solid: #0b2b26;
+  --surface-btn-bg: rgba(255, 255, 255, 0.03);
+  --surface-btn-border: rgba(255, 255, 255, 0.2);
+  --surface-btn-border-soft: rgba(255, 255, 255, 0.15);
+  --surface-btn-hover: rgba(255, 255, 255, 0.1);
+  --surface-border-faint: rgba(255, 255, 255, 0.05);
+  --surface-track: rgba(255, 255, 255, 0.05);
+  --shadow-alert: rgba(229, 9, 20, 0.4);
+  --surface-select-tint: rgba(231, 106, 36, 0.15);
+  --timer-running: #f87171;
+  --timer-running-bg: rgba(248, 113, 113, 0.18);
+  --timer-running-border: rgba(248, 113, 113, 0.45);
 }
 :root[data-theme="light"],
 .light {
@@ -70,6 +156,92 @@
   --font-sans: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
   --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-bounce: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+  /* Paleta Stitch → variables CSS (theme-aware). 2026-10-20: antes era
+     una paleta fija en tailwind.config.js (siempre oscura) y se mezclaba
+     con el tema claro. En el tema oscuro los valores NO cambian. */
+  --tw-background: #fcf9f8;
+  --tw-surface: #fcf9f8;
+  --tw-surface-level-1: #ffffff;
+  --tw-surface-container: #f0eded;
+  --tw-surface-container-low: #ffffff;
+  --tw-surface-container-high: #eae7e7;
+  --tw-surface-container-highest: #e3e0e0;
+  --tw-surface-container-lowest: #ffffff;
+  --tw-surface-variant: #eae7e7;
+  --tw-surface-dim: #eae7e7;
+  --tw-surface-bright: #ffffff;
+  --tw-obsidian-zero: #f0eded;
+  --tw-on-surface: #1c1b1b;
+  --tw-on-background: #1c1b1b;
+  --tw-on-surface-variant: 89 65 60;
+  --tw-primary: 170 48 21;
+  --tw-primary-container: #aa3015;
+  --tw-primary-fixed: #ffdcc4;
+  --tw-primary-fixed-dim: #ffb780;
+  --tw-on-primary: #ffffff;
+  --tw-on-primary-container: #ffffff;
+  --tw-on-primary-fixed: #2f1400;
+  --tw-on-primary-fixed-variant: #6f3800;
+  --tw-secondary: #7e5700;
+  --tw-secondary-container: #7e5700;
+  --tw-secondary-fixed: #8cf5e4;
+  --tw-secondary-fixed-dim: #6fd8c8;
+  --tw-on-secondary: #ffffff;
+  --tw-on-secondary-container: #ffffff;
+  --tw-on-secondary-fixed: #00201c;
+  --tw-on-secondary-fixed-variant: #005048;
+  --tw-tertiary: #8c4a38;
+  --tw-tertiary-container: #ffe0d6;
+  --tw-tertiary-fixed: #ffdad2;
+  --tw-tertiary-fixed-dim: #ffb4a2;
+  --tw-on-tertiary: #ffffff;
+  --tw-on-tertiary-container: #82250e;
+  --tw-on-tertiary-fixed: #3c0700;
+  --tw-on-tertiary-fixed-variant: #83260e;
+  --tw-outline: #6b5a52;
+  --tw-outline-variant: #c9b3a8;
+  --tw-border-subtle: rgba(0, 0, 0, 0.08);
+  --tw-energy-track: #dcd7d7;
+  --tw-error: 186 26 26;
+  --tw-error-container: #ffdad6;
+  --tw-on-error: #ffffff;
+  --tw-on-error-container: #93000a;
+  --tw-inverse-primary: #f4a261;
+  --tw-inverse-surface: #1c1b1b;
+  --tw-inverse-on-surface: #fcf9f8;
+  --tw-surface-tint: #ffb780;
+  --surface-scrim: rgba(252, 249, 248, 0.97);
+  --surface-widget: rgba(255, 255, 255, 0.96);
+  --surface-control-bg: rgba(0, 0, 0, 0.04);
+  --surface-control-border: rgba(0, 0, 0, 0.12);
+  --tw-accent-primary: 170 48 21;
+  --tw-accent-secondary: 126 87 0;
+  --tw-accent-alert: 186 26 26;
+  --surface-inset-bg: rgba(0, 0, 0, 0.02);
+  --surface-inset-border: rgba(0, 0, 0, 0.08);
+  --surface-hairline-bg: rgba(0, 0, 0, 0.01);
+  --surface-hairline-border: rgba(0, 0, 0, 0.04);
+  --surface-sunken-bg: rgba(0, 0, 0, 0.06);
+  --surface-chip-border: rgba(0, 0, 0, 0.1);
+  --tw-accent-secondary-08: rgba(126, 87, 0, 0.08);
+  --tw-accent-secondary-20: rgba(126, 87, 0, 0.2);
+  --tw-accent-secondary-35: rgba(126, 87, 0, 0.35);
+  --tw-accent-secondary-45: rgba(126, 87, 0, 0.45);
+  --tw-accent-primary-08: rgba(170, 48, 21, 0.08);
+  --tw-accent-primary-20: rgba(170, 48, 21, 0.2);
+  --tw-on-accent-secondary-solid: #ffffff;
+  --surface-btn-bg: rgba(0, 0, 0, 0.03);
+  --surface-btn-border: rgba(0, 0, 0, 0.2);
+  --surface-btn-border-soft: rgba(0, 0, 0, 0.15);
+  --surface-btn-hover: rgba(0, 0, 0, 0.08);
+  --surface-border-faint: rgba(0, 0, 0, 0.06);
+  --surface-track: rgba(0, 0, 0, 0.06);
+  --shadow-alert: rgba(186, 26, 26, 0.3);
+  --surface-select-tint: rgba(170, 48, 21, 0.12);
+  --timer-running: #ba1a1a;
+  --timer-running-bg: rgba(186, 26, 26, 0.10);
+  --timer-running-border: rgba(186, 26, 26, 0.45);
 }
 
 /* Material Symbols font configuration */
@@ -1219,32 +1391,50 @@ input[type="password"]::placeholder {
   box-sizing: border-box;
 }
 
-/* 2026-10-09 (SPEC_015): superficies con fondo SIEMPRE oscuro — el overlay de
-   descanso y el banner del cronómetro usan rgba fijos, pero el contenido tomaba
-   los tokens del tema activo. Con data-theme=light eso daba texto oscuro sobre
-   fondo oscuro (1.10–2.83:1). Aquí se fija, SOLO dentro de estas superficies, el
-   valor que esos tokens ya tenían en el tema oscuro. Tokens globales intactos. */
-.always-dark-surface {
+/* 2026-10-20: superficies aisladas del chrome de la app (banner y overlay de
+   descanso, glosario, transición "Siguiente Ejercicio" y "Resumen de Rutina").
+
+   Antes esta clase se llamaba "always-dark-surface" (SPEC_015, 2026-10-09) y
+   clavaba tokens oscuros porque el FONDO era un rgba oscuro inmutable. Ahora
+   los fondos son variables por tema (--surface-scrim / --surface-widget), así
+   que la superficie SIGUE al tema: en oscuro conserva exactamente los valores
+   de entonces; en claro usa los equivalentes claros y el texto se lee. */
+.surface-isolated {
   --bg-primary: #16181f;
+  --bg-secondary: #181b26;
+  --bg-tertiary: #1c1f2a;
   --text-primary: #e0e1f1;
   --text-secondary: #d8c2b5;
   --text-tertiary: #94a3b8;
   --border-color: rgba(255, 255, 255, 0.18);
 }
-.always-dark-surface .btn-secondary {
+:root[data-theme="light"] .surface-isolated,
+.light .surface-isolated {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f7f4f3;
+  --bg-tertiary: #efebea;
+  --text-primary: #1c1b1b;
+  --text-secondary: #59413c;
+  --text-tertiary: #8d716a;
+  --border-color: rgba(0, 0, 0, 0.12);
+}
+/* En oscuro el primario conserva el degradado con texto oscuro (10.6:1); con el
+   terracota del tema claro el texto blanco no llegaba a AA. */
+:root[data-theme="dark"] .surface-isolated .btn-primary,
+.dark .surface-isolated .btn-primary {
+  background: linear-gradient(135deg, #f4a261, #6fd8c8);
+  color: #10131e;
+}
+:root[data-theme="dark"] .surface-isolated .btn-secondary,
+.dark .surface-isolated .btn-secondary {
   background-color: #16181f;
   border-color: rgba(255, 255, 255, 0.18);
   color: #e0e1f1;
 }
-.always-dark-surface .btn-secondary:hover {
+:root[data-theme="dark"] .surface-isolated .btn-secondary:hover,
+.dark .surface-isolated .btn-secondary:hover {
   border-color: #f4a261;
   color: #f4a261;
-}
-/* El primario conserva el degradado del tema oscuro con texto oscuro (10.6:1);
-   con el terracota del tema claro el texto blanco no llegaba a AA. */
-.always-dark-surface .btn-primary {
-  background: linear-gradient(135deg, #f4a261, #6fd8c8);
-  color: #10131e;
 }
 
 .timer-circle-wrap {

@@ -1179,7 +1179,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
           display: 'flex', 
           alignItems: 'center', 
           justifyContent: 'center', 
-          backgroundColor: 'rgba(255,255,255,0.03)',
+          backgroundColor: 'var(--surface-btn-bg)',
           color: 'var(--text-tertiary)',
           fontSize: '11px',
           fontStyle: 'italic',
@@ -2321,8 +2321,8 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
     return (
       <div className="app-container flex flex-col justify-center items-center px-6 py-12 min-h-screen bg-background text-on-background relative overflow-hidden" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: '100svh', padding: '24px' }}>
         {/* Decorative elements */}
-        <div className="absolute -top-32 -right-32 w-64 h-64 rounded-full bg-amber-500/10 blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-32 -left-32 w-64 h-64 rounded-full bg-lime-500/10 blur-3xl pointer-events-none" />
+        <div className="absolute -top-32 -right-32 w-64 h-64 rounded-full bg-accent-primary/10 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-32 -left-32 w-64 h-64 rounded-full bg-accent-secondary/10 blur-3xl pointer-events-none" />
         
         <div className="w-full max-w-sm z-10 flex flex-col gap-6" style={{ width: '100%', maxWidth: '360px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <div className="text-center mb-4" style={{ textAlign: 'center' }}>
@@ -2887,7 +2887,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
               </div>
 
               {onboardingWeight > 0 && onboardingHeight > 0 && (
-                <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '16px', backgroundColor: 'rgba(255,255,255,0.01)', border: '1px dashed var(--border-color)', borderRadius: '12px', marginTop: '12px' }}>
+                <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '16px', backgroundColor: 'var(--surface-hairline-bg)', border: '1px dashed var(--border-color)', borderRadius: '12px', marginTop: '12px' }}>
                   <span style={{ fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 700 }}>Índice de Masa Corporal (IMC)</span>
                   <span style={{ fontSize: '28px', fontWeight: '950', color: imcColor, margin: '6px 0', fontFamily: 'Outfit' }}>{imc.toFixed(1)}</span>
                   <span style={{ fontSize: '13px', fontWeight: 'bold', color: imcColor }}>Categoría: {imcCategory}</span>
@@ -2916,7 +2916,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                         height: '54px',
                         borderRadius: '50%',
                         border: `2px solid ${isSelected ? 'var(--accent-secondary)' : 'var(--border-color)'}`,
-                        backgroundColor: isSelected ? 'rgba(231, 106, 36, 0.15)' : 'rgba(255,255,255,0.02)',
+                        backgroundColor: isSelected ? 'var(--surface-select-tint)' : 'var(--surface-inset-bg)',
                         boxShadow: isSelected ? '0 0 15px var(--accent-glow)' : 'none',
                         color: isSelected ? 'var(--accent-secondary)' : 'var(--text-primary)',
                         fontSize: '18px',
@@ -3176,7 +3176,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
               boxShadow: '0 0 100px rgba(244,162,97,0.6)'
             }}
           >
-            <Zap size={72} className="text-[#f4a261]" fill="currentColor" style={{ filter: 'drop-shadow(0 0 20px #f4a261)', animation: 'pulseGlow 0.4s infinite' }} />
+            <Zap size={72} className="text-accent-primary" fill="currentColor" style={{ filter: 'drop-shadow(0 0 20px #f4a261)', animation: 'pulseGlow 0.4s infinite' }} />
             <h1 className="lvl-title" style={{ fontSize: '42px', letterSpacing: '1px', marginTop: '16px' }}>
               DESTELLO NEGRO
             </h1>
@@ -3300,8 +3300,8 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                             alignItems: 'center',
                             fontSize: '11px',
                             color: 'var(--text-secondary)',
-                            backgroundColor: 'rgba(255, 255, 255, 0.01)',
-                            borderBottom: '1px solid rgba(255, 255, 255, 0.03)',
+                            backgroundColor: 'var(--surface-hairline-bg)',
+                            borderBottom: '1px solid var(--surface-hairline-border)',
                             padding: '4px 0'
                           }}
                         >
@@ -3504,12 +3504,12 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
             {timerRemaining > 0 && (
               isTimerMinimized ? (
                 /* Minimized state: show compact banner with a maximize button */
-                <div role="status" aria-live="polite"  className="workout-rest-timer-banner always-dark-surface" style={{ cursor: 'pointer' }} onClick={() => setIsTimerMinimized(false)}>
+                <div role="status" aria-live="polite"  className="workout-rest-timer-banner surface-isolated" style={{ cursor: 'pointer' }} onClick={() => setIsTimerMinimized(false)}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
                     <div className="timer-circle-wrap">
                       <svg className="timer-circle-svg">
-                        <circle cx="20" cy="20" r="17" stroke="rgba(255,255,255,0.05)" strokeWidth="2.5" fill="transparent" />
-                        <circle cx="20" cy="20" r="17" stroke="#f4a261" strokeWidth="2.5" fill="transparent" 
+                        <circle cx="20" cy="20" r="17" stroke="var(--surface-track)" strokeWidth="2.5" fill="transparent" />
+                        <circle cx="20" cy="20" r="17" stroke="var(--accent-primary)" strokeWidth="2.5" fill="transparent" 
                           strokeDasharray="106.8"
                           strokeDashoffset={106.8 - (106.8 * timerRemaining) / timerDuration}
                         />
@@ -3520,7 +3520,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                       {/* 2026-10-09 (SPEC_015): acento fijo — en tema claro el token
                           era terracota (#aa3015) y sobre este fondo oscuro daba 2.8:1 */}
-                      <span style={{ fontSize: '11px', fontWeight: '800', color: '#f4a261', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--accent-primary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                         Intervalo de Recarga
                       </span>
                       <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>
@@ -3537,7 +3537,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                         height: '28px',
                         borderRadius: '50%',
                         border: '1px solid var(--border-color)',
-                        backgroundColor: 'rgba(255,255,255,0.03)',
+                        backgroundColor: 'var(--surface-btn-bg)',
                         color: 'var(--text-primary)',
                         display: 'flex',
                         alignItems: 'center',
@@ -3554,7 +3554,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                         height: '28px',
                         borderRadius: '50%',
                         border: '1px solid var(--border-color)',
-                        backgroundColor: 'rgba(255,255,255,0.03)',
+                        backgroundColor: 'var(--surface-btn-bg)',
                         color: 'var(--text-primary)',
                         display: 'flex',
                         alignItems: 'center',
@@ -3569,9 +3569,9 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
               ) : (
                 /* Full-screen rest overlay with JJK premium styling and backdrop blur */
                 <div 
-                  className="overlay-screen animate-slide always-dark-surface"
+                  className="overlay-screen animate-slide surface-isolated"
                   style={{
-                    backgroundColor: 'rgba(7, 7, 10, 0.96)',
+                    backgroundColor: 'var(--surface-scrim)',
                     backdropFilter: 'blur(20px)',
                     WebkitBackdropFilter: 'blur(20px)',
                     zIndex: 150,
@@ -3592,19 +3592,19 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                   )}
                   {/* 2026-10-09 (SPEC_015): acento fijo ámbar (el token era terracota
                       en tema claro y no llegaba a AA sobre este fondo oscuro) */}
-                  <span style={{ fontSize: '11px', fontWeight: 800, color: '#f4a261', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '16px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--accent-primary)', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '16px' }}>
                     ⚡ Intervalo de Recarga ⚡
                   </span>
                   
                   {/* Big SVG Countdown Wheel */}
                   <div style={{ position: 'relative', width: '200px', height: '200px', marginBottom: '32px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                     <svg style={{ width: '200px', height: '200px', transform: 'rotate(-90deg)' }}>
-                      <circle cx="100" cy="100" r="85" stroke="rgba(255, 255, 255, 0.05)" strokeWidth="6" fill="transparent" />
+                      <circle cx="100" cy="100" r="85" stroke="var(--surface-control-border)" strokeWidth="6" fill="transparent" />
                       <circle 
                         cx="100" 
                         cy="100" 
                         r="85" 
-                        stroke="#f4a261" 
+                        stroke="var(--accent-primary)" 
                         strokeWidth="6" 
                         fill="transparent" 
                         strokeDasharray="534.07"
@@ -3626,8 +3626,8 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                       maxWidth: '360px',
                       padding: '16px 20px',
                       borderRadius: '16px',
-                      backgroundColor: 'rgba(255, 255, 255, 0.03)',
-                      border: '1px solid rgba(255, 255, 255, 0.08)',
+                      backgroundColor: 'var(--surface-control-bg)',
+                      border: '1px solid var(--surface-control-border)',
                       marginBottom: '40px',
                       boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)'
                     }}
@@ -3738,10 +3738,10 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                 transform: 'translateX(-50%)',
                 width: 'calc(100% - 32px)',
                 maxWidth: '480px',
-                backgroundColor: 'rgba(10, 10, 15, 0.95)',
+                backgroundColor: 'var(--surface-widget)',
                 backdropFilter: 'blur(12px)',
                 WebkitBackdropFilter: 'blur(12px)',
-                border: '1.5px solid #6fd8c8',
+                border: '1.5px solid var(--accent-secondary)',
                 borderRadius: '14px',
                 padding: '10px 16px',
                 display: 'flex',
@@ -3752,14 +3752,14 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{ fontSize: '18px', fontWeight: 900, color: '#e0e1f1', fontVariantNumeric: 'tabular-nums', letterSpacing: '0.5px' }}>
+                <span style={{ fontSize: '18px', fontWeight: 900, color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums', letterSpacing: '0.5px' }}>
                   {formatExerciseTime(exerciseTimeElapsed)}
                 </span>
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <span style={{ fontSize: '9px', color: '#f4a261', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px' }}>
+                  <span style={{ fontSize: '9px', color: 'var(--accent-primary)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px' }}>
                     Cronómetro
                   </span>
-                  <span style={{ fontSize: '10px', color: '#94a3b8' }}>
+                  <span style={{ fontSize: '10px', color: 'var(--text-tertiary)' }}>
                     {isCardioOrStretch ? 'Cardio activo ⚡' : 'Misión en curso'}
                   </span>
                 </div>
@@ -3769,12 +3769,12 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                 <button
                   onClick={() => setIsExerciseTimerRunning(!isExerciseTimerRunning)}
                   style={{
-                    backgroundColor: isExerciseTimerRunning ? 'rgba(248, 113, 113, 0.18)' : 'rgba(255, 255, 255, 0.05)',
+                    backgroundColor: isExerciseTimerRunning ? 'var(--timer-running-bg)' : 'var(--surface-control-bg)',
                     /* 2026-10-09 (SPEC_015): bordes fijos — var(--border-color) era
                        oscuro sobre el fondo siempre oscuro del widget, invisible. */
-                    border: `1px solid ${isExerciseTimerRunning ? 'rgba(248, 113, 113, 0.45)' : 'rgba(255, 255, 255, 0.18)'}`,
+                    border: `1px solid ${isExerciseTimerRunning ? 'var(--timer-running-border)' : 'var(--surface-control-border)'}`,
                     /* 2026-10-09 (SPEC_015): #ef4444 daba 4.11:1; #f87171 pasa AA. */
-                    color: isExerciseTimerRunning ? '#f87171' : '#e0e1f1',
+                    color: isExerciseTimerRunning ? 'var(--timer-running)' : 'var(--text-primary)',
                     borderRadius: '8px',
                     padding: '6px 12px',
                     fontSize: '11px',
@@ -3792,10 +3792,10 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                 <button
                   onClick={() => setExerciseTimeElapsed(0)}
                   style={{
-                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                    /* 2026-10-09 (SPEC_015): igual que arriba, borde fijo visible. */
-                    border: '1px solid rgba(255, 255, 255, 0.18)',
-                    color: '#94a3b8',
+                    backgroundColor: 'var(--surface-control-bg)',
+                    /* 2026-10-20: el widget sigue al tema (antes fijo en oscuro). */
+                    border: '1px solid var(--surface-control-border)',
+                    color: 'var(--text-tertiary)',
                     borderRadius: '8px',
                     padding: '6px 10px',
                     fontSize: '11px',
@@ -3858,7 +3858,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
 
           return (
             <div
-              className="overlay-screen animate-slide always-dark-surface"
+              className="overlay-screen animate-slide surface-isolated"
               style={{ zIndex: 160, overflowY: 'auto', paddingBottom: '32px' }}
             >
               {/* Header: rutina + contador de ejercicio */}
@@ -3897,7 +3897,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                   style={{
                     height: '6px',
                     borderRadius: '9999px',
-                    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                    backgroundColor: 'var(--surface-sunken-bg)',
                     overflow: 'hidden'
                   }}
                 >
@@ -3916,7 +3916,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                 {fromCompleted && (
                   <section
                     className="card"
-                    style={{ border: '1px solid rgba(111, 216, 200, 0.35)', backgroundColor: 'rgba(111, 216, 200, 0.08)' }}
+                    style={{ border: '1px solid var(--tw-accent-secondary-35)', backgroundColor: 'var(--tw-accent-secondary-08)' }}
                   >
                     <span
                       style={{
@@ -3977,8 +3977,8 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                         flex: 1,
                         padding: '10px 12px',
                         borderRadius: '12px',
-                        backgroundColor: 'rgba(244, 162, 97, 0.08)',
-                        border: '1px solid rgba(244, 162, 97, 0.2)'
+                        backgroundColor: 'var(--tw-accent-primary-08)',
+                        border: '1px solid var(--tw-accent-primary-20)'
                       }}
                     >
                       <span style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-secondary)', display: 'block' }}>
@@ -3993,8 +3993,8 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                         flex: 1,
                         padding: '10px 12px',
                         borderRadius: '12px',
-                        backgroundColor: 'rgba(111, 216, 200, 0.08)',
-                        border: '1px solid rgba(111, 216, 200, 0.2)'
+                        backgroundColor: 'var(--tw-accent-secondary-08)',
+                        border: '1px solid var(--tw-accent-secondary-20)'
                       }}
                     >
                       <span style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-secondary)', display: 'block' }}>
@@ -4024,7 +4024,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                       cursor: 'pointer',
                       textAlign: 'left',
                       backgroundColor: equipmentConfirmed ? 'rgba(111, 216, 200, 0.1)' : 'transparent',
-                      border: `1px solid ${equipmentConfirmed ? 'rgba(111, 216, 200, 0.45)' : 'rgba(255, 255, 255, 0.15)'}`,
+                      border: `1px solid ${equipmentConfirmed ? 'var(--tw-accent-secondary-45)' : 'var(--surface-btn-border-soft)'}`,
                       transition: 'all 0.2s ease'
                     }}
                   >
@@ -4040,8 +4040,8 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                         fontWeight: 900,
                         flexShrink: 0,
                         backgroundColor: equipmentConfirmed ? 'var(--accent-secondary)' : 'transparent',
-                        color: equipmentConfirmed ? '#0b2b26' : 'var(--text-secondary)',
-                        border: `1px solid ${equipmentConfirmed ? 'var(--accent-secondary)' : 'rgba(255, 255, 255, 0.2)'}`
+                        color: equipmentConfirmed ? 'var(--tw-on-accent-secondary-solid)' : 'var(--text-secondary)',
+                        border: `1px solid ${equipmentConfirmed ? 'var(--accent-secondary)' : 'var(--surface-btn-border)'}`
                       }}
                     >
                       ✓
@@ -4089,7 +4089,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
           ];
           return (
             <div
-              className="overlay-screen animate-slide always-dark-surface"
+              className="overlay-screen animate-slide surface-isolated"
               style={{ zIndex: 170, overflowY: 'auto', paddingBottom: '120px' }}
             >
               <header className="overlay-header">
@@ -4284,7 +4284,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                 if (!featuredRoutine) return null;
                 return (
                   <section className="card" style={{ position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    <div className="absolute -top-16 -right-16 w-40 h-40 rounded-full bg-amber-500/10 blur-2xl pointer-events-none" />
+                    <div className="absolute -top-16 -right-16 w-40 h-40 rounded-full bg-accent-primary/10 blur-2xl pointer-events-none" />
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative' }}>
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 12px', backgroundColor: 'var(--bg-surface-elevated)', border: '1px solid var(--border-color)', borderRadius: '9999px', fontSize: '10px', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase', color: 'var(--accent-primary)' }}>
                         <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>fitness_center</span>
@@ -4312,7 +4312,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
 
               {/* Level XP Card */}
               <section className="card">
-                <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full bg-amber-500/10 blur-3xl pointer-events-none" />
+                <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full bg-accent-primary/10 blur-3xl pointer-events-none" />
                 <div className="level-xp-info">
                   <span style={{ fontWeight: '700', color: 'var(--text-secondary)' }}>Nivel de Ki (XP)</span>
                   <span style={{ color: 'var(--accent-secondary)', fontWeight: '700' }}>
@@ -4356,7 +4356,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
               {/* Weekly Calendar Card */}
               <section className="card">
                 <h3 className="card-title">
-                  <Calendar size={15} className="text-[#f4a261]" />
+                  <Calendar size={15} className="text-accent-primary" />
                   <span>Misiones Semanales</span>
                 </h3>
                 
@@ -4386,7 +4386,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                   </span>
                 </div>
                 
-                <div className="progress-track" style={{ height: '8px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '4px', overflow: 'hidden' }}>
+                <div className="progress-track" style={{ height: '8px', backgroundColor: 'var(--surface-track)', borderRadius: '4px', overflow: 'hidden' }}>
                   <div 
                     className="progress-fill" 
                     style={{ 
@@ -4521,7 +4521,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                                 justifyContent: 'space-between', 
                                 alignItems: 'center', 
                                 marginBottom: '6px', 
-                                backgroundColor: 'rgba(255,255,255,0.02)',
+                                backgroundColor: 'var(--surface-inset-bg)',
                                 border: '1px solid var(--border-color)',
                                 borderRadius: '10px',
                                 color: 'var(--text-primary)',
@@ -4573,7 +4573,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                           flex: 1,
                           height: '32px',
                           borderRadius: '6px',
-                          border: `1.5px solid ${isFilled ? '#6fd8c8' : 'rgba(255,255,255,0.1)'}`,
+                          border: `1.5px solid ${isFilled ? '#6fd8c8' : 'var(--surface-chip-border)'}`,
                           backgroundColor: isFilled ? 'rgba(111, 216, 200, 0.2)' : 'transparent',
                           display: 'flex',
                           alignItems: 'center',
@@ -4612,7 +4612,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                       localStorage.setItem(`water_intake_${todayStr}`, newVal.toString());
                     }}
                     className="btn-secondary"
-                    style={{ flex: 1, padding: '10px', fontSize: '12px', borderColor: 'rgba(255,255,255,0.1)', color: 'var(--text-secondary)', borderRadius: '12px', cursor: 'pointer' }}
+                    style={{ flex: 1, padding: '10px', fontSize: '12px', borderColor: 'var(--surface-chip-border)', color: 'var(--text-secondary)', borderRadius: '12px', cursor: 'pointer' }}
                     disabled={waterIntake === 0}
                   >
                     Remover 🥛
@@ -4630,7 +4630,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
               <section className="card" style={{ cursor: 'pointer', marginTop: '4px' }} onClick={() => setShowGlossary(true)}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <BookOpen size={16} className="text-[#f4a261]" />
+                    <BookOpen size={16} className="text-accent-primary" />
                     <span style={{ fontWeight: '700', fontSize: '13px', color: 'var(--text-primary)' }}>Glosario de Técnicas</span>
                   </div>
                   <span style={{ fontSize: '12px', color: 'var(--accent-primary)', fontWeight: 'bold' }}>Ver Catálogo →</span>
@@ -4817,7 +4817,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                       <label className="font-label-md text-label-md text-primary uppercase tracking-wider" htmlFor="routine-name">Nombre de la Rutina</label>
                       <div className="relative" aria-live="polite">
                         <input 
-                          className="w-full h-14 bg-obsidian-zero border border-border-subtle rounded-lg px-4 pr-4 text-on-surface font-body-lg text-body-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-all placeholder:text-on-surface-variant/40" 
+                          className="w-full h-14 bg-surface-container border border-border-subtle rounded-lg px-4 pr-4 text-on-surface font-body-lg text-body-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 transition-all placeholder:text-on-surface-variant/40" 
                           id="routine-name" 
                           placeholder="Ej: Tormenta Solar" 
                           type="text"
@@ -4868,7 +4868,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                               className={`w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center font-label-lg text-label-lg transition-transform active:scale-95 ${
                                 isSelected 
                                   ? 'bg-primary text-on-primary shadow-[0_0_20px_rgba(244,162,97,0.28)] font-bold' 
-                                  : 'bg-obsidian-zero border border-border-subtle text-on-surface-variant hover:border-primary/50'
+                                  : 'bg-surface-container border border-border-subtle text-on-surface-variant hover:border-primary/50'
                               }`}
                             >
                               {day.label}
@@ -4886,7 +4886,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                         Técnicas Seleccionadas ({newRoutineSelectedExercises.length})
                       </h4>
                       {newRoutineSelectedExercises.length === 0 ? (
-                        <div className="py-6 flex flex-col items-center justify-center text-center gap-2 border border-dashed border-border-subtle rounded-xl bg-obsidian-zero">
+                        <div className="py-6 flex flex-col items-center justify-center text-center gap-2 border border-dashed border-border-subtle rounded-xl bg-surface-container">
                           <span className="material-symbols-outlined text-on-surface-variant/30 text-4xl">do_not_disturb_off</span>
                           <p className="text-on-surface-variant font-label-md" style={{ fontSize: '12px' }}>
                             No hay técnicas seleccionadas. Usa el buscador de abajo para añadir técnicas.
@@ -4899,11 +4899,11 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                             return (
                               <div 
                                 key={config.id} 
-                                className="flex flex-col gap-3 p-3 bg-obsidian-zero rounded-lg border border-border-subtle hover:border-primary/30 transition-colors group"
+                                className="flex flex-col gap-3 p-3 bg-surface-container rounded-lg border border-border-subtle hover:border-primary/30 transition-colors group"
                               >
                                 <div className="flex justify-between items-center">
                                   <div className="flex items-center gap-4">
-                                    <div className="w-14 h-14 rounded-md bg-surface-bright overflow-hidden flex-shrink-0 relative border border-white/5">
+                                    <div className="w-14 h-14 rounded-md bg-surface-bright overflow-hidden flex-shrink-0 relative border border-[var(--surface-border-faint)]">
                                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10 pointer-events-none" aria-hidden="true"></div>
                                       <div className="w-full h-full bg-surface-container flex items-center justify-center">
                                         {exerciseObj ? renderExerciseMedia(exerciseObj, { style: { width: '100%', height: '100%', objectFit: 'cover' } }) : (
@@ -4931,7 +4931,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                                           prev.map(item => item.id === config.id ? { ...item, is_time_based: !item.is_time_based } : item)
                                         );
                                       }}
-                                      className="px-2 py-1 text-[11px] rounded bg-white/5 border border-white/10 text-on-surface-variant hover:text-primary hover:bg-white/10 transition-all font-semibold"
+                                      className="px-2 py-1 text-[11px] rounded bg-[var(--surface-btn-bg)] border border-[var(--surface-btn-border-soft)] text-on-surface-variant hover:text-primary hover:bg-[var(--surface-btn-hover)] transition-all font-semibold"
                                       style={{ display: 'flex', alignItems: 'center', gap: '3px' }}
                                     >
                                       <span>{config.is_time_based ? '⏱️ Tiempo' : '🔢 Reps'}</span>
@@ -4950,7 +4950,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                                 </div>
 
                                 {/* Edit Fields */}
-                                <div className="grid grid-cols-3 gap-2 pt-2 border-t border-white/5">
+                                <div className="grid grid-cols-3 gap-2 pt-2 border-t border-[var(--surface-border-faint)]">
                                   <div>
                                     <label className="text-[11px] text-on-surface-variant/80 uppercase block mb-1" style={{ fontSize: '12px' }}>Series</label>
                                     <div className="stepper-container bg-surface-container-high">
@@ -5132,7 +5132,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                         placeholder="Buscar técnica por nombre..."
                         value={routineExerciseSearch}
                         onChange={(e) => setRoutineExerciseSearch(e.target.value)}
-                        className="search-input w-full bg-obsidian-zero border border-border-subtle rounded-lg px-4 py-3 text-on-surface font-body-md"
+                        className="search-input w-full bg-surface-container border border-border-subtle rounded-lg px-4 py-3 text-on-surface font-body-md"
                         style={{ paddingLeft: '40px', fontSize: '13px' }}
                       />
                       <Search size={16} className="search-icon" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
@@ -5196,12 +5196,12 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                             }}
                           >
                             <div className="flex items-center gap-4" style={{ flex: 1 }}>
-                              <div style={{ width: '96px', height: '96px', borderRadius: '8px', overflow: 'hidden', backgroundColor: 'var(--bg-primary)', border: '1px solid rgba(255,255,255,0.05)', flexShrink: 0 }}>
+                              <div style={{ width: '96px', height: '96px', borderRadius: '8px', overflow: 'hidden', backgroundColor: 'var(--bg-primary)', border: '1px solid var(--surface-border-faint)', flexShrink: 0 }}>
                                 {renderExerciseMedia(ex, { style: { width: '100%', height: '100%', objectFit: 'cover' } })}
                               </div>
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                 <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>{ex.name}</span>
-                                <span style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'inline-block', backgroundColor: 'rgba(255,255,255,0.03)', padding: '2px 8px', borderRadius: '4px', alignSelf: 'flex-start' }}>{ex.category}</span>
+                                <span style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'inline-block', backgroundColor: 'var(--surface-btn-bg)', padding: '2px 8px', borderRadius: '4px', alignSelf: 'flex-start' }}>{ex.category}</span>
                               </div>
                             </div>
                             <button
@@ -5232,7 +5232,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                   </section>
 
                   {/* Save Action */}
-                  <div className="pt-6 mt-4 border-t border-white/5 pb-10">
+                  <div className="pt-6 mt-4 border-t border-[var(--surface-border-faint)] pb-10">
                     <button aria-label={editingRoutineId ? 'Actualizar Rutina de Ki' : 'Guardar Rutina de Ki'}  
                       onClick={handleCreateRoutine}
                       disabled={!newRoutineName.trim() || newRoutineSelectedExercises.length === 0}
@@ -5267,7 +5267,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
 
             <section className="card">
               <h3 className="card-title">
-                <TrendingUp size={15} className="text-[#f4a261]" />
+                <TrendingUp size={15} className="text-accent-primary" />
                 <span>Destellos Negros ⚡ (1RM Estimados)</span>
               </h3>
               
@@ -5301,7 +5301,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
 
             <section className="card">
               <h3 className="card-title">
-                <Clock size={15} className="text-[#f4a261]" />
+                <Clock size={15} className="text-accent-primary" />
                 <span>Historial de Rituales</span>
               </h3>
 
@@ -5552,7 +5552,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                        style={{
                          padding: '6px 12px',
                          fontSize: '12px',
-                         backgroundColor: editCursedTechnique === t ? 'rgba(231, 106, 36, 0.15)' : 'rgba(255,255,255,0.03)',
+                         backgroundColor: editCursedTechnique === t ? 'var(--surface-select-tint)' : 'var(--surface-btn-bg)',
                          border: `1px solid ${editCursedTechnique === t ? 'var(--accent-secondary)' : 'var(--border-color)'}`,
                          borderRadius: '16px',
                          color: editCursedTechnique === t ? 'var(--accent-secondary)' : 'var(--text-secondary)',
@@ -5603,7 +5603,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                     await updateBodyMetrics(parsedW, parsedF, parsedH);
                   }}
                   className="btn-secondary"
-                  style={{ padding: '6px 12px', fontSize: '11px', borderRadius: '20px', borderColor: 'rgba(255,255,255,0.1)', cursor: 'pointer' }}
+                  style={{ padding: '6px 12px', fontSize: '11px', borderRadius: '20px', borderColor: 'var(--surface-chip-border)', cursor: 'pointer' }}
                 >
                   Actualizar
                 </button>
@@ -5613,7 +5613,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
             {/* Marcas & Destellos Récords (moved from Hoy) (SPEC_011) */}
             <section className="card">
               <h3 className="card-title">
-                <TrendingUp size={15} className="text-[#f4a261]" />
+                <TrendingUp size={15} className="text-accent-primary" />
                 <span>Marcas & Destellos Récords</span>
               </h3>
               {Object.keys(personalRecords).length === 0 ? (
@@ -5626,7 +5626,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                     const ex = exercises.find((e) => e.id === exId);
                     if (!ex) return null;
                     return (
-                      <div key={exId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 8px', backgroundColor: 'rgba(255,255,255,0.01)', borderBottom: '1px solid rgba(255,255,255,0.03)', borderRadius: '6px' }}>
+                      <div key={exId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 8px', backgroundColor: 'var(--surface-hairline-bg)', borderBottom: '1px solid var(--surface-hairline-border)', borderRadius: '6px' }}>
                         <div>
                           <h4 style={{ margin: 0, fontSize: '12px', color: 'var(--text-primary)', fontWeight: 600 }}>{ex.name}</h4>
                           <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>1RM: {record.oneRM.toFixed(1)} kg • {record.weight}kg x {record.reps}r</span>
@@ -5868,9 +5868,9 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
       {/* GLOSARIO DE TÉCNICAS (MODAL) */}
       {showGlossary && (
         <div 
-          className="overlay-screen animate-slide always-dark-surface"
+          className="overlay-screen animate-slide surface-isolated"
           style={{ 
-            backgroundColor: 'rgba(7, 7, 10, 0.96)', 
+            backgroundColor: 'var(--surface-scrim)', 
             backdropFilter: 'blur(16px)',
             WebkitBackdropFilter: 'blur(16px)',
             zIndex: 150,
@@ -5986,7 +5986,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                         borderRadius: '12px',
                         padding: '16px',
                         textAlign: 'center',
-                        backgroundColor: 'rgba(255, 255, 255, 0.01)',
+                        backgroundColor: 'var(--surface-hairline-bg)',
                         cursor: 'pointer'
                       }}
                         onClick={() => document.getElementById('exercise-media-input-glossary')?.click()}
@@ -6079,9 +6079,9 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
       {/* GLOSARIO DE TÉCNICAS (MODAL) */}
       {selectedExerciseForGlosario && (
         <div 
-          className="overlay-screen animate-slide always-dark-surface"
+          className="overlay-screen animate-slide surface-isolated"
           style={{ 
-            backgroundColor: 'rgba(7, 7, 10, 0.96)', 
+            backgroundColor: 'var(--surface-scrim)', 
             backdropFilter: 'blur(16px)',
             WebkitBackdropFilter: 'blur(16px)',
             zIndex: 200,
@@ -6123,7 +6123,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
               
               {/* Posición Inicial */}
               {selectedExerciseForGlosario.posicion_inicial && selectedExerciseForGlosario.posicion_inicial.length > 0 && (
-                <div style={{ padding: '14px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)', backgroundColor: 'rgba(255, 255, 255, 0.02)' }}>
+                <div style={{ padding: '14px', borderRadius: '12px', border: '1px solid var(--surface-inset-border)', backgroundColor: 'var(--surface-inset-bg)' }}>
                   <h4 style={{ color: 'var(--accent-primary)', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px', margin: 0 }}>
                     <span>🥋</span> Posición Inicial
                   </h4>
@@ -6137,7 +6137,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
 
               {/* Ejecución */}
               {selectedExerciseForGlosario.ejecucion && selectedExerciseForGlosario.ejecucion.length > 0 && (
-                <div style={{ padding: '14px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)', backgroundColor: 'rgba(255, 255, 255, 0.02)' }}>
+                <div style={{ padding: '14px', borderRadius: '12px', border: '1px solid var(--surface-inset-border)', backgroundColor: 'var(--surface-inset-bg)' }}>
                   <h4 style={{ color: 'var(--accent-primary)', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px', margin: 0 }}>
                     <span>⚔️</span> Ejecución
                   </h4>
@@ -6151,7 +6151,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
 
               {/* Consejos */}
               {selectedExerciseForGlosario.consejos && selectedExerciseForGlosario.consejos.length > 0 && (
-                <div style={{ padding: '14px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)', backgroundColor: 'rgba(255, 255, 255, 0.02)' }}>
+                <div style={{ padding: '14px', borderRadius: '12px', border: '1px solid var(--surface-inset-border)', backgroundColor: 'var(--surface-inset-bg)' }}>
                   <h4 style={{ color: 'var(--accent-primary)', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px', margin: 0 }}>
                     <span>💡</span> Tips e Indicaciones
                   </h4>
@@ -6165,7 +6165,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
 
               {/* Variantes */}
               {selectedExerciseForGlosario.variantes && selectedExerciseForGlosario.variantes.length > 0 && (
-                <div style={{ padding: '14px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)', backgroundColor: 'rgba(255, 255, 255, 0.02)' }}>
+                <div style={{ padding: '14px', borderRadius: '12px', border: '1px solid var(--surface-inset-border)', backgroundColor: 'var(--surface-inset-bg)' }}>
                   <h4 style={{ color: 'var(--accent-primary)', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px', margin: 0 }}>
                     <span>🌀</span> Variantes
                   </h4>
@@ -6192,7 +6192,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                 fontSize: '12px',
                 letterSpacing: '1px',
                 textTransform: 'uppercase',
-                boxShadow: '0 4px 15px rgba(229, 9, 20, 0.4)'
+                boxShadow: '0 4px 15px var(--shadow-alert)'
               }}
             >
               🔴 Cerrar Glosario
