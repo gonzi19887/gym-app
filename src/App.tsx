@@ -261,7 +261,7 @@ const [showShenronModal, setShowShenronModal] = useState<boolean>(false);
 
   // Gamification & Level Up Overlay State
   const [levelUpInfo, setLevelUpInfo] = useState<{ oldLevel: number; newLevel: number; xpEarned: number } | null>(null);
-  const [showBlackFlash, setShowBlackFlash] = useState(false); // Jujutsu personal record burst
+  const [showPRBreak, setShowPRBreak] = useState(false); // Racha de récord personal (PR)
 
   // 2026-10-14 (Stitch Gen 2): pantalla de transición "Siguiente Ejercicio"
   // y pantalla de "Resumen de Rutina" al completar el entreno.
@@ -1956,7 +1956,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
     setOnboardingFromWorkout(false);
     setTimerRemaining(0);
     setIsTimerRunning(false);
-    setShowBlackFlash(false);
+    setShowPRBreak(false);
 
     // SPEC_007: Persist workout start to IndexedDB for crash/interrupt recovery
     saveActiveWorkoutState({
@@ -1970,7 +1970,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
     }).catch(err => console.warn('Could not persist workout state:', err));
   };
 
-  // Toggle set completion and trigger timer / check Black Flash (PR)
+  // Toggle set completion and trigger timer / check PR record
   const handleToggleSet = (setId: string, isCompleted: boolean) => {
     setActiveWorkoutSets((prev) =>
       prev.map((set) => {
@@ -1989,10 +1989,10 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
               const existingRecord = personalRecords[set.exercise_id];
 
               if (!existingRecord || current1RM > existingRecord.oneRM) {
-                // BLACK FLASH TRIGGERS!
-                setShowBlackFlash(true);
+                // ¡SE ACTIVA EL RÉCORD PERSONAL!
+                setShowPRBreak(true);
                 triggerVibration([300, 100, 300]);
-                setTimeout(() => setShowBlackFlash(false), 2500); // clear banner after 2.5s
+                setTimeout(() => setShowPRBreak(false), 2500); // clear banner after 2.5s
               }
             }
 
@@ -2327,10 +2327,10 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
         <div className="w-full max-w-sm z-10 flex flex-col gap-6" style={{ width: '100%', maxWidth: '360px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <div className="text-center mb-4" style={{ textAlign: 'center' }}>
             <h1 className="font-headline text-primary mb-2 uppercase tracking-wide drop-shadow-md" style={{ fontSize: '32px', color: 'var(--accent-primary)', marginBottom: '8px', fontWeight: '800' }}>
-              Hechicería Fitness
+              Capsule Corp Fitness
             </h1>
             <p className="text-on-surface-variant uppercase tracking-widest font-semibold" style={{ fontSize: '12px', color: 'var(--text-secondary)', letterSpacing: '2px' }}>
-              Expande tu Dominio • Forja tu Fuerza
+              Forja tu Fuerza • Supera tus Límites
             </p>
           </div>
 
@@ -2387,7 +2387,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                   <label style={{ fontSize: '12px', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontWeight: 'bold' }}>Apodo / Username</label>
                   <input aria-label="Apodo / Username" 
                     type="text"
-                    placeholder="Ej: Gojo Satoru"
+                    placeholder="Ej: Son Goku"
                     value={authUsername}
                     onChange={(e) => setAuthUsername(e.target.value)}
                     className="form-input"
@@ -2900,7 +2900,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div style={{ textAlign: 'center', marginBottom: '8px' }}>
                 <h2 style={{ fontSize: '18px', fontWeight: 'bold', margin: '0 0 6px 0', color: 'var(--text-primary)' }}>3. Meta Semanal</h2>
-                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0 }}>¿Cuántas veces expandirás tu dominio en el gimnasio a la semana? Esto definirá tu meta de Ki.</p>
+                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0 }}>¿Cuántas veces entrenarás a la semana en el gimnasio? Esto definirá tu meta de Ki.</p>
               </div>
 
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'center', padding: '12px 0' }}>
@@ -3130,7 +3130,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
               <span className="header-theme-label" style={{ fontSize: '10px' }}>{theme === 'dark' ? 'CLARO' : 'OSCURO'}</span>
             </button>
 
-            <div className="profile-section" style={{ cursor: 'pointer' }} onClick={() => setActiveTab('perfil')} title="Ver perfil del hechicero">
+            <div className="profile-section" style={{ cursor: 'pointer' }} onClick={() => setActiveTab('perfil')} title="Ver perfil del atleta">
             <img 
               src={profile.avatar_url} 
               alt="Avatar" 
@@ -3166,8 +3166,8 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
       {/* Main Content Area */}
       <main className="app-main">
         
-        {/* BLACK FLASH (PR BREAK) FULLSCREEN BURST EFFECT */}
-        {showBlackFlash && (
+        {/* RÉCORD PERSONAL (PR BREAK) — EFECTO A PANTALLA COMPLETA */}
+        {showPRBreak && (
           <div 
             className="fixed inset-0 flex flex-col items-center justify-center z-50 animate-pop"
             style={{ 
@@ -3181,10 +3181,10 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
               DESTELLO NEGRO
             </h1>
             <p style={{ color: '#fff', fontSize: '16px', fontWeight: 'bold', textShadow: '0 0 8px #f4a261', textTransform: 'uppercase' }}>
-              ¡BLACK FLASH! ⚡
+              ¡RÉCORD PERSONAL! ⚡
             </p>
             <p style={{ color: 'var(--text-secondary)', fontSize: '12px', marginTop: '8px' }}>
-              Rompiste tu récord personal. ¡Tu energía maldita se desborda!
+              ¡Rompiste tu récord personal! Tu energía se desborda.
             </p>
           </div>
         )}
@@ -4154,7 +4154,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                     </p>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 12px', borderRadius: '12px', backgroundColor: 'rgba(244, 162, 97, 0.08)', border: '1px solid rgba(244, 162, 97, 0.2)' }}>
                       <span style={{ fontSize: '18px' }}>⚡</span>
-                      <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>+{s.xpEarned} XP de experiencia maldita</span>
+                      <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>+{s.xpEarned} XP de experiencia</span>
                     </div>
                   </section>
                 )}
@@ -4273,7 +4273,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                   Fitness for<br />everyday athletes
                 </h1>
                 <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0 }}>
-                  Empuja tus límites hoy, hechicero.
+                  Empuja tus límites hoy, guerrero.
                 </p>
               </section>
 
@@ -5260,7 +5260,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                 <p className="stat-value">{workouts.length}</p>
               </div>
               <div className="stat-box">
-                <span className="stat-label">Energía Maldita</span>
+                <span className="stat-label">Energía (XP)</span>
                 <p className="stat-value">{profile?.experience_points || 0}</p>
               </div>
             </div>
@@ -5340,7 +5340,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
               className="btn-danger-outline" 
               style={{ width: '100%', marginTop: '8px', padding: '12px', fontSize: '12px', fontWeight: 'bold' }}
               onClick={async () => {
-                if (confirm('¿Seguro que deseas restablecer el templo? Esto eliminará todo tu historial de hechicería y cargará los datos por defecto.')) {
+                if (confirm('¿Seguro que deseas restablecer el templo? Esto eliminará todo tu historial de entrenamiento y cargará los datos por defecto.')) {
                   await clearAllTables();
                   localStorage.removeItem('onboarding_completed');
                   // 2026-10-07 (SDD Fase 2): clearAllTables NO toca app_settings;
@@ -5673,7 +5673,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                       <label style={{ fontSize: '12px', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontWeight: 'bold' }}>Apodo / Username</label>
                       <input aria-label="Apodo / Username" 
                         type="text"
-                        placeholder="Ej: Gojo Satoru"
+                        placeholder="Ej: Son Goku"
                         value={authUsername}
                         onChange={(e) => setAuthUsername(e.target.value)}
                         className="form-input"
@@ -5865,7 +5865,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
         </button>
       </nav>
 
-      {/* GLOSARIO DE TÉCNICAS (MODAL DE DOMINIO EXPANSIÓN) */}
+      {/* GLOSARIO DE TÉCNICAS (MODAL) */}
       {showGlossary && (
         <div 
           className="overlay-screen animate-slide always-dark-surface"
@@ -6076,7 +6076,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
         </div>
       )}
 
-      {/* GLOSARIO DE TÉCNICAS (MODAL DE DOMINIO EXPANSIÓN) */}
+      {/* GLOSARIO DE TÉCNICAS (MODAL) */}
       {selectedExerciseForGlosario && (
         <div 
           className="overlay-screen animate-slide always-dark-surface"
@@ -6088,7 +6088,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
             overflowY: 'auto'
           }}
         >
-          <header className="overlay-header" style={{ borderBottom: '1px solid var(--border-color)', backgroundColor: 'transparent', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <header className="overlay-header" style={{ borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-primary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <span className="overlay-header-title-sub" style={{ color: 'var(--accent-primary)', fontSize: '11px', display: 'block' }}>Glosario de Técnicas</span>
               <h3 className="overlay-header-title" style={{ fontSize: '1.25rem', fontWeight: 800, marginTop: '2px', color: 'var(--text-primary)' }}>{selectedExerciseForGlosario.name}</h3>
@@ -6195,7 +6195,7 @@ const [, setAssigningRoutineDayValue] = useState<number | null>(null);
                 boxShadow: '0 4px 15px rgba(229, 9, 20, 0.4)'
               }}
             >
-              🔴 Cerrar Dominio
+              🔴 Cerrar Glosario
             </button>
           </div>
         </div>
