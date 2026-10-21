@@ -122,6 +122,7 @@
   --surface-track: rgba(255, 255, 255, 0.05);
   --shadow-alert: rgba(229, 9, 20, 0.4);
   --surface-select-tint: rgba(231, 106, 36, 0.15);
+  --on-accent: #10131e;
   --timer-running: #f87171;
   --timer-running-bg: rgba(248, 113, 113, 0.18);
   --timer-running-border: rgba(248, 113, 113, 0.45);
@@ -239,6 +240,7 @@
   --surface-track: rgba(0, 0, 0, 0.06);
   --shadow-alert: rgba(186, 26, 26, 0.3);
   --surface-select-tint: rgba(170, 48, 21, 0.12);
+  --on-accent: #ffffff;
   --timer-running: #ba1a1a;
   --timer-running-bg: rgba(186, 26, 26, 0.10);
   --timer-running-border: rgba(186, 26, 26, 0.45);
@@ -992,7 +994,7 @@ input[type="password"]::placeholder {
 .calendar-day-box.completed {
   background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
   border: none;
-  color: white;
+  color: var(--on-accent);
   box-shadow: 0 4px 10px rgba(244, 162, 97, 0.3);
 }
 
@@ -1284,14 +1286,14 @@ input[type="password"]::placeholder {
 .check-btn.completed {
   background-color: var(--accent-primary);
   border-color: var(--accent-primary);
-  color: white;
+  color: var(--on-accent);
   box-shadow: 0 4px 10px rgba(244, 162, 97, 0.3);
 }
 
 /* Buttons */
 .btn-primary {
   background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-  color: white;
+  color: var(--on-accent);
   border: none;
   font-weight: 700;
   font-size: 13px;
@@ -1417,13 +1419,6 @@ input[type="password"]::placeholder {
   --text-secondary: #59413c;
   --text-tertiary: #8d716a;
   --border-color: rgba(0, 0, 0, 0.12);
-}
-/* En oscuro el primario conserva el degradado con texto oscuro (10.6:1); con el
-   terracota del tema claro el texto blanco no llegaba a AA. */
-:root[data-theme="dark"] .surface-isolated .btn-primary,
-.dark .surface-isolated .btn-primary {
-  background: linear-gradient(135deg, #f4a261, #6fd8c8);
-  color: #10131e;
 }
 :root[data-theme="dark"] .surface-isolated .btn-secondary,
 .dark .surface-isolated .btn-secondary {
@@ -1654,7 +1649,7 @@ input[type="password"]::placeholder {
 .checkbox-row.selected .checkbox-indicator {
   background-color: var(--accent-primary);
   border-color: var(--accent-primary);
-  color: white;
+  color: var(--on-accent);
 }
 
 /* Form Styles */
