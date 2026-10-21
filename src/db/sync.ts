@@ -19,6 +19,19 @@ function isPermanentSyncError(err: unknown): boolean {
   return /does not exist|not found in schema cache|schema cache/i.test(message);
 }
 
+// 2026-10-20: violación de FK (23503). Ocurre cuando una fila apunta a un
+// ejercicio que todavía no existe en la nube —p. ej. un ejercicio del catálogo
+// recién añadido que aún no se ha subido a Supabase—. NO es un error
+// permanente (se arregla cuando el catálogo se sincroniza), pero antes caía en
+// el `break` genérico y UNA sola fila bloqueaba toda la cola FIFO, dejando la
+// app "sin sincronizar" para siempre.
+function isForeignKeyError(err: unknown): boolean {
+  const code = (err as { code?: string })?.code;
+  if (code === '23503') return true;
+  const message = (err as { message?: string })?.message || '';
+  return /violates foreign key|foreign key constraint/i.test(message);
+}
+
 // Extracts the offending column from a PostgREST 42703 error
 // ("column workout_sets.is_time_based does not exist").
 function missingColumnOf(err: unknown): string | null {
@@ -207,6 +220,18 @@ export async function syncLocalQueueToCloud(): Promise<number> {
           continue;
         }
         console.error('Failed to sync item:', item, err);
+        // 2026-10-20: referencia a un ejercicio que aún no está en la nube. El
+        // item NO se descarta (no se pierde el dato) y NO se rompe la cola: se
+        // sigue con el siguiente para que el resto (workouts, sets, perfiles)
+        // suba, y este item se reintentará en la próxima sincronización, ya
+        // existiendo el ejercicio en la nube.
+        if (isForeignKeyError(err)) {
+          console.warn('Referencia pendiente en la nube (FK) — se reintentará:', item, err);
+          recordSyncError(new Error(
+            'Hay un ejercicio de tus rutinas que aún no está en la nube. Se reintentará automáticamente.'
+          ));
+          continue;
+        }
         // 2026-10-09 (Q3): el fallo se persiste para que la barra de estado lo
         // muestre y decida si reintenta. Sin esto, el error moría en consola.
         recordSyncError(err);
