@@ -139,4 +139,8 @@ Los tokens viven en `src/index.css` como variables CSS:
 | `on-surface-variant` | `--text-secondary: #d8c2b5` |
 | `on-surface-muted` | `--text-tertiary: #94a3b8` |
 
-El tema claro (`Laboratorio Zenith`: `#fcf9f8` / terracotta `#aa3015`) se mantiene operativo pero **fuera del alcance de la migración Chronos** (pendiente futuro).
+El tema claro (**Laboratorio Zenith**: `#fcf9f8` / terracotta `#aa3015`) es **operativo y
+coherente** desde el 2026-10-20: la paleta de Tailwind pasó a ser theme-aware
+(`var(--tw-*)`), las superficies aisladas (`.surface-isolated`) siguen al tema y
+el texto sobre acentos usa `--on-accent`. Detalle en el vault:
+`PROYECTOS/Gym App Jujutsu Kaisen PWA/AppGimnasio_Estado_y_Mantenimiento_2026-10.md`.
