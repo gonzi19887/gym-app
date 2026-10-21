@@ -8,12 +8,21 @@ Este documento contiene la especificación oficial del sistema de diseño extra�
 
 ## 🌌 Personalidad de Marca y Estilo Visual
 
-La personalidad de marca sigue siendo la energía del universo de **Jujutsu Kaisen** (usuario = "Hechicero", progreso = "Ki"), pero la estética visual es ahora **Athletic Tech de cápsula espacial**:
+La personalidad de marca es la energía del universo **Dragon Ball / Capsule Corp** (progreso = **"Ki"**, transformación de las 7 esferas → **Shenron**, niveles *Humano Normal → Goku Ultra Instinto*), con la estética **Athletic Tech de cápsula espacial**:
 
 - Entorno oscuro profundo y enfocado (cámara del tiempo / cámara gravitacional de Capsule Corp).
 - Acentos cálidos **ámbar solar** para la acción principal y **cian scouter** para datos/estado.
 - Capas tonales (superficies escalonadas) en lugar de sombras marcadas; bordes finos como definición.
 - Tipografía deportiva geométrica (Outfit) para impacto y funcional (Inter) para lectura.
+
+> **2026-10-20 — limpieza de flavor JJK (puro).** Se retiraron de la UI las
+> referencias exclusivas de *Jujutsu Kaisen*: placeholders "Gojo Satoru",
+> "BLACK FLASH" (→ "RÉCORD PERSONAL"), "Energía Maldita" (→ "Energía (XP)"),
+> "hechicero" (→ "atleta" / "guerrero") y el concepto "Técnica Maldita" (→ campo
+> `cursed_technique`, que se conserva por compatibilidad de datos, con etiqueta
+> visible "Técnica Especial"). **Se mantienen** la gamificación y el flavor
+> Capsule Corp: Ki, Shenron, las 7 esferas, los niveles y los nombres de rutina
+> temáticos.
 
 ---
 
