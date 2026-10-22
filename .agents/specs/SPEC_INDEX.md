@@ -1,4 +1,4 @@
-# 📋 SPEC INDEX — Hechicería Fitness (Gym App)
+# 📋 SPEC INDEX — Gym App (Chronos / Capsule Corp)
 
 Índice vivo de todas las especificaciones del proyecto. Actualizar en cada ingest.
 
