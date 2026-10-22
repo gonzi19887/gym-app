@@ -5,9 +5,10 @@ status: done
 priority: medium
 branch: dev
 created: 2026-10-07
-updated: 2026-10-20
+updated: 2026-10-21
 closed: 2026-10-09
 sealed: 2026-10-20
+validated: 2026-10-21
 ---
 
 ## 🎯 Objetivo
